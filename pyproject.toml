@@ -1,0 +1,27 @@
+[build-system]
+requires = ["setuptools", "wheel", "numpy"]
+build-backend = "setuptools.build_meta"
+
+
+[project]
+dynamic = ["version"]
+name = 'pogos'
+authors = [
+    {name = 'Neil Cook', email = 'neil.james.cook@gmail.com'},
+]
+description = 'Processing General Observations - A wrapper for PAKORA, SOSSISSE and SORBET'
+readme = {file = "README.md", content-type = "text/markdown"}
+license = {file = 'LICENSE'}
+requires-python = ">=3.9"
+
+[project.urls]
+Homepage = 'http://apero.exoplanets.ca'
+Repository = 'https://github.com/njcuk9999/{module}'
+
+[project.scripts]
+test_setup = "pogos:recipes.pogos_setup.run"
+test_run = "pogos:recipes.pogos_run.run"
+
+[project.optional-dependencies]
+full = ["aperocore @ git+https://github.com/njcuk9999/apero-drs.git@v0.8.003#subdirectory=apero-core"]
+dev = ["aperocore"]
