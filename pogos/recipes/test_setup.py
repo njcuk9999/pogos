@@ -27,7 +27,7 @@ __authors__ = base.__authors__
 __date__ = base.__date__
 __release__ = base.__release__
 # set description
-__description__ = 'Setup the APERO test recipes'
+__description__ = 'Setup the POGOS recipes'
 __inputs__ = ['GLOBAL.YAML_FILE', 'PATHS.DATA_PATH', 'PATHS.PLOT_PATH']
 
 # =============================================================================
@@ -35,7 +35,7 @@ __inputs__ = ['GLOBAL.YAML_FILE', 'PATHS.DATA_PATH', 'PATHS.PLOT_PATH']
 # =============================================================================
 def main(**kwargs):
     # print splash
-    general.start_splash('APERO Test Setup')
+    general.start_splash('POGOS Setup')
     # get parameters
     params = load_functions.get_all_params(name=__NAME__,
                                            description=__description__,

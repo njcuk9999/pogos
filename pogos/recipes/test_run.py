@@ -29,7 +29,7 @@ __authors__ = base.__authors__
 __date__ = base.__date__
 __release__ = base.__release__
 # set description
-__description__ = 'Run the APERO test recipe'
+__description__ = 'Run the POGOS recipe'
 __inputs__ = ['GLOBAL.YAML_FILE']
 # get the logger
 WLOG = drs_log.wlog

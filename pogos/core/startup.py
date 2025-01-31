@@ -39,8 +39,8 @@ WLOG = drs_log.wlog
 PATHS = ['DATA_PATH', 'PLOT_PATH']
 # Set the description of APERO Core
 DESCRIPTIONS = dict()
-DESCRIPTIONS['pogos.recipes.test_setup'] = 'SOSSISSE - SOSS Inspired SpectroScopic Extraction'
-DESCRIPTIONS['pogos.recipes.test_run'] = 'Setup up SOSSISSE directories'
+DESCRIPTIONS['pogos.recipes.test_setup'] = 'Setup POGOS'
+DESCRIPTIONS['pogos.recipes.test_run'] = 'Run POGOS'
 
 INPUTARGS = dict()
 INPUTARGS['pogos.recipes.test_setup'] = ['GLOBAL.YAML_FILE', 'DATA_PATH',
