@@ -30,7 +30,7 @@ ConstDict = constant_functions.ConstantsDict
 CDict = ConstDict(__NAME__)
 
 # set the title for output yaml files
-CDict.title = CDict.yaml_title('APERO TEST', setup_program='test_setup.py',
+CDict.title = CDict.yaml_title('POGOS', setup_program='pogos_setup.py',
                                version=__version__, date=__date__)
 
 
@@ -57,36 +57,6 @@ CDict.add('YAML_NAME', value=None, dtype=str,
           description='The name of the yaml file to create '
                       '(if not using a previous yaml file)')
 
-# Plotting mode (0-3)
-CDict.add('PLOTTING', value=0, dtype=int,
-          source=__NAME__, user=True,
-          active=True, group=cgroup, options=[0, 1, 2, 3],
-          description='Plotting mode: '
-                      '\n\t0: No plots'
-                      '\n\t1: Only show plots '
-                      '\n\t2: Only save plots to file '
-                      '\n\t3: Show and save plots to file')
-
-# Plotting types
-CDict.add('PLOT_TYPES', value=['png', 'pdf'], dtype=list,
-          source=__NAME__, user=True,
-          active=True, group=cgroup,
-          description='List of plot types to save (e.g. [\'png\', \'pdf\'])')
-
-# Debug mode
-CDict.add('DEBUG', value=False, dtype=bool,
-          source=__NAME__, user=True,
-          active=True, group=cgroup,
-          description='Show debug messages')
-
-
-# =============================================================================
-# path settings (generally don't touch these)
-# =============================================================================
-cgroup = 'PATHS'
-CDict.add_group(cgroup, description='Definition of inputs related to the data',
-                source=__NAME__, user=True, active=True)
-
 # Define data path
 CDict.add('DATA_PATH', value=None, dtype=str,
           source=__NAME__, user=True,
@@ -99,6 +69,28 @@ CDict.add('PLOT_PATH', value=None, dtype=str,
           active=True, group=cgroup, not_none=True, cmd_arg='plot_path',
           description='Plot path (required)')
 
+
+# =============================================================================
+# Switches to turn of major features
+# =============================================================================
+group = 'RUN'
+CDict.add_group(group, description='Switches to turn on major features',
+                source=__NAME__, user=True, active=True)
+
+# Run TSOVORE
+CDict.add('TSOVORE', value=False, dtype=bool, source=__NAME__,
+          user=True, active=True, group=group, not_none=True,
+          description='Run TSOVORE')
+
+# Run SOSSISSE
+CDict.add('SOSSISSE', value=False, dtype=bool, source=__NAME__,
+          user=True, active=True, group=group, not_none=True,
+          description='Run SOSSISSE')
+
+# Run SORBET
+CDict.add('SORBET', value=False, dtype=bool, source=__NAME__,
+          user=True, active=True, group=group, not_none=True,
+          description='Run SORBET')
 
 # =============================================================================
 # Start of code

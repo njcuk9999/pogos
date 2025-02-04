@@ -12,7 +12,7 @@ Created on 2024-10-29 at 10:16
 from aperocore.constants import param_functions
 from aperocore.core import drs_log
 
-from aperotest.core import base
+from pogos.core import base
 
 # =============================================================================
 # Define variables

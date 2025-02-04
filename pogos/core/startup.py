@@ -19,8 +19,8 @@ from aperocore.constants import load_functions
 from aperocore.core import drs_log
 from aperocore.core import drs_text
 
-from aperotest.core import base
-from aperotest.constants import constants
+from pogos.core import base
+from pogos.constants import constants
 
 # =============================================================================
 # Define variables
@@ -36,7 +36,7 @@ ParamDict = param_functions.ParamDict
 # get the logger
 WLOG = drs_log.wlog
 # Define paths to create
-PATHS = ['DATA_PATH', 'PLOT_PATH']
+PATHS = ['GLOBAL.DATA_PATH', 'GLOBAL.PLOT_PATH']
 # Set the description of APERO Core
 DESCRIPTIONS = dict()
 DESCRIPTIONS['pogos.recipes.test_setup'] = 'Setup POGOS'
@@ -86,6 +86,13 @@ def setup(params: ParamDict):
         # ask user
         if drs_text.user_input(question, dtype='YN', required=True):
             os.makedirs(params[path])
+
+    # ----------------------------------------------------------------------
+    # ask user whether they want to start from a demo file or to turn on
+    # individual features
+    # ----------------------------------------------------------------------
+    question = 'Would you like to start from a [D]emo file or switch on ?'
+
     # ----------------------------------------------------------------------
     # print progress
     WLOG(params, 'info', params['LOG.HEADER'])

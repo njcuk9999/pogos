@@ -12,15 +12,15 @@ Created on 2024-10-29 at 09:32
 
 from aperocore.constants import load_functions
 
-from aperotest.constants.constants import CDict
-from aperotest.core import base
-from aperotest.core import startup
-from aperotest.core import general
+from pogos.constants.constants import CDict
+from pogos.core import base
+from pogos.core import startup
+from pogos.core import general
 
 # =============================================================================
 # Define variables
 # =============================================================================
-__NAME__ = 'pogos.recipes.test_setup'
+__NAME__ = 'pogos.recipes.pogos_setup'
 __PACKAGE__ = base.__PACKAGE__
 __version__ = base.__version__
 __authors__ = base.__authors__
@@ -28,7 +28,7 @@ __date__ = base.__date__
 __release__ = base.__release__
 # set description
 __description__ = 'Setup the POGOS recipes'
-__inputs__ = ['GLOBAL.YAML_FILE', 'PATHS.DATA_PATH', 'PATHS.PLOT_PATH']
+__inputs__ = ['GLOBAL.YAML_FILE', 'GLOBAL.DATA_PATH', 'GLOBAL.PLOT_PATH']
 
 # =============================================================================
 # Define functions

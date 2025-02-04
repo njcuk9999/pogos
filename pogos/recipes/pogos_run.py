@@ -15,14 +15,14 @@ from aperocore.constants import load_functions
 from pogos.constants.constants import CDict
 from pogos.core import base
 from pogos.core import general
-from pogos import pakora
+from pogos import tsovore
 from pogos import sossisse_wrap
 from pogos import sorbet
 
 
 # =============================================================================
 # Define variables
-__NAME__ = 'pogos.recipes.test_run'
+__NAME__ = 'pogos.recipes.pogos_run'
 __PACKAGE__ = base.__PACKAGE__
 __version__ = base.__version__
 __authors__ = base.__authors__
@@ -49,14 +49,14 @@ def main(**kwargs):
                                            config_list=[CDict],
                                            kwargs=kwargs)
     # -------------------------------------------------------------------------
-    # run pakora
-    if params['SWITCHES']['RUN_PAKORA']:
-        pakora.run_pakora(params)
+    # run tsovore
+    if params['RUN.TSOVORE']:
+        tsovore.run_tsovore(params)
     # run sossisse_wrap
-    if params['SWITCHES']['RUN_SOSSISSE']:
+    if params['RUN.SOSSISSE']:
         sossisse_wrap.run_sossisse(params)
     # run sorbet
-    if params['SWITCHES']['RUN_SORBET']:
+    if params['RUN.SORBET']:
         sorbet.run_sorbet(params)
     # -------------------------------------------------------------------------
     # print splash

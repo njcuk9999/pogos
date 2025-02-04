@@ -1,9 +1,9 @@
 # Define versionV
-VERSION: 0.1.001
+DRS.VERSION: 0.1.001
 # Define date of release
-DATE: 2025-01-31
+DRS.DATE: 2025-01-31
 # Define release type
-RELEASE: alpha
+DRS.RELEASE: alpha
 # Define authors
-AUTHORS:
+DRS.AUTHORS:
     - N. Cook

@@ -9,7 +9,7 @@ Created on 2024-10-29 at 09:30
 
 @author: cook
 """
-from aperotest.core import base
+from pogos.core import base
 
 # =============================================================================
 # Define variables

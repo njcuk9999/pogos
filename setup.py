@@ -28,7 +28,7 @@ def get_version() -> str:
     """
     # try to open version file
     try:
-        with open('aperotest/info.yaml', 'r') as vfile:
+        with open('pogos/info.yaml', 'r') as vfile:
             vtext = vfile.readlines()
     except Exception as e:
         print('Error: Could not read version file')

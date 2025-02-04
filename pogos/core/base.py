@@ -35,7 +35,7 @@ __release__ = __YAML__['DRS.RELEASE']
 # =============================================================================
 # Base functionality
 # =============================================================================
-class AperoTestException(Exception):
+class pogosException(Exception):
     def __init__(self, message):
         super().__init__(message)
 
