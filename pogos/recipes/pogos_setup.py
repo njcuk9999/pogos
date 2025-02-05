@@ -33,26 +33,18 @@ __inputs__ = ['GLOBAL.YAML_FILE', 'GLOBAL.DATA_PATH', 'GLOBAL.PLOT_PATH']
 # =============================================================================
 # Define functions
 # =============================================================================
-def initial_setup():
-    # ----------------------------------------------------------------------
-    # ask user whether they want to start from a demo file or to turn on
-    # individual features
-    # ----------------------------------------------------------------------
-    question = 'Would you like to start from a [D]emo file or switch on ?'
-
-
 def main(**kwargs):
     # print splash
     general.start_splash('POGOS Setup')
     # ask for some user options (which may change what is loaded)
-    initial_setup()
+    external_const = startup.initial_setup()
     # get parameters
     params = load_functions.get_all_params(name=__NAME__,
                                            description=__description__,
                                            inputargs=__inputs__,
                                            config_list=[CDict],
                                            from_file=False,
-                                           external_const=base.EXTERNAL_CONST,
+                                           external_const=external_const,
                                            kwargs=kwargs)
     # setup using parameters
     startup.setup(params)

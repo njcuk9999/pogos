@@ -20,7 +20,8 @@ from aperocore.core import drs_log
 from aperocore.core import drs_text
 
 from pogos.core import base
-from pogos.constants import constants
+from pogos import constants
+from pogos.constants import constants as pogo_constants
 
 # =============================================================================
 # Define variables
@@ -33,6 +34,8 @@ __date__ = base.__date__
 __release__ = base.__release__
 # get parameter dictionary
 ParamDict = param_functions.ParamDict
+# get constant dictionary
+ConstDict = pogo_constants.ConstDict
 # get the logger
 WLOG = drs_log.wlog
 # Define paths to create
@@ -94,7 +97,7 @@ def setup(params: ParamDict):
     WLOG(params, 'info', 'Constructing yaml file')
     WLOG(params, 'info', params['LOG.HEADER'])
     # Get the merged constants dictionary
-    cdict = constants.ConstDict.merge_configs(params['CONFIG_LIST'])
+    cdict = ConstDict.merge_configs(params['CONFIG_LIST'])
     # get the yaml file
     yaml_file = params['GLOBAL.YAML_FILE']
     # print progress
@@ -102,6 +105,52 @@ def setup(params: ParamDict):
     WLOG(params, '', msg.format(os.path.realpath(yaml_file)))
     # save the constants dictionary to yaml file
     cdict.save_yaml(params, outpath=yaml_file, log=False)
+
+
+def initial_setup():
+
+    # define which constant lists we should be using
+    const_list = dict()
+    const_list['TSOVORE_SIM'] = constants.TSOVORE_SimCDict
+    const_list['TSOVORE_IMCAL'] = constants.TSOVORE_ImCDict
+    const_list['MIRIAM'] = constants.MIRIAM_CDict
+    const_list['SORBET_WLCTA'] = constants.SORBET_WLCTA_CDict
+    const_list['SORBET_SLCTA'] = constants.SORBET_SLCTA_CDict
+    const_list['SORBET_TFIT'] = constants.SORBET_TFIT_CDict
+    const_list['SORBET_RV'] = constants.SORBET_RV_CDict
+
+    # add those external ones
+    const_list.update(base.EXTERNAL_CONST)
+
+    # ----------------------------------------------------------------------
+    # ask user whether they want to start from a demo file or to turn on
+    # individual features
+    # ----------------------------------------------------------------------
+    q1 = """Would you like to start from:
+         - [D]emo setup (set values)
+         - [S]witch features on/off (default values)
+         - [A]ll features on (default values)
+         """
+    # # get user input
+    # a1 = drs_text.user_input(q1, dtype='str', options=['D', 'S', 'A'],
+    #                          required=True)
+    # # ----------------------------------------------------------------------
+    # if a1 == 'D':
+    #     # print demos available
+    #     WLOG(None, '', 'Demos available:')
+    #     pass
+    #
+    # elif a1 == 'S':
+    #     # print features available
+    #     WLOG(None, '', 'Features available:')
+    #     pass
+    # else:
+    #     pass
+
+
+    # return the updated extenral constants list
+    return const_list
+
 
 
 # =============================================================================

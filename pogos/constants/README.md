@@ -54,7 +54,7 @@ To do this you can add a "section" as follows:
 
 ```python
 
-cgroup = 'SCARVS.GLOBAL'
+cgroup = 'GLOBAL'
 CDict.add_group(cgroup, description='global settings (generally '
                                     'don\'t touch these)')
 
@@ -70,7 +70,7 @@ The following code is an example:
 # =============================================================================
 # path settings (generally don't touch these)
 # =============================================================================
-cgroup = 'SCARVS.PATHS'
+cgroup = 'PATHS'
 CDict.add_group(cgroup, description='Definition of inputs related to the data')
 
 # Define data path
@@ -94,7 +94,9 @@ that produces the following section in the yaml file
 # Definition of inputs related to the data
 # =============================================================================
 # The data directory (required)
-DATA_PATH: /scratch2/other/prv/data
+PATHS:
+  DATA_PATH: /scratch2/other/test/data
 # Plot path (required)
-PLOT_PATH: /scratch2/other/prv/plots
+PATHS:
+  PLOT_PATH: /scratch2/other/test/plots
 ```
