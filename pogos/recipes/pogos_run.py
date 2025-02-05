@@ -11,6 +11,7 @@ Created on 2024-10-29 at 09:32
 """
 from aperocore.core import drs_log
 from aperocore.constants import load_functions
+import sossisse
 
 from pogos.constants.constants import CDict
 from pogos.core import base
@@ -47,7 +48,9 @@ def main(**kwargs):
                                            inputargs=__inputs__,
                                            param_file_path='GLOBAL.YAML_FILE',
                                            config_list=[CDict],
+                                           external_const=base.EXTERNAL_CONST,
                                            kwargs=kwargs)
+
     # -------------------------------------------------------------------------
     # run tsovore
     if params['RUN.TSOVORE']:

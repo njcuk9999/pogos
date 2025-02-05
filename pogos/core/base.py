@@ -12,7 +12,7 @@ Created on 2024-10-29 at 09:35
 from pathlib import Path
 
 import yaml
-
+import sossisse
 
 # =============================================================================
 # Define variables
@@ -40,6 +40,9 @@ class pogosException(Exception):
         super().__init__(message)
 
 
+# set up external constants
+EXTERNAL_CONST = dict()
+EXTERNAL_CONST['SOSSISSE'] = sossisse.CDict
 
 # =============================================================================
 # Start of code

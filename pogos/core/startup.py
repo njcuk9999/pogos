@@ -87,19 +87,14 @@ def setup(params: ParamDict):
         if drs_text.user_input(question, dtype='YN', required=True):
             os.makedirs(params[path])
 
-    # ----------------------------------------------------------------------
-    # ask user whether they want to start from a demo file or to turn on
-    # individual features
-    # ----------------------------------------------------------------------
-    question = 'Would you like to start from a [D]emo file or switch on ?'
 
     # ----------------------------------------------------------------------
     # print progress
     WLOG(params, 'info', params['LOG.HEADER'])
     WLOG(params, 'info', 'Constructing yaml file')
     WLOG(params, 'info', params['LOG.HEADER'])
-    # Get the constants dictionary
-    cdict = constants.CDict
+    # Get the merged constants dictionary
+    cdict = constants.ConstDict.merge_configs(params['CONFIG_LIST'])
     # get the yaml file
     yaml_file = params['GLOBAL.YAML_FILE']
     # print progress

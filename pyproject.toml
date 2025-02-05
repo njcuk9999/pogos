@@ -25,5 +25,6 @@ pogos_setup = "pogos:recipes.pogos_setup.run"
 pogos_run = "pogos:recipes.pogos_run.run"
 
 [project.optional-dependencies]
-full = ["aperocore @ git+https://github.com/njcuk9999/apero-drs.git@v0.8.003#subdirectory=apero-core"]
-dev = ["aperocore"]
+full = ["aperocore @ git+https://github.com/njcuk9999/apero-drs.git@v0.8.003#subdirectory=apero-core",
+        "sossisse @ git+https://github.com/njcuk9999/sossisse.git"]
+dev = ["aperocore", "sossisse"]
