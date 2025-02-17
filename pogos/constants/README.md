@@ -1,5 +1,13 @@
 # Constants
 
+## Contents
+
+- [Adding a constant](#adding-a-constant)
+- [Adding a new constant group](#adding-a-new-constant-group)
+- [Accessing nested constant lists](#accessing-nested-constant-lists)
+
+## Adding a constant
+
 Please add any constant as follows
 
 
@@ -100,3 +108,39 @@ PATHS:
 PATHS:
   PLOT_PATH: /scratch2/other/test/plots
 ```
+
+
+
+
+## Accessing nested constant lists
+
+As you can see we have multiple "levels" of constants
+
+In POGOS we can have very nested constants, for example:
+
+```python
+params['SOSSISSE']['WLC']['GENERAL']['X_TRACE_OFFSET']
+```
+
+To access these we can use the following code:
+
+```python
+wlc_gen_params = params.get('SOSSISSE.WLC.GENERAL')
+```
+
+And then any parameter can be accessed as follows:
+
+```python
+
+x_trace_offset = wlc_gen_params['X_TRACE_OFFSET']
+
+```
+
+You can choose what level you need depending on your usage e.g.:
+
+```python 
+sparams = params.get('SOSSISSE')
+swlc_params = params.get('SOSSISSE.WLC')
+gen_params = params.get('SOSSISSE.WLC.GENERAL')
+```
+
