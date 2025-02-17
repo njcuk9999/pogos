@@ -10,36 +10,8 @@ Created on 2025-01-31 at 15:03
 @author: cook
 """
 
-import numpy as np
-import matplotlib.pyplot as plt
-from astropy.io import fits
-from astropy.table import Table
-from astropy import units as u
-from tqdm import tqdm
-import warnings
-
-
-# =============================================================================
-# Define variables
-# =============================================================================
-
-# -----------------------------------------------------------------------------
-
-# =============================================================================
-# Define functions
-# =============================================================================
-def function1():
-    return 0
-
-
-# =============================================================================
-# Start of code
-# =============================================================================
-# Main code here
-if __name__ == "__main__":
-    # ----------------------------------------------------------------------
-    # print 'Hello World!'
-    print("Hello World!")
+# replace this with a import to a sub module function
+run_tsovore = lambda x: print('Hello world')
 
 # =============================================================================
 # End of code
