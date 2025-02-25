@@ -89,8 +89,6 @@ def setup(params: ParamDict):
         # ask user
         if drs_text.user_input(question, dtype='YN', required=True):
             os.makedirs(params[path])
-
-
     # ----------------------------------------------------------------------
     # print progress
     WLOG(params, 'info', params['LOG.HEADER'])

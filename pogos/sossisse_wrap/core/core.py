@@ -22,7 +22,7 @@ from aperocore.constants.param_functions import ParamDict
 from aperocore.core import drs_misc
 from aperocore.core import drs_log
 from sossisse.recipes import run_sossisse as sossisse_run
-from sossisse.recipes import run_setup
+import sossisse
 
 from pogos.core import base
 
@@ -50,12 +50,15 @@ WLOG = drs_log.wlog
 # =============================================================================
 def run_sossisse_module(params: ParamDict):
     """
-    Run the sossisse recipe
+    Run the sossisse run recipe
 
     :param params: ParamDict, the parameter dictionary of constants
 
-    :return: None, runs sossisse recipe
+    :return: None, runs sossisse run
     """
+    # if RUN.SOSSISSE is False skip
+    if not params['RUN.SOSSISSE']:
+        return
     # get the SOSSISSE sub-dictionary
     sossisse_params = params.get('SOSSISSE')
     # deal with SOSSISSE nested dictionary not in params
@@ -68,6 +71,32 @@ def run_sossisse_module(params: ParamDict):
     sparams['INPUTS.PARAM_FILE'] = str(params['GLOBAL.YAML_FILE'])
     # run the sossisse recipe
     return sossisse_run.main(__YAML_DICT__=sparams)
+
+
+def setup_sossisse_module(params: ParamDict):
+    """
+    Run the sossisse setup recipe
+
+    :param params: ParamDict, the parameter dictionary of constants
+
+    :return: None, runs sossisse setup
+    """
+    # if RUN.SOSSISSE is False skip
+    if not params['RUN.SOSSISSE']:
+        return
+    # get the SOSSISSE sub-dictionary
+    sossisse_params = params.get('SOSSISSE')
+    # deal with SOSSISSE nested dictionary not in params
+    if sossisse_params is None:
+        # we assume that if SOSSISSE is not there we don't want to run this
+        return
+    # convert to independent parameter dictionary
+    sparams = sossisse_params.as_param_dict()
+    # make sure yaml file is set
+    sparams['INPUTS.PARAM_FILE'] = str(params['GLOBAL.YAML_FILE'])
+    # setup for SOSSISSE just uses "get_parameters" function
+    return sossisse.get_parameters(__NAME__=__NAME__, only_create=True,
+                                   log_level='setup', __YAML_DICT__=sparams)
 
 
 # =============================================================================
