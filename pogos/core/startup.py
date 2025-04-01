@@ -19,9 +19,11 @@ from aperocore.constants import load_functions
 from aperocore.core import drs_log
 from aperocore.core import drs_text
 
+
 from pogos.core import base
 from pogos import constants
 from pogos.constants import constants as pogo_constants
+from pogos.resources import demos as demo_mod
 
 # =============================================================================
 # Define variables
@@ -50,6 +52,15 @@ INPUTARGS['pogos.recipes.test_setup'] = ['GLOBAL.YAML_FILE', 'DATA_PATH',
                                              'PLOT_PATH']
 INPUTARGS['pogos.recipes.test_run'] = ['GLOBAL.YAML_FILE']
 
+# deal with switching off sections (for yaml file)
+RUN_KEYS = dict()
+RUN_KEYS['RUN.TSOVORE'] = 'TSOVORE'
+RUN_KEYS['RUN.SOSSISSE'] = 'SOSSISSE'
+RUN_KEYS['RUN.MIRIAM'] = 'MIRIAM'
+RUN_KEYS['RUN.SORBET'] = 'SORBET'
+
+
+
 
 # =============================================================================
 # Define functions
@@ -60,6 +71,29 @@ def setup(params: ParamDict):
 
     :return: None
     """
+    # ------------------------------------------------------------------------
+    # deal with start point (setup only) - ask user to start from demo or blank
+    params = load_functions.starting_point(params, 'GLOBAL.INSTRUMENTMODE',
+                                           demo_mod)
+    # -------------------------------------------------------------------------
+    # ask user for run arguments
+    run_keys = list(RUN_KEYS.keys())
+    params = load_functions.ask_for_missing_args(params, include_keys=run_keys)
+    # -------------------------------------------------------------------------
+    # Deal with disabling sections we don't need in the yaml
+    for run_key in run_keys:
+        # if False turn off the section
+        if not params[run_key]:
+            for key in params.keys():
+                if key.startswith(RUN_KEYS[run_key]):
+                    params.instances[key].user = False
+                    params.instances[key].not_none = False
+    # -------------------------------------------------------------------------
+    # if user wants to run SOSSISSE set path from data path
+    if params['RUN.SOSSISSE']:
+        sossisse_path = os.path.join(params['GLOBAL.DATA_PATH'], 'sossisse')
+        params['SOSSISSE.INPUTS.SOSSIOPATH'] = sossisse_path
+    # -------------------------------------------------------------------------
     # print progress
     WLOG(params, 'info', params['LOG.HEADER'])
     WLOG(params, 'info', 'Checking arguments')

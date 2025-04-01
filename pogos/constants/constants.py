@@ -69,6 +69,13 @@ CDict.add('PLOT_PATH', value=None, dtype=str,
           active=True, group=cgroup, not_none=True, cmd_arg='plot_path',
           description='Plot path (required)')
 
+# Instrument mode i.e. JWST.NIRISS.SOSS or JWST.NIRISS.PRISM
+CDict.add('INSTRUMENTMODE', value=None, dtype=str, not_none=True,
+          source=__NAME__, user=True, active=True,
+          options=base.INSTRUMENTS,
+          cmd_arg='instmode', group=cgroup,
+          description='Instrument mode e.g. one of the following: {0}'
+                      ''.format('\n\t'.join(base.INSTRUMENTS)))
 
 # =============================================================================
 # Switches to turn of major features
@@ -78,17 +85,22 @@ CDict.add_group(group, description='Switches to turn on major features',
                 source=__NAME__, user=True, active=True)
 
 # Run TSOVORE
-CDict.add('TSOVORE', value=False, dtype=bool, source=__NAME__,
+CDict.add('TSOVORE', value=None, dtype=bool, source=__NAME__,
           user=True, active=True, group=group, not_none=True,
           description='Run TSOVORE')
 
 # Run SOSSISSE
-CDict.add('SOSSISSE', value=False, dtype=bool, source=__NAME__,
+CDict.add('SOSSISSE', value=None, dtype=bool, source=__NAME__,
           user=True, active=True, group=group, not_none=True,
           description='Run SOSSISSE')
 
+# Run MIRIAM
+CDict.add('MIRIAM', value=None, dtype=bool, source=__NAME__,
+          user=True, active=True, group=group, not_none=True,
+          description='Run MIRIAM')
+
 # Run SORBET
-CDict.add('SORBET', value=False, dtype=bool, source=__NAME__,
+CDict.add('SORBET', value=None, dtype=bool, source=__NAME__,
           user=True, active=True, group=group, not_none=True,
           description='Run SORBET')
 

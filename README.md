@@ -38,7 +38,7 @@ conda create --name pogos-env python=3.10
 conda activate pogos-env
 ```
 
-Note you need to activate `pogos-env` each time before running any sosssise command.
+Note you need to activate `pogos-env` each time before running any SOSSISSE command.
 
 #### Step 3: Install sossisse with pip 
 
