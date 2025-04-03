@@ -1,5 +1,5 @@
 # pogos
-PrOcessing General ObServations - A wrapper for PAKORA, SOSSISSE and SORBET
+PrOcessing General ObServations: A wrapper for TSOVORE, SOSSISSE, MIRIAM and SORBET
 
 ## Table of contents
 
