@@ -16,6 +16,7 @@ from pogos.constants.constants import CDict
 from pogos.core import base
 from pogos.core import startup
 from pogos.core import general
+from pogos import sossisse_wrap
 
 # =============================================================================
 # Define variables
@@ -48,6 +49,10 @@ def main(**kwargs):
                                            kwargs=kwargs)
     # setup using parameters
     startup.setup(params)
+
+
+    sossisse_wrap.setup_sossisse_module(params)
+
     # print splash
     general.end_splash()
 

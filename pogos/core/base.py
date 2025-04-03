@@ -32,6 +32,17 @@ __authors__ = __YAML__['DRS.AUTHORS']
 __date__ = __YAML__['DRS.DATE']
 __release__ = __YAML__['DRS.RELEASE']
 
+# =============================================================================
+# Define core variables
+# =============================================================================
+# supported instruments modes
+# JWST NIRISS SOSS
+INSTRUMENTS = ['JWST.NIRISS.SOSS',
+               'JWST.NIRISS.FGS',
+               'JWST.NIRSPEC.PRISM',
+               'JWST.NIRSPEC.G395',
+               'JWST.NIRSPEC.G253',
+               'JWST.NIRSPEC.G140']
 
 # =============================================================================
 # Define sub module functionality

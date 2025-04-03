@@ -1,5 +1,5 @@
 [build-system]
-requires = ["setuptools", "wheel", "numpy"]
+requires = ["setuptools", "wheel", "radvel", "numpy"]
 build-backend = "setuptools.build_meta"
 
 
@@ -12,8 +12,23 @@ authors = [
 description = 'Processing General Observations - A wrapper for PAKORA, SOSSISSE and SORBET'
 readme = {file = "README.md", content-type = "text/markdown"}
 license = {file = 'LICENSE'}
-requires-python = ">=3.9"
+requires-python = "==3.11.*"
 dependencies = [
+        "juliet==2.2.7",
+        "jwst==1.17.1",
+        "numpy==1.26.4",
+        "astropy==7.0.1",
+        "corner==2.2.3",
+        "ipython==8.32.0",
+        "scipy==1.15.2",
+        "matplotlib==3.10.1",
+        "tqdm==4.67.1",
+        "h5py==3.13.0",
+        "ruamel.yaml==0.18.10",
+        "wpca==0.1",
+        "scikit-image==0.25.2",
+        "scikit-learn==1.6.1",
+        "statsmodels==0.14.4",
 ]
 
 [project.urls]
