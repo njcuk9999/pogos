@@ -111,7 +111,7 @@ pip install -U -e './sossisse[dev]'
 pip install -U -e './pogos[dev]'
 ```
 
-And then proceed with [Setup](#2-setting-up-pogos) and [Runnging](#3-running-pogos) POGOS.
+And then proceed with [Setup](#2-setting-up-pogos) and [Running](#3-running-pogos) POGOS.
 
 [Back to top](#table-of-contents)
 
