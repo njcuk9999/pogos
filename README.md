@@ -4,13 +4,16 @@ PrOcessing General ObServations: A wrapper for TSOVORE, SOSSISSE, MIRIAM and SOR
 ## Table of contents
 
 1. [Installation](#1-installation)
-2. [Dev mode](#2-dev-mode)
+2. [Setup POGOS](#2-setting-up-pogos)
+3. [Running POGOS](#3-running-pogos)
+4. [Dev mode](#4-dev-mode)
+
 
 ---
 
 ## 1. Installation
 
-Note if you are a developer please see [Dev mode](#2-dev-mode)
+Note if you are a developer please see [Dev mode](#4-dev-mode)
 
 #### Step 1: Download the GitHub repository
 
@@ -33,7 +36,7 @@ we recommend a new clean environment to avoid module conflicts.
 
 
 ```bash
-conda create --name pogos-env python=3.10
+conda create --name pogos-env python=3.11
 ```
 
 ```bash
@@ -58,12 +61,46 @@ if you are in the directory where you did your `git clone` then you need to chan
 
 [Back to top](#table-of-contents)
 
+---
 
-## 2. Dev mode
+## 2. Setting up POGOS
+
+From inside the `pogos-env` conda environment (or equivalanet), in any directory (except the directory where you downloaded the github directories), run:
+
+```bash
+pogos_setup
+````
+
+This should ask you for several options, and create a file structure and a yaml file.
+
+[Back to top](#table-of-contents)
+
+---
+
+## 3. Running POGOS
+
+Once you have run `pogos_setup` and read and understood the yaml file you can run the main POGOS code.
+
+You can do this as follows:
+
+```bash
+pogos_run {path_to_yaml_file}
+```
+
+where `{path_to_yaml_file}` is the path to the yaml file you created in the setup step.
+
+
+[Back to top](#table-of-contents)
+
+---
+
+## 4. Dev mode
 
 For dev mode (editable install of both apero-core and sossisse) please run the following:
 
 ```bash
+conda create --name pogos-env python=3.11
+conda activate pogos-env
 
 git clone git@github.com:njcuk9999/apero-drs.git -b v0.8.003
 git clone git@github.com:njcuk9999/sossisse.git -b developer
