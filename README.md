@@ -102,6 +102,8 @@ For dev mode (editable install of both apero-core and sossisse) please run the f
 conda create --name pogos-env python=3.11
 conda activate pogos-env
 
+pip install radvel
+
 git clone git@github.com:njcuk9999/apero-drs.git -b v0.8.003
 git clone git@github.com:njcuk9999/sossisse.git -b developer
 git clone git@github.com:njcuk9999/pogos.git -b developer
