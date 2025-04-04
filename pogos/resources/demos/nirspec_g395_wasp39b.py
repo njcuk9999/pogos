@@ -101,10 +101,9 @@ cgroup = 'SOSSISSE.GENERAL'
 #  - file2
 #  - file3
 Cdict.set('FILES', group=cgroup, source=__NAME__,
-          value=['jw01366004001_04101_00001-seg001_nrs1_rateints.fits',
-                 'jw01366004001_04101_00001-seg002_nrs1_rateints.fits',
-                 'jw01366004001_04101_00001-seg003_nrs1_rateints.fits',
-                 'jw01366004001_04101_00001-seg004_nrs1_rateints.fits'])
+          value=['jw01366003001_04101_00001-seg001_nrs2_rateints.fits',
+                 'jw01366003001_04101_00001-seg002_nrs2_rateints.fits',
+                 'jw01366003001_04101_00001-seg003_nrs2_rateints.fits'])
 
 # background file --> leave as None if the is no background available for
 #    the mode - if empty DO_BACKGROUND is set to False regardless of the value
@@ -167,7 +166,7 @@ Cdict.set('BASELINE_INTS', group=cgroup, source=__NAME__,
 #     e.g. TRANSIT_INTS:
 #           - [90, 97, 103, 110]
 Cdict.set('TRANSIT_INTS', group=cgroup, source=__NAME__,
-          value = [160, 200, 300, 340])
+          value = [[160, 200, 300, 340]])
 
 # =============================================================================
 # Definition of inputs related to handling of the data within each frame
