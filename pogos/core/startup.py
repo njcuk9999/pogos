@@ -76,6 +76,11 @@ def setup(params: ParamDict):
     params = load_functions.starting_point(params, 'GLOBAL.INSTRUMENTMODE',
                                            demo_mod)
     # -------------------------------------------------------------------------
+    # print progress
+    WLOG(params, 'info', params['LOG.HEADER'])
+    WLOG(params, 'info', 'Checking arguments')
+    WLOG(params, 'info', params['LOG.HEADER'])
+    # -------------------------------------------------------------------------
     # ask user for run arguments
     run_keys = list(RUN_KEYS.keys())
     params = load_functions.ask_for_missing_args(params, include_keys=run_keys)
@@ -97,11 +102,6 @@ def setup(params: ParamDict):
     if params['RUN.SOSSISSE']:
         sossisse_path = os.path.join(params['GLOBAL.DATA_PATH'], 'sossisse')
         params['SOSSISSE.INPUTS.SOSSIOPATH'] = sossisse_path
-    # -------------------------------------------------------------------------
-    # print progress
-    WLOG(params, 'info', params['LOG.HEADER'])
-    WLOG(params, 'info', 'Checking arguments')
-    WLOG(params, 'info', params['LOG.HEADER'])
     # ask user for any missing arguments
     params = load_functions.ask_for_missing_args(params)
     # ----------------------------------------------------------------------
