@@ -89,6 +89,10 @@ def setup(params: ParamDict):
                     params.instances[key].user = False
                     params.instances[key].not_none = False
     # -------------------------------------------------------------------------
+    # ask user for any missing arguments
+    params = load_functions.ask_for_missing_args(params,
+                                                 include_keys=['GLOBAL.DATA_PATH'])
+    # -------------------------------------------------------------------------
     # if user wants to run SOSSISSE set path from data path
     if params['RUN.SOSSISSE']:
         sossisse_path = os.path.join(params['GLOBAL.DATA_PATH'], 'sossisse')

@@ -42,7 +42,7 @@ cgroup = 'GLOBAL'
 
 # Instrument mode i.e. JWST.NIRISS.SOSS or JWST.NIRISS.PRISM
 Cdict.set('INSTRUMENTMODE', group=cgroup, source=__NAME__,
-          value='JWST.NIRISS.SOSS')
+          value=INFO['instrument'])
 
 # =============================================================================
 # Switches to turn of major features
@@ -85,7 +85,7 @@ cgroup = 'SOSSISSE.INPUTS'
 
 # Instrument mode
 Cdict.set('INSTRUMENTMODE', group=cgroup, source=__NAME__,
-          value='JWST.NIRISS.SOSS')
+          value=INFO['instrument'])
 
 # Name of the object (must match the object directory name)
 Cdict.set('OBJECTNAME', group=cgroup, source=__NAME__,
