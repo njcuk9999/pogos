@@ -173,6 +173,10 @@ Cdict.set('TRANSIT_INTS', group=cgroup, source=__NAME__,
 # =============================================================================
 cgroup = 'SOSSISSE.WLC.GENERAL'
 
+# Use fancy centering of the trace (sets RECENTER_TRACE_POSITION to False)
+Cdict.set('USE_FANCY_CENTERING', group=cgroup, source=__NAME__,
+          value=True)
+
 # Trace extraction width. Set to 0 to use the full image
 Cdict.set('TRACE_WIDTH_EXTRACTION', group=cgroup, source=__NAME__,
           value=40)
