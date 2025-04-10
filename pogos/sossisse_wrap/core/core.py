@@ -81,6 +81,8 @@ def setup_sossisse_module(params: ParamDict):
 
     :return: None, runs sossisse setup
     """
+    # set function name
+    func_name = f'{__NAME__}.setup_sossisse_module()'
     # if RUN.SOSSISSE is False skip
     if not params['RUN.SOSSISSE']:
         return
@@ -95,8 +97,21 @@ def setup_sossisse_module(params: ParamDict):
     # make sure yaml file is set
     sparams['INPUTS.PARAM_FILE'] = str(params['GLOBAL.YAML_FILE'])
     # setup for SOSSISSE just uses "get_parameters" function
-    return sossisse.get_parameters(__NAME__=__NAME__, only_create=True,
-                                   log_level='setup', __YAML_DICT__=sparams)
+    inst = sossisse.get_parameters(__NAME__=__NAME__, only_create=True,
+                                      log_level='setup', __YAML_DICT__=sparams)
+    # -------------------------------------------------------------------------
+    # get the SOSSISSE PATH params out of instrument class
+    spaths = inst.params.get('PATHS')
+    # update the SOSSISSE paths
+    for path in spaths.keys():
+        # get the key in POGOS parameters
+        pkey = f'SOSSISSE.PATHS.{path}'
+        # if the key exists update it
+        if pkey in params:
+            params.set(pkey, spaths[path], source=func_name)
+    # -------------------------------------------------------------------------
+    # return the parameters
+    return params
 
 
 # =============================================================================

@@ -34,6 +34,14 @@ INFO['instrument'] = 'JWST.NIRISS.SOSS'
 INFO['description'] = 'Trappist 1b transit observed XXX'
 INFO['date'] = '2025-03-25'
 INFO['author'] = 'Etienne Artigau'
+# url for data download
+URL = 'https://www.astro.umontreal.ca/~cook/pogo-data/'
+# download: key = file, value = local path
+DOWNLOAD = dict()
+DOWNLOAD['SOSSISSE.GENERAL.FILES'] = 'SOSSISSE.PATHS.RAWPATH'
+DOWNLOAD['SOSSISSE.GENERAL.BKGFILE'] = 'SOSSISSE.PATHS.CALIBPATH'
+DOWNLOAD['SOSSISSE.GENERAL.FLATFILE'] = 'SOSSISSE.PATHS.CALIBPATH'
+DOWNLOAD['SOSSISSE.GENERAL.POS_FILE'] = 'SOSSISSE.PATHS.CALIBPATH'
 
 # =============================================================================
 # global settings (generally don't touch these)
@@ -154,6 +162,15 @@ cgroup = 'SOSSISSE.WLC.INPUTS'
 Cdict.set('BASELINE_INTS', group=cgroup, source=__NAME__,
           value=None)
 
+# Whether there is a transit/eclipse in the data.
+# If this is set to False TRANSIT_INTS is ignored
+# If this is set to True and TRANSIT_INTS is None a graph will help you
+#    decide where the transit should be
+# If this is set to True and TRANSIT_INTS is set the code will process transits
+#    and treat the data as such
+Cdict.set('HAS_TRANSIT', group=cgroup, source=__NAME__,
+          value=True)
+
 # If there are transit(s)/eclipse(s) in the data, enter the frames
 #     corresponding to either the 1st, 2nd, 3rd and 4th contact [length 4 list]
 #     or the 1st to 4th contact [length 2 list].
@@ -166,7 +183,7 @@ Cdict.set('BASELINE_INTS', group=cgroup, source=__NAME__,
 #     e.g. TRANSIT_INTS:
 #           - [90, 97, 103, 110]
 Cdict.set('TRANSIT_INTS', group=cgroup, source=__NAME__,
-          value=[90, 97, 103, 110])
+          value=[[90, 97, 103, 110]])
 
 # =============================================================================
 # Definition of inputs related to handling of the data within each frame

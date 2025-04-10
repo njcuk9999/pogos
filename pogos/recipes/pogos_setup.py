@@ -47,12 +47,15 @@ def main(**kwargs):
                                            from_file=False,
                                            external_const=external_const,
                                            kwargs=kwargs)
+    # -------------------------------------------------------------------------
     # setup using parameters
     startup.setup(params)
-
-
+    # -------------------------------------------------------------------------
     sossisse_wrap.setup_sossisse_module(params)
-
+    # -------------------------------------------------------------------------
+    # ask for data download
+    load_functions.download_data(params)
+    # -------------------------------------------------------------------------
     # print splash
     general.end_splash()
 
