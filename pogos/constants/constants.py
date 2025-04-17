@@ -63,12 +63,6 @@ CDict.add('DATA_PATH', value=None, dtype=str,
           active=True, group=cgroup, not_none=True, cmd_arg='data_path',
           description='The data directory (required)')
 
-# Define plot path
-CDict.add('PLOT_PATH', value=None, dtype=str,
-          source=__NAME__, user=True,
-          active=True, group=cgroup, not_none=True, cmd_arg='plot_path',
-          description='Plot path (required)')
-
 # Instrument mode i.e. JWST.NIRISS.SOSS or JWST.NIRISS.PRISM
 CDict.add('INSTRUMENTMODE', value=None, dtype=str, not_none=True,
           source=__NAME__, user=True, active=True,

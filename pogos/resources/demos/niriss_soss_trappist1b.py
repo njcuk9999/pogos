@@ -185,6 +185,16 @@ Cdict.set('HAS_TRANSIT', group=cgroup, source=__NAME__,
 Cdict.set('TRANSIT_INTS', group=cgroup, source=__NAME__,
           value=[[90, 97, 103, 110]])
 
+# define the area around which we will optimize the background
+#   this should be a length 4 list (x start, x end, y start, y end)
+Cdict.set('BACKGROUND_GLITCH_BOX', group=cgroup, source=__NAME__,
+          value=[650, 750, 200, 240])
+
+# define the area around which the background will be optimized
+#    should be a list (start, end, step)
+Cdict.set('BACKGROUND_SHIFTS', group=cgroup, source=__NAME__,
+          value=[-5.0, 5.2, 0.2])
+
 # =============================================================================
 # Definition of inputs related to handling of the data within each frame
 # =============================================================================

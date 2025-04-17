@@ -58,8 +58,12 @@ RUN_KEYS['RUN.TSOVORE'] = 'TSOVORE'
 RUN_KEYS['RUN.SOSSISSE'] = 'SOSSISSE'
 RUN_KEYS['RUN.MIRIAM'] = 'MIRIAM'
 RUN_KEYS['RUN.SORBET'] = 'SORBET'
-
-
+# deal with settings initial directories from pogos data directory
+RUN_DIRS = dict()
+RUN_DIRS['RUN.TSOVORE'] = 'TSOVORE.INPUTS.PATH'
+RUN_DIRS['RUN.SOSSISSE'] = 'SOSSISSE.INPUTS.SOSSIOPATH'
+RUN_DIRS['RUN.MIRIAM'] = 'MIRIAM.INPUTS.PATH'
+RUN_DIRS['RUN.SORBET'] = 'SORBET.INPUTS.PATH'
 
 
 # =============================================================================
@@ -98,10 +102,22 @@ def setup(params: ParamDict):
     params = load_functions.ask_for_missing_args(params,
                                                  include_keys=['GLOBAL.DATA_PATH'])
     # -------------------------------------------------------------------------
-    # if user wants to run SOSSISSE set path from data path
-    if params['RUN.SOSSISSE']:
-        sossisse_path = os.path.join(params['GLOBAL.DATA_PATH'], 'sossisse')
-        params['SOSSISSE.INPUTS.SOSSIOPATH'] = sossisse_path
+    # create paths to sub modules
+    for run_key in RUN_KEYS:
+        # get run value
+        run_value = RUN_KEYS[run_key]
+        # get path to directory
+        run_path = os.path.join(params['GLOBAL.DATA_PATH'], run_value.lower())
+        # make directory if it doesn't already exist
+        if not os.path.exists(run_path):
+            # print making directory
+            WLOG(params, '', 'Creating directory: {}'.format(run_path))
+            # make directory
+            os.makedirs(run_path)
+        # update parameters
+        if run_key in RUN_DIRS:
+            params[RUN_DIRS[run_key]] = run_path
+    # -------------------------------------------------------------------------
     # ask user for any missing arguments
     params = load_functions.ask_for_missing_args(params)
     # ----------------------------------------------------------------------
