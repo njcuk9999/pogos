@@ -138,6 +138,12 @@ Cdict.set('WAVE_FILE', group=cgroup, source=__NAME__,
 Cdict.set('WAVE_FILE_TYPE', group=cgroup, source=__NAME__,
           value=None)
 
+# Define which orders to use e.g.
+# - 1
+# - 2
+Cdict.set('TRACE_ORDERS', group=cgroup, source=__NAME__,
+          value=[1,2])
+
 # =============================================================================
 # Definition of inputs related to the position within data cube timeseries
 # =============================================================================
