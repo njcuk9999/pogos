@@ -38,10 +38,7 @@ URL = 'https://www.astro.umontreal.ca/~cook/pogo-data/'
 # download: key = file, value = local path
 DOWNLOAD = dict()
 DOWNLOAD['SOSSISSE.GENERAL.FILES'] = 'SOSSISSE.PATHS.RAWPATH'
-DOWNLOAD['SOSSISSE.GENERAL.BKGFILE'] = 'SOSSISSE.PATHS.CALIBPATH'
-DOWNLOAD['SOSSISSE.GENERAL.FLATFILE'] = 'SOSSISSE.PATHS.CALIBPATH'
-DOWNLOAD['SOSSISSE.GENERAL.POS_FILE'] = 'SOSSISSE.PATHS.CALIBPATH'
-
+DOWNLOAD['SOSSISSE.GENERAL.WAVE_FILE'] = 'SOSSISSE.PATHS.CALIBPATH'
 
 # =============================================================================
 # global settings (generally don't touch these)
