@@ -131,12 +131,13 @@ Cdict.set('POS_FILE', group=cgroup, source=__NAME__,
           value=None)
 
 # Wavelength calibration file
+# TODO: update to ext1d after Loic gets it
 Cdict.set('WAVE_FILE', group=cgroup, source=__NAME__,
-          value='jw02055001001_04102_00001-seg002_nrs1_x1dints.fits')
+          value='nirspec_wave1d.h5')
 
 # Wavelength calibration file type
 Cdict.set('WAVE_FILE_TYPE', group=cgroup, source=__NAME__,
-          value='ext1d')
+          value='hdf5')
 
 
 # =============================================================================
