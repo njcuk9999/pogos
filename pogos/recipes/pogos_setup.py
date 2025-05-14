@@ -49,9 +49,9 @@ def main(**kwargs):
                                            kwargs=kwargs)
     # -------------------------------------------------------------------------
     # setup using parameters
-    startup.setup(params)
+    cdict = startup.setup(params)
     # -------------------------------------------------------------------------
-    sossisse_wrap.setup_sossisse_module(params)
+    sossisse_wrap.setup_sossisse_module(params, cdict)
     # -------------------------------------------------------------------------
     # ask for data download
     load_functions.download_data(params)

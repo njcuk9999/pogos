@@ -9,14 +9,7 @@ Created on 2025-02-18 at 14:13
 
 @author: cook
 """
-
-import numpy as np
-import matplotlib.pyplot as plt
-from astropy.io import fits
-from astropy.table import Table
-from astropy import units as u
-from tqdm import tqdm
-import warnings
+import os
 
 from aperocore.constants.param_functions import ParamDict
 from aperocore.core import drs_misc
@@ -73,7 +66,7 @@ def run_sossisse_module(params: ParamDict):
     return sossisse_run.main(__YAML_DICT__=sparams)
 
 
-def setup_sossisse_module(params: ParamDict):
+def setup_sossisse_module(params: ParamDict, cdict):
     """
     Run the sossisse setup recipe
 
@@ -98,7 +91,7 @@ def setup_sossisse_module(params: ParamDict):
     sparams['INPUTS.PARAM_FILE'] = str(params['GLOBAL.YAML_FILE'])
     # setup for SOSSISSE just uses "get_parameters" function
     inst = sossisse.get_parameters(__NAME__=__NAME__, only_create=True,
-                                      log_level='setup', __YAML_DICT__=sparams)
+                                   log_level='setup', __YAML_DICT__=sparams)
     # -------------------------------------------------------------------------
     # get the SOSSISSE PATH params out of instrument class
     spaths = inst.params.get('PATHS')
@@ -109,6 +102,19 @@ def setup_sossisse_module(params: ParamDict):
         # if the key exists update it
         if pkey in params:
             params.set(pkey, spaths[path], source=func_name)
+    # update the SID if changed
+    if sparams['INPUTS.SID'] is not None:
+        params.set('SOSSISSE.INPUTS.SID', sparams['INPUTS.SID'],
+                   source=sparams.sources['INPUTS.SID'])
+    # -------------------------------------------------------------------------
+    # re-save the yaml file after sossisse updates
+    # get the yaml file
+    yaml_file = params['GLOBAL.YAML_FILE']
+    # print progress
+    msg = 'Re-saving constants to yaml file after SOSSISSE setup: {0}'
+    WLOG(params, '', msg.format(os.path.realpath(yaml_file)))
+    # save the constants dictionary to yaml file
+    cdict.save_yaml(params, outpath=yaml_file, log=False)
     # -------------------------------------------------------------------------
     # return the parameters
     return params

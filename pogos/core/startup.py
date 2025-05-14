@@ -158,6 +158,8 @@ def setup(params: ParamDict):
     # save the constants dictionary to yaml file
     cdict.save_yaml(params, outpath=yaml_file, log=False)
 
+    return cdict
+
 
 def initial_setup():
 
