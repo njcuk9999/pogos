@@ -31,7 +31,8 @@ from pogos.recipes import pogos_run
 # =============================================================================
 def sossisse_init(yaml_file: str) -> sossisse.instruments.Instrument:
     # force argument
-    kwargs = dict(yamlfile=yaml_file)
+    cmd_kwargs = dict()
+    cmd_kwargs['yamlfile'] = yaml_file
     # Define variables
     __NAME__ = pogos_run.__NAME__
     __PACKAGE__ = pogos_run.__PACKAGE__
@@ -49,7 +50,7 @@ def sossisse_init(yaml_file: str) -> sossisse.instruments.Instrument:
                                            param_file_path='GLOBAL.YAML_FILE',
                                            config_list=[CDict],
                                            external_const=pbase.EXTERNAL_CONST,
-                                           kwargs=kwargs)
+                                           cmd_kwargs=cmd_kwargs)
     # get the SOSSISSE sub-dictionary
     sossisse_params = params.get('SOSSISSE')
     # convert to independent parameter dictionary
@@ -58,6 +59,10 @@ def sossisse_init(yaml_file: str) -> sossisse.instruments.Instrument:
     sparams['INPUTS.PARAM_FILE'] = str(params['GLOBAL.YAML_FILE'])
     # get instrument class for SOSSISSE
     inst = sossisse.get_parameters(__NAME__=__NAME__, __YAML_DICT__=sparams)
+
+
+    # force plots to do what we want
+    inst.params.set('PLOTS.SHOW', value=True)
     # return SOSSISSE instrument instance
     return inst
 
@@ -68,8 +73,10 @@ def sossisse_init(yaml_file: str) -> sossisse.instruments.Instrument:
 # Main code here
 if __name__ == "__main__":
     # ----------------------------------------------------------------------
-    # print 'Hello World!'
-    print("Hello World!")
+    # set the yaml file
+    yaml_file = '/scratch3/jwst/pogos-data/soss_test.yaml'
+    # pogos sossisse init
+    inst = sossisse_init(yaml_file)
 
 # =============================================================================
 # End of code

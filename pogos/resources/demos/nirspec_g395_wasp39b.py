@@ -189,19 +189,22 @@ Cdict.set('TRANSIT_INTS', group=cgroup, source=__NAME__,
 # =============================================================================
 cgroup = 'SOSSISSE.WLC.GENERAL'
 
-# Use fancy centering of the trace (sets RECENTER_TRACE_POSITION to False)
-Cdict.set('USE_FANCY_CENTERING', group=cgroup, source=__NAME__,
-          value=False)
-
 # Trace extraction width. Set to 0 to use the full image
-Cdict.set('TRACE_WIDTH_EXTRACTION', group=cgroup, source=__NAME__,
+Cdict.set('LINRECON_TRACE_WIDTH', group=cgroup, source=__NAME__,
           value=7)
 
 # define the width for masking the white light curve trace
 #         Default
 Cdict.set('TRACE_WIDTH_MASKING', group=cgroup, source=__NAME__,
           value=5)
-
+# Set the range of dys to scan over number of -nbypix/trace_y_scale to
+#     +nbyix/trace_y_scale
+Cdict.set('TRACE_Y_SCALE', group=cgroup, source=__NAME__,
+          value=10)
+# Set the range of dys to scan over number of -nbxpix/trace_x_scale to
+#     +nbxpix/trace_x_scale
+Cdict.set('TRACE_X_SCALE', group=cgroup, source=__NAME__,
+          value=10)
 # =============================================================================
 # Definition for white light curve
 # =============================================================================
