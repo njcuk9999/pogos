@@ -29,7 +29,7 @@ from pogos.recipes import pogos_run
 # =============================================================================
 # Define functions
 # =============================================================================
-def sossisse_init(yaml_file: str) -> sossisse.instruments.Instrument:
+def sossisse_init(yaml_file: str) -> Instrument:
     # force argument
     cmd_kwargs = dict()
     cmd_kwargs['yamlfile'] = yaml_file
