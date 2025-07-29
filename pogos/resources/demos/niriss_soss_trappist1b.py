@@ -222,6 +222,7 @@ Cdict.set('TRACE_Y_SCALE', group=cgroup, source=__NAME__,
 #     +nbxpix/trace_x_scale
 Cdict.set('TRACE_X_SCALE', group=cgroup, source=__NAME__,
           value=10)
+
 # =============================================================================
 # Definition for white light curve
 # =============================================================================
