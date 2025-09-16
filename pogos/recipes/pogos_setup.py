@@ -37,15 +37,15 @@ __inputs__ = ['GLOBAL.YAML_FILE', 'GLOBAL.DATA_PATH', 'GLOBAL.PLOT_PATH']
 def main(**kwargs):
     # print splash
     general.start_splash('POGOS Setup')
-    # ask for some user options (which may change what is loaded)
-    external_const = startup.initial_setup()
+    # get other configs (either internal like SORBET or external like SOSSISSE)
+    other_const = startup.initial_setup()
     # get parameters
     params = load_functions.get_all_params(name=__NAME__,
                                            description=__description__,
                                            inputargs=__inputs__,
                                            config_list=[CDict],
                                            from_file=False,
-                                           external_const=external_const,
+                                           external_const=other_const,
                                            kwargs=kwargs)
     # -------------------------------------------------------------------------
     # setup using parameters

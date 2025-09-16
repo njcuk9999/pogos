@@ -11,6 +11,7 @@ Created on 2025-03-25 at 09:57
 """
 from pogos.core import base
 from pogos.resources.demos import niriss_soss_trappist1b
+from pogos.resources.demos import sorbet_trappist1b
 from pogos.resources.demos import nirspec_prism_wasp39b
 from pogos.resources.demos import nirspec_g395_wasp39b
 
@@ -27,6 +28,9 @@ for instrument in base.INSTRUMENTS:
 # =============================================================================
 # JWST.NIRISS.SOSS Trappist-1 demo
 DEMOS['JWST.NIRISS.SOSS']['TRAPPIST 1b'] = niriss_soss_trappist1b
+
+# SORBET Trappist-1 demo
+DEMOS['JWST.NIRISS.SOSS']['SORBET TRAPPIST 1b'] = sorbet_trappist1b
 
 # JWST.NIRSPEC.PRISM WASP 39b
 DEMOS['JWST.NIRSPEC.PRISM']['WASP 39b'] = nirspec_prism_wasp39b

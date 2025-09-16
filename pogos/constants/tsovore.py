@@ -30,32 +30,42 @@ ConstDict = constant_functions.ConstantsDict
 
 
 # =============================================================================
-# Simulation module constants for TSOVORE
+# General constants for TSOVORE
 # =============================================================================
-SimCDict = ConstDict(__NAME__)
+TSOVORE_CDict = ConstDict(__NAME__)
 
 # set the title for output yaml files
-SimCDict.title = SimCDict.yaml_title('TSOVORE-Simulation',
-                                     setup_program=None,
-                                     version=base.TSOVORE_SIM_VERSION,
-                                     date=base.TSOVORE_SIM_DATE)
+TSOVORE_CDict.title = TSOVORE_CDict.yaml_title('TSOVORE',
+                                   setup_program=None,
+                                   version=base.TSOVORE_VERSION,
+                                   date=base.TSOVORE_DATE)
+
+
+# =============================================================================
+# Simulation module constants for TSOVORE
+# =============================================================================
+# set the group for all simulation constants
+group = 'SIM'
+TSOVORE_CDict.add_group(group, description='Configs for TSOVORE.SIM',
+                  source=__NAME__, user=True, active=True)
+
 # Debug parameter
-SimCDict.add('DEBUG', value=False, dtype=bool, source=__NAME__,
-             user=True, active=True, description='Enable debugging')
+TSOVORE_CDict.add('DEBUG', value=False, dtype=bool, source=__NAME__,
+            user=True, active=True, group=group,
+            description='Enable debugging')
 
 # =============================================================================
 # Image calibration module constants for TSOVORE
 # =============================================================================
-ImCDict  = ConstDict(__NAME__)
+# set the group for all image calibration constants
+group = 'IMCAL'
+TSOVORE_CDict.add_group(group, description='Configs for TSOVORE.IMCAL',
+                  source=__NAME__, user=True, active=True)
 
-# set the title for output yaml files
-ImCDict.title = ImCDict.yaml_title('TSOVORE-ImageCalibration',
-                                   setup_program=None,
-                                   version=base.TSOVORE_IMCAL_VERSION,
-                                   date=base.TSOVORE_IMCAL_DATE)
 # Debug parameter
-ImCDict.add('DEBUG', value=False, dtype=bool, source=__NAME__,
-             user=True, active=True, description='Enable debugging')
+TSOVORE_CDict.add('DEBUG', value=False, dtype=bool, source=__NAME__,
+             user=True, active=True, group=group,
+            description='Enable debugging')
 
 # =============================================================================
 # Start of code

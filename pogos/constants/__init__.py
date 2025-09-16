@@ -25,13 +25,9 @@ __date__ = base.__date__
 __release__ = base.__release__
 
 # set constant dictionaries
-TSOVORE_SimCDict = tsovore.SimCDict
-TSOVORE_ImCDict = tsovore.ImCDict
+TSOVORE_CDict = tsovore.TSOVORE_CDict
 MIRIAM_CDict = miriam.CDict
-SORBET_WLCTA_CDict = sorbet.WLCTA_CDict
-SORBET_SLCTA_CDict = sorbet.SLCTA_CDict
-SORBET_TFIT_CDict = sorbet.TFIT_CDict
-SORBET_RV_CDict = sorbet.RV_CDict
+SORBET_CDict = sorbet.SORBET_CDict
 
 
 # =============================================================================

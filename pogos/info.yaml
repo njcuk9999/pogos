@@ -12,29 +12,13 @@ DRS.AUTHORS:
 # Version/dates of the individual sub-modules
 # -------------------------------------------------------
 # TSOVORE simulation module
-TSOVORE.SIM.VERSION: 0.0.001
-TSOVORE.SIM.DATE: 2025-01-31
-
-# TSOVORE image calibration module
-TSOVORE.IMCAL.VERSION: 0.0.001
-TSOVORE.IMCAL.DATE: 2025-01-31
+TSOVORE.VERSION: 0.0.001
+TSOVORE.DATE: 2025-01-31
 
 # MIRIAM module
 MIRIAM.VERSION: 0.0.001
 MIRIAM.DATE: 2025-01-31
 
-# SORBET module - white light curve transit fit
-SORBET.WLCTA.VERSION: 0.0.001
-SORBET.WLCTA.DATE: 2025-01-31
-
-# SORBET module - spectral light curve transit fit
-SORBET.SLCTA.VERSION: 0.0.001
-SORBET.SLCTA.DATE: 2025-01-31
-
-# SORBET module - transit fit code
-SORBET.TFIT.VERSION: 0.0.001
-SORBET.TFIT.DATE: 2025-01-31
-
-# SORBET module - radial velocity module
-SORBET.RV.VERSION: 0.0.001
-SORBET.RV.DATE: 2025-01-31
+# SORBET module - general
+SORBET.VERSION: 0.0.03
+SORBET.DATE: 2025-09-16

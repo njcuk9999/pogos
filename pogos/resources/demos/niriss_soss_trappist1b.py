@@ -31,7 +31,7 @@ INFO = dict()
 INFO['title'] = 'JWST.NIRISS.SOSS Trappist 1b transit'
 INFO['object'] = 'Trappist 1b'
 INFO['instrument'] = 'JWST.NIRISS.SOSS'
-INFO['description'] = 'Trappist 1b transit observed XXX'
+INFO['description'] = 'Trappist 1b transit observed on 2022-07-18'
 INFO['date'] = '2025-03-25'
 INFO['author'] = 'Etienne Artigau'
 # url for data download

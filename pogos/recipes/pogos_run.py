@@ -9,9 +9,10 @@ Created on 2024-10-29 at 09:32
 
 @author: cook
 """
+import os
+
 from aperocore.core import drs_log
 from aperocore.constants import load_functions
-import sossisse
 
 from pogos.constants.constants import CDict
 from pogos.core import base
@@ -19,7 +20,7 @@ from pogos.core import general
 from pogos import tsovore
 from pogos import sossisse_wrap
 from pogos import sorbet
-
+from pogos.core import startup
 
 # =============================================================================
 # Define variables
@@ -42,15 +43,20 @@ WLOG = drs_log.wlog
 def main(**kwargs):
     # print splash
     general.start_splash('POGOS')
+    # get other configs (either internal like SORBET or external like SOSSISSE)
+    other_const = startup.initial_setup()
     # get parameters
     params = load_functions.get_all_params(name=__NAME__,
                                            description=__description__,
                                            inputargs=__inputs__,
                                            param_file_path='GLOBAL.YAML_FILE',
                                            config_list=[CDict],
-                                           external_const=base.EXTERNAL_CONST,
+                                           external_const=other_const,
                                            kwargs=kwargs)
-
+    # -------------------------------------------------------------------------
+    # print yaml file used
+    msg = f'Using yaml file: {os.path.realpath(params["GLOBAL.YAML_FILE"])}'
+    WLOG(params, 'info', msg)
     # -------------------------------------------------------------------------
     # run tsovore
     if params['RUN.TSOVORE']:
