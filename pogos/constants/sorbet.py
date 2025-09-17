@@ -51,6 +51,12 @@ SORBET_CDict.add('SID', value=None, dtype=str, source=__NAME__,
                  description='A string ID for the observation (used for '
                              'default paths etc)')
 
+# define the valid Juilet distributions
+jdists = ['fixed', 'uniform', 'loguniform', 'normal', 'truncatednormal', 'beta']
+SORBET_CDict.add('JULIET_VALID_DISTS', value=jdists, dtype=list, dtypei=str,
+                 source=__NAME__, user=False, active=False, group=group,
+                 description='Valid prior distributions in juliet')
+
 # =============================================================================
 # Constants for SORBET white light curve transit analysis
 # =============================================================================
@@ -77,45 +83,129 @@ SORBET_CDict.add('OUTPUT_PATH', value='sorbet_wlcta_fit', dtype=str,
                 source=__NAME__,
                 user=True, active=True, group=group,
                 description='Output result folder or path to the output folder.'
-                            'If this is an aboslute path it will be used as is'
-                            ' otherwise it will be relative to '
+                            '\nIf this is an aboslute path it will be used as is'
+                            '\n otherwise it will be relative to '
                             'GLOBAL.DATA_PATH/sorbet/')
+
+# Juliet instrument name - used in parameters that require an {INST_MODE} tag
+# (e.g. JWST-NIRISS-SOSS, HST-WFC3-IR, TESS, Kepler, Spitzer-IRAC1 etc).
+jn_desc = ('Juliet instrument name - used in parameters that require an '
+           '{INST_MODE} tag'
+           '\n(e.g. JWST-NIRISS-SOSS, HST-WFC3-IR, TESS, Kepler, '
+           'Spitzer-IRAC1 etc).')
+SORBET_CDict.add('JULIET_INSTRUMENT_NAME', value=None, dtype=str,
+                source=__NAME__,
+                user=True, active=True, group=group,
+                description=jn_desc)
+
 # Juliet parameters
-default_value = ['P_p1', 't0_p1', 'p_p1', 'b_p1', 'a_p1',
-                 'ecc_p1', 'omega_p1',
-                 'q1_{INST_MODE}', 'q2_{INST_MODE}',
-                 'mdilution_{INST_MODE}', 'mflux_{INST_MODE}',
-                 'sigma_w_{INST_MODE}']
-SORBET_CDict.add('JULIET_PARAMETERS', value=default_value, dtype=list, source=__NAME__,
-                user=True, active=True, group=group,
-                description='Juliet transit parameters following the '
-                'juliet docs (juliet.readthedocs.io/en/latest/user/priorsnparameters.html)')
+jps_desc = """
+Juliet transit parameters as a list, following the juliet docs
+(juliet.readthedocs.io/en/latest/user/priorsnparameters.html). e.g.:
+JULIET_PARAMETERS:
+ - P_p1
+ - t0_p1
+ - p_p1
+ - b_p1
+ - a_p1
+ - ecc_p1
+ - Pomega_p1
+ - q1_{INST_MODE}
+ - q2_{INST_MODE}
+ - mdilution_{INST_MODE}
+ - mflux_{INST_MODE}
+ - sigma_w_{INST_MODE}
+"""
+
+SORBET_CDict.add('JULIET_PARAMETERS', value=None, dtype=list, dtypei=str,
+                 source=__NAME__, user=True, active=True, group=group,
+                 description=jps_desc)
 # Prior distributions
-default_value = ['fixed', 'uniform', 'uniform', 'uniform', 'uniform',
-                 'fixed', 'fixed',
-                 'uniform', 'uniform',
-                 'fixed', 'fixed',
-                 'loguniform']
-SORBET_CDict.add('JULIET_PRIOR_DISTS', value=default_value, dtype=list, source=__NAME__,
-                user=True, active=True, group=group,
-                description='Juliet prior distributions following the juliet docs '
-                '(fixed, uniform, loguniform, normal, truncatednormal, beta)')
+jpd_desc = """
+Juliet prior distributions following the juliet docs.
+https://juliet.readthedocs.io/en/latest/user/priorsnparameters.html#priors
+
+Values should be one of:
+    fixed, uniform, loguniform, normal, truncatednormal, beta
+
+If a distribution is missing from Juliet you can add and override
+JULIET_VALID_DISTS e.g.
+    SORBET:
+        GENERAL:
+            JULIET_VALID_DISTS:
+            - fixed
+            - uniform
+            - loguniform
+            - normal
+            - truncatednormal
+            - beta
+    Adding any extra required
+
+You must have at least the values in JULIET_PARAMETERS defined
+
+(extras will be ignored). e.g.:
+    JULIET_PRIOR_DISTS:
+     P_p1: fixed
+     t0_p1: uniform
+     p_p1: uniform
+     b_p1: uniform
+     a_p1: uniform
+     ecc_p1: fixed
+     omega_p1: fixed
+     q1_{INST_MODE}: uniform
+     q2_{INST_MODE}: uniform
+     mdilution_{INST_MODE}: fixed
+     mflux_{INST_MODE}: fixed
+     sigma_w_{INST_MODE}: loguniform
+
+Note going from Juliet format to SORBET format is easy:
+
+    JULIET_PRIOR_DISTS = dict(zip(juilet_params, juliet_prior_dists))
+
+where juilet_params and juliet_prior_dists are the lists used in juliet
+"""
+
+SORBET_CDict.add('JULIET_PRIOR_DISTS', value=None, dtype=dict, source=__NAME__,
+                 user=True, active=True, group=group,
+                 description=jpd_desc)
 # Prior values
-default_value = [10, [2460000, 2460001], [0.0, 0.5], [0.0, 0.5], [5, 150],
-                 0.0, 90.0,
-                 [0.0, 1.0], [0.0, 1.0],
-                 1.0, 0.0,
-                 [1, 1000]]
-SORBET_CDict.add('JULIET_PRIOR_VALS', value=default_value, dtype=list, source=__NAME__,
+jpv_desc = """
+Juliet prior hyperparameters following the juliet docs.
+https://juliet.readthedocs.io/en/latest/user/priorsnparameters.html#priors
+
+You must have at least the values in JULIET_PARAMETERS defined
+(extras will be ignored). e.g.:
+    JULIET_PRIOR_VALS:
+     P_p1: val
+     t0_p1: [a, b]
+     p_p1: [a, b]
+     b_p1: [a, b]
+     a_p1: [a, b]
+     ecc_p1: val
+     omega_p1: val
+     q1_{INST_MODE}: [a, b]
+     q2_{INST_MODE}: [a, b]
+     mdilution_{INST_MODE}: val
+     mflux_{INST_MODE}: val
+     sigma_w_{INST_MODE}: [a, b]
+
+Note going from Juliet format to SORBET format is easy:
+
+    JULIET_PRIOR_VALS = dict(zip(juilet_params, juliet_prior_values))
+
+where juilet_params and juliet_prior_values are the lists used in juliet
+"""
+
+SORBET_CDict.add('JULIET_PRIOR_VALS', value=None, dtype=dict, source=__NAME__,
                 user=True, active=True, group=group,
-                description='Juliet prior hyperparameters following the juliet docs '
-                '(val, [min, max], [min, max], [mu, sigma], [mu, sigma, min, max], [a, b])')
+                description=jpv_desc)
+
 # Linear detrending
 SORBET_CDict.add('LINEAR_DETRENDING', value=None, dtype=str, source=__NAME__,
                 user=True, active=True, group=group,
                 description='Enable linear detrending of the flux. '
-                'Temporal slope is accepted (value=time) or '
-                'provide the path to a file with the variable to detrend linearly '
+                '\nTemporal slope is accepted (value=time) or provide the path '
+                '\nto a file with the variable to detrend linearly '
                 'in each column.')
 # Sampling options
 SORBET_CDict.add('SAMPLING_OPTIONS', value='dynesty', dtype=str, source=__NAME__,
@@ -159,43 +249,35 @@ SORBET_CDict.add('RESOLUTION_BIN', value=100, dtype=int, source=__NAME__,
                 user=True, active=True, group=group,
                 description='Define the spectral resolution to bin to prior to fitting. '
                 'For native resolution set to -1')
+
+# Juliet instrument name - used in parameters that require an {INST_MODE} tag
+# (e.g. JWST-NIRISS-SOSS, HST-WFC3-IR, TESS, Kepler, Spitzer-IRAC1 etc).
+SORBET_CDict.add('JULIET_INSTRUMENT_NAME', value=None, dtype=str,
+                source=__NAME__,
+                user=True, active=True, group=group,
+                description=jn_desc)
+
 # Juliet parameters
-default_value = ['P_p1', 't0_p1', 'p_p1', 'b_p1', 'a_p1',
-                 'ecc_p1', 'omega_p1',
-                 'q1_{INST_MODE}', 'q2_{INST_MODE}',
-                 'mdilution_{INST_MODE}', 'mflux_{INST_MODE}',
-                 'sigma_w_{INST_MODE}']
-SORBET_CDict.add('JULIET_PARAMETERS', value=default_value, dtype=list, source=__NAME__,
-                user=True, active=True, group=group,
-                description='Juliet transit parameters following the '
-                'juliet docs (juliet.readthedocs.io/en/latest/user/priorsnparameters.html)')
+SORBET_CDict.add('JULIET_PARAMETERS', value=None, dtype=list, dtypei=str,
+                 source=__NAME__, user=True, active=True, group=group,
+                 description=jps_desc)
 # Prior distributions
-default_value = ['fixed', 'fixed', 'uniform', 'fixed', 'fixed',
-                 'fixed', 'fixed',
-                 'uniform', 'uniform',
-                 'fixed', 'fixed',
-                 'loguniform']
-SORBET_CDict.add('JULIET_PRIOR_DISTS', value=default_value, dtype=list, source=__NAME__,
-                user=True, active=True, group=group,
-                description='Juliet prior distributions following the juliet docs '
-                '(fixed, uniform, loguniform, normal, truncatednormal, beta)')
+SORBET_CDict.add('JULIET_PRIOR_DISTS', value=None, dtype=dict, dtypei=str,
+                 source=__NAME__, user=True, active=True, group=group,
+                 description=jpd_desc)
 # Prior values
-default_value = [10, 2460000.5, [0.0, 0.5], 0.0, 10,
-                 0.0, 90.0,
-                 [0.0, 1.0], [0.0, 1.0],
-                 1.0, 0.0,
-                 [1, 1000]]
-SORBET_CDict.add('JULIET_PRIOR_VALS', value=default_value, dtype=list, source=__NAME__,
-                user=True, active=True, group=group,
-                description='Juliet prior hyperparameters following the juliet docs '
-                '(val, [min, max], [min, max], [mu, sigma], [mu, sigma, min, max], [a, b])')
+SORBET_CDict.add('JULIET_PRIOR_VALS', value=None, dtype=dict, source=__NAME__,
+                 user=True, active=True, group=group,
+                 description=jpv_desc)
+
 # Linear detrending
 SORBET_CDict.add('LINEAR_DETRENDING', value=None, dtype=str, source=__NAME__,
                 user=True, active=True, group=group,
                 description='Enable linear detrending of the flux. '
-                'Temporal slope is accepted (value=time) or '
-                'provide the path to a file with the variable to detrend linearly '
+                '\nTemporal slope is accepted (value=time) or provide the path '
+                '\nto a file with the variable to detrend linearly '
                 'in each column.')
+
 # Sampling options
 SORBET_CDict.add('SAMPLING_OPTIONS', value='dynesty', dtype=str, source=__NAME__,
                 user=True, active=True, group=group,
@@ -204,7 +286,8 @@ SORBET_CDict.add('SAMPLING_OPTIONS', value='dynesty', dtype=str, source=__NAME__
 # ExoTiC-LD
 cgroup = 'SLCTA.EXOTIC-LD'
 SORBET_CDict.add_group(cgroup,
-                description='Limb-darkening modeling using the ExoTiC-LD package (for transit fitting)',
+                description='Limb-darkening modeling using the ExoTiC-LD package '
+                            '(for transit fitting)',
                 source=__NAME__, user=True, active=True)
 # Use ExoTiC-LD
 SORBET_CDict.add('ENABLE', value=False, dtype=bool, source=__NAME__,

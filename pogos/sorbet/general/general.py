@@ -12,7 +12,7 @@ Created on 2025-02-19 at 13:43
 import os
 import pickle as pkl
 import warnings
-from typing import Literal
+from typing import Any, Literal, List
 
 import numpy as np
 import astropy.table
@@ -24,7 +24,6 @@ from aperocore import math as mp
 from sossisse.core import io
 
 from pogos.core import base
-from pogos.sorbet.core.io import convert_to_number
 from pogos.sorbet.core import base as sorbet_base
 from pogos.sorbet.core import core
 
@@ -282,14 +281,129 @@ def find_outliers(params: ParamDict, dataset: astropy.table.Table,
     
     # remove outliers
     mad = np.median(np.abs(flux - medfilt_model))
-    bad = np.abs(flux - medfilt_model) > 5 * mad
+    outlier_mask = np.abs(flux - medfilt_model) > 5 * mad
 
-    # save medfilt model
-    params[f'SORBET.{method}.MEDFILT_MODEL'] = medfilt_model
-    # save the outlier mask
-    params[f'SORBET.{method}.OUTLIER_MASK'] = bad.astype(bool)
+    return medfilt_model, outlier_mask.astype(bool)
 
-    return medfilt_model, bad.astype(bool)
+
+def test_juliet_distributions(params: ParamDict,
+                              method: Literal['WLCTA', 'SLCTA']) -> List[str]:
+    """
+    Test the user inputted all the Juliet distributions correctly
+
+    :param params: ParamDict, the parameter dictionary of constants
+    :param method: str, the method to use (WLCTA or SLCTA)
+
+    :return: list of strings, the prior distributions for each juliet parameter
+    """
+    # get the juliet parameters and prior distributions from sparams
+    jparams = params[f'SORBET.{method}.JULIET_PARAMETERS']
+    jdists = params[f'SORBET.{method}.JULIET_PRIOR_DISTS']
+
+    # deal with jvals being empty
+    if jdists is None or len(jdists) == 0:
+        msg = (f'No juliet prior values defined in '
+               f'"SORBET.{method}.JULIET_PRIOR_DISTS". '
+               f' Cannot proceed with the fit.')
+        raise sorbet_base.SorbetException(msg)
+
+    # get valid distribution types
+    valid_dists = params['SORBET.GENERAL.JULIET_VALID_DISTS']
+
+    # deal with valid dists being empty
+    if valid_dists is None or len(valid_dists) == 0:
+        msg = (f'No juliet valid disributions defined in '
+               f'"SORBET.GENERAL.JULIET_VALID_DISTS". '
+               f' Cannot proceed with the fit.')
+        raise sorbet_base.SorbetException(msg)
+
+    # test that all juliet parameters have a prior distribution
+    prior_dists: List[str] = []
+    for param in jparams:
+        if param in jdists and jdists[param] in valid_dists:
+            prior_dists.append(jdists[param])
+        elif param in jdists and jdists[param] not in valid_dists:
+            msg = (f'Parameter "{param}" has an invalid prior distribution '
+                   f'"{jdists[param]}". Valid distributions are: '
+                   f'{valid_dists}. Please define it under '
+                   f' "SORBET.{method}.JULIET_PRIOR_DISTS". '
+                   f' If we have missed one you can override '
+                   f' SORBET.GENERAL.JULIET_VALID_DISTS')
+            raise sorbet_base.SorbetException(msg)
+        else:
+            msg = (f'Parameter "{param}" does not have a prior distribution '
+                   f'defined in the yaml file. Please define it under '
+                   f' "SORBET.{method}.JULIET_PRIOR_DISTS"')
+            raise sorbet_base.SorbetException(msg)
+
+    return prior_dists
+
+
+def test_juliet_values(params: ParamDict,
+                       method: Literal['WLCTA', 'SLCTA']
+                       ) -> List[float | List[float]]:
+    """
+    Test the user inputted all the Juliet prior values correctly
+
+    :param params: ParamDict, the parameter dictionary of constants
+    :param method: str, the method to use (WLCTA or SLCTA)
+
+    :return: list of float or list of float, the prior values for each
+             juliet parameter
+    """
+    # get the juliet parameters and prior distributions from sparams
+    jparams = params[f'SORBET.{method}.JULIET_PARAMETERS']
+    jvals = params[f'SORBET.{method}.JULIET_PRIOR_VALS']
+
+    # deal with jvals being empty
+    if jvals is None or len(jvals) == 0:
+        msg = (f'No juliet prior values defined in '
+               f'"SORBET.{method}.JULIET_PRIOR_VALS". '
+               f' Cannot proceed with the fit.')
+        raise sorbet_base.SorbetException(msg)
+
+    # function to force float conversion#
+    def force_float(value: Any) -> float:
+        """
+        Force conversion to float, raise exception if not possible
+        :param value: Any, the value to convert
+
+        :raises SorbetException: if value is not a float
+        :return: float, the converted value
+        """
+        try:
+            return float(value)
+        except ValueError:
+            msg = (f'Value "{value}" cannot be converted to a float. '
+                   f'Please define it under "SORBET.{method}.JULIET_PRIOR_VALS"')
+            raise sorbet_base.SorbetException(msg)
+
+    # test that all juliet parameters have a prior distribution
+    prior_vals: List[float | List[float]] = []
+    for param in jparams:
+        if param in jvals:
+            # get yaml value
+            raw_val = jvals[param]
+            # deal with raw value being a float
+            if isinstance(raw_val, (int, float, str)):
+                prior_vals.append(force_float(raw_val))
+            # deal with raw value being a string (i.e 4e5 is read as a string)
+            elif isinstance(raw_val, list):
+                # make sure all values are numbers
+                list_val = [force_float(v) for v in raw_val]
+                prior_vals.append(list_val)
+            # deal with anything else (bad)
+            else:
+                msg = (f'Value "{raw_val}" is not a valid type. '
+                       f'Please define it under "SORBET.{method}.JULIET_PRIOR_VALS"')
+                raise sorbet_base.SorbetException(msg)
+        else:
+            msg = (f'Parameter "{param}" does not have a prior distribution '
+                   f'defined in the yaml file. Please define it under '
+                   f' "SORBET.{method}.JULIET_PRIOR_DISTS"')
+            raise sorbet_base.SorbetException(msg)
+
+    return prior_vals
 
 
 def prepare_dataset(params: ParamDict, dataset: astropy.table.Table,
@@ -309,9 +423,11 @@ def prepare_dataset(params: ParamDict, dataset: astropy.table.Table,
     sparams = params.get(f'SORBET.{method}')
     slcta_params = params.get('SORBET.SLCTA')
     # select instrumental mode
-    inst_mode = params['GLOBAL.INSTRUMENTMODE']
-    # make sure inst_mode has no _ for juliet compatibility
-    inst_mode = inst_mode.replace('_', '.')
+    inst_mode = sparams['JULIET_INSTRUMENT_NAME']
+    # deal with no Juliet instrument name defined
+    if inst_mode is None:
+        inst_mode = params['GLOBAL.INSTRUMENTMODE'].replace('_', '.')
+        sparams['JULIET_INSTRUMENT_NAME'] = inst_mode
     # -------------------------------------------------------------------------
     # convert the data into juliet format
     times, fluxes, fluxes_error = {},{},{}
@@ -322,16 +438,25 @@ def prepare_dataset(params: ParamDict, dataset: astropy.table.Table,
     fluxes_error[inst_mode] = dataset['amplitude_error'].data[~outlier_mask]
     # -------------------------------------------------------------------------
     # load the juliet parameters, prior distributions, and prior parameters
+    #  in SORBET these are a list, a two dictionaries but we need to do some
+    #  checks and data type conversion before passing them into juliet
+    # -------------------------------------------------------------------------
     # list of juliet parameters
     juliet_params = sparams['JULIET_PARAMETERS']
-    # replace INSTRUMENT with the instrument mode
-    juliet_params = [param.replace('{INST_MODE}', inst_mode) for param in juliet_params]
+    # get the juliet instrument name (may be custom as underscores are not
+    # allowed)
+    juliet_inst = sparams['JULIET_INSTRUMENT_NAME']
+    # deal with no parameters
+    if juliet_params is None or len(juliet_params) == 0:
+        msg = (f'No juliet parameters defined in '
+               f'"SORBET.{method}.JULIET_PARAMETERS". '
+               f' Cannot proceed with the fit.'
+               f'\n\tFunction = {func_name}')
+        raise sorbet_base.SorbetException(msg)
     # list of prior distributions
-    prior_dists = sparams['JULIET_PRIOR_DISTS']
+    prior_dists = test_juliet_distributions(params, method=method)
     # list of prior hyperparameters
-    prior_vals = sparams['JULIET_PRIOR_VALS']
-    # make sure values from yaml are numbers
-    prior_vals = [convert_to_number(val) for val in prior_vals]
+    prior_vals = test_juliet_values(params, method=method)
     # -------------------------------------------------------------------------
     # add parameter for GP
     do_gp = False

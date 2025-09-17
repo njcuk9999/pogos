@@ -9,6 +9,8 @@ Created on 2025-03-25 at 09:57
 
 @author: cook
 """
+from isoduration.operations import quot2
+
 from pogos.constants import constants as pconst
 from pogos.constants import sorbet as sconst
 
@@ -103,21 +105,53 @@ Cdict.set('OUTPUT_PATH', group=cgroup, source=__NAME__,
 # =============================================================================
 # Definition of general inputs SORBET_WLCTA
 # =============================================================================
+# Juliet instrument name (used in parameters that require an {INST_MODE} tag
+Cdict.set('JULIET_INSTRUMENT_NAME', group=cgroup, source=__NAME__,
+          value='JWST-NIRISS-SOSS')
+
 # Prior distributions for the default juliet parameterization
+jps_values = ['P_p1', 't0_p1', 'p_p1', 'b_p1', 'a_p1',
+              'ecc_p1', 'omega_p1',
+              'q1_JWST-NIRISS-SOSS', 'q2_JWST-NIRISS-SOSS',
+              'mdilution_JWST-NIRISS-SOSS', 'mflux_JWST-NIRISS-SOSS',
+              'sigma_w_JWST-NIRISS-SOSS']
+Cdict.set('JULIET_PARAMETERS', group=cgroup, source=__NAME__,
+          value=jps_values)
+
+# Prior distributions for the default juliet parameterization
+jpd_values = dict()
+jpd_values['P_p1'] = 'fixed'
+jpd_values['t0_p1'] = 'uniform'
+jpd_values['p_p1'] = 'uniform'
+jpd_values['b_p1'] = 'truncatednormal'
+jpd_values['a_p1'] = 'uniform'
+jpd_values['ecc_p1'] = 'fixed'
+jpd_values['omega_p1'] = 'fixed'
+jpd_values['q1_JWST-NIRISS-SOSS'] = 'uniform'
+jpd_values['q2_JWST-NIRISS-SOSS'] = 'uniform'
+jpd_values['mdilution_JWST-NIRISS-SOSS'] = 'fixed'
+jpd_values['mflux_JWST-NIRISS-SOSS'] = 'fixed'
+jpd_values['sigma_w_JWST-NIRISS-SOSS'] = 'loguniform'
 Cdict.set('JULIET_PRIOR_DISTS', group=cgroup, source=__NAME__,
-          value=['fixed', 'uniform', 'uniform', 'truncatednormal', 'uniform',
-                 'fixed', 'fixed',
-                 'uniform', 'uniform',
-                 'fixed', 'fixed',
-                 'loguniform'])
+          value=jpd_values)
 # Priors for the default juliet parameterization
 # Following Lim et al. 2023
+jpv_values = dict()
+jpv_values['P_p1'] = 1.51087081
+jpv_values['t0_p1'] = [2459779.1, 2459779.3]
+jpv_values['p_p1'] = [0.01, 0.22]
+jpv_values['b_p1'] = [0.095, 0.65, 0.0, 1.0]
+jpv_values['a_p1'] = [10, 30]
+jpv_values['ecc_p1'] = 0.0
+jpv_values['omega_p1'] = 90.0
+jpv_values['q1_JWST-NIRISS-SOSS'] = [0.0, 1.0]
+jpv_values['q2_JWST-NIRISS-SOSS'] = [0.0, 1.0]
+jpv_values['mdilution_JWST-NIRISS-SOSS'] = 1.0
+jpv_values['mflux_JWST-NIRISS-SOSS'] = 0.0
+jpv_values['sigma_w_JWST-NIRISS-SOSS'] = [1, 1000]
 Cdict.set('JULIET_PRIOR_VALS', group=cgroup, source=__NAME__,
-          value=[1.51087081, [2459779.1, 2459779.3], [0.01, 0.22], [0.095, 0.65, 0.0, 1.0], [10, 30],
-                 0.0, 90.0,
-                 [0.0, 1.0], [0.0, 1.0],
-                 1.0, 0.0,
-                 [1, 1000]])
+          value=jpv_values)
+
 # Fit temporal slope by default
 Cdict.set('LINEAR_DETRENDING', group=cgroup, source=__NAME__,
           value='time')
@@ -148,21 +182,53 @@ Cdict.set('RESOLUTION_BIN', group=cgroup, source=__NAME__,
 # =============================================================================
 # Definition of general inputs SORBET_SLCTA
 # =============================================================================
+# Juliet instrument name (used in parameters that require an {INST_MODE} tag
+Cdict.set('JULIET_INSTRUMENT_NAME', group=cgroup, source=__NAME__,
+          value='JWST-NIRISS-SOSS')
+
 # Prior distributions for the default juliet parameterization
+jps_values = ['P_p1', 't0_p1', 'p_p1', 'b_p1', 'a_p1',
+              'ecc_p1', 'omega_p1',
+              'q1_JWST-NIRISS-SOSS', 'q2_JWST-NIRISS-SOSS',
+              'mdilution_JWST-NIRISS-SOSS', 'mflux_JWST-NIRISS-SOSS',
+              'sigma_w_JWST-NIRISS-SOSS']
+Cdict.set('JULIET_PARAMETERS', group=cgroup, source=__NAME__,
+          value=jps_values)
+
+# Prior distributions for the default juliet parameterization
+jpd_values = dict()
+jpd_values['P_p1'] = 'fixed'
+jpd_values['t0_p1'] = 'fixed'
+jpd_values['p_p1'] = 'uniform'
+jpd_values['b_p1'] = 'fixed'
+jpd_values['a_p1'] = 'fixed'
+jpd_values['ecc_p1'] = 'fixed'
+jpd_values['omega_p1'] = 'fixed'
+jpd_values['q1_JWST-NIRISS-SOSS'] = 'uniform'
+jpd_values['q2_JWST-NIRISS-SOSS'] = 'uniform'
+jpd_values['mdilution_JWST-NIRISS-SOSS'] = 'fixed'
+jpd_values['mflux_JWST-NIRISS-SOSS'] = 'fixed'
+jpd_values['sigma_w_JWST-NIRISS-SOSS'] = 'loguniform'
 Cdict.set('JULIET_PRIOR_DISTS', group=cgroup, source=__NAME__,
-          value=['fixed', 'fixed', 'uniform', 'fixed', 'fixed',
-                 'fixed', 'fixed',
-                 'uniform', 'uniform',
-                 'fixed', 'fixed',
-                 'loguniform'])
+          value=jpd_values)
 # Priors for the default juliet parameterization
 # Following Lim et al. 2023
+jpv_values = dict()
+jpv_values['P_p1'] = 1.51087081
+jpv_values['t0_p1'] = 2459779.210475
+jpv_values['p_p1'] = [0.01, 0.22]
+jpv_values['b_p1'] = 0.098
+jpv_values['a_p1'] = 20.66
+jpv_values['ecc_p1'] = 0.0
+jpv_values['omega_p1'] = 90.0
+jpv_values['q1_JWST-NIRISS-SOSS'] = [0.0, 1.0]
+jpv_values['q2_JWST-NIRISS-SOSS'] = [0.0, 1.0]
+jpv_values['mdilution_JWST-NIRISS-SOSS'] = 1.0
+jpv_values['mflux_JWST-NIRISS-SOSS'] = 0.0
+jpv_values['sigma_w_JWST-NIRISS-SOSS'] = [1, 1000]
 Cdict.set('JULIET_PRIOR_VALS', group=cgroup, source=__NAME__,
-          value=[1.51087081, 2459779.210475, [0.01, 0.22], 0.098, 20.66,
-                 0.0, 90.0,
-                 [0.0, 1.0], [0.0, 1.0],
-                 1.0, 0.0,
-                 [1, 1000]])
+          value=jpv_values)
+
 # Fit temporal slope by default
 Cdict.set('LINEAR_DETRENDING', group=cgroup, source=__NAME__,
           value='time')
