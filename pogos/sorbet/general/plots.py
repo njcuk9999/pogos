@@ -72,10 +72,6 @@ def plot_corner(params: ParamDict, dataset: juliet.load, results: juliet.fit,
 
     return: None
     """
-    # set function name
-    func_name = f'{__NAME__}.plot_corner'
-    # select instrumental mode
-    inst_mode = params['GLOBAL.INSTRUMENTMODE']
     # labels and list of fitted parameters
     juliet_params = []
     for key in dataset.priors.keys():
@@ -125,8 +121,6 @@ def plot_transit(params: ParamDict, dataset: juliet.load, results: juliet.fit,
 
     return: None
     """
-    # set function name
-    func_name = f'{__NAME__}.plot_transit'
     # select instrumental mode
     inst_mode = params['GLOBAL.INSTRUMENTMODE']
     # load best-fit model components

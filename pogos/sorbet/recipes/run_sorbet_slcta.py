@@ -172,8 +172,6 @@ def append_transmission_spectrum(params: ParamDict, results: juliet.fit,
     :param wb: int, the wavelength bin number
     :return: spec_tbl: astropy.table.Table, the updated transmission spectrum table
     """
-    # select instrumental mode
-    inst_mode = params['GLOBAL.INSTRUMENTMODE']
     # append transit depth to the transmission spectrum table
     p = results.posteriors['posterior_samples']['p_p1']
     delta = np.median(p**2)

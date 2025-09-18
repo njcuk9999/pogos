@@ -296,6 +296,8 @@ def test_juliet_distributions(params: ParamDict,
 
     :return: list of strings, the prior distributions for each juliet parameter
     """
+    # select instrumental mode
+    inst_mode = core.sorbet_inst_mode(params)
     # get the juliet parameters and prior distributions from sparams
     jparams = params[f'SORBET.{method}.JULIET_PARAMETERS']
     jdists = params[f'SORBET.{method}.JULIET_PRIOR_DISTS']
@@ -335,6 +337,9 @@ def test_juliet_distributions(params: ParamDict,
                    f'defined in the yaml file. Please define it under '
                    f' "SORBET.{method}.JULIET_PRIOR_DISTS"')
             raise sorbet_base.SorbetException(msg)
+
+    # update juliet params with instrument mode
+    prior_dists = [p.replace('{INST_MODE}', inst_mode) for p in prior_dists]
 
     return prior_dists
 
@@ -423,11 +428,7 @@ def prepare_dataset(params: ParamDict, dataset: astropy.table.Table,
     sparams = params.get(f'SORBET.{method}')
     slcta_params = params.get('SORBET.SLCTA')
     # select instrumental mode
-    inst_mode = sparams['JULIET_INSTRUMENT_NAME']
-    # deal with no Juliet instrument name defined
-    if inst_mode is None:
-        inst_mode = params['GLOBAL.INSTRUMENTMODE'].replace('_', '.')
-        sparams['JULIET_INSTRUMENT_NAME'] = inst_mode
+    inst_mode = core.sorbet_inst_mode(params)
     # -------------------------------------------------------------------------
     # convert the data into juliet format
     times, fluxes, fluxes_error = {},{},{}
@@ -443,9 +444,10 @@ def prepare_dataset(params: ParamDict, dataset: astropy.table.Table,
     # -------------------------------------------------------------------------
     # list of juliet parameters
     juliet_params = sparams['JULIET_PARAMETERS']
-    # get the juliet instrument name (may be custom as underscores are not
-    # allowed)
-    juliet_inst = sparams['JULIET_INSTRUMENT_NAME']
+    # select instrumental mode
+    inst_mode = core.sorbet_inst_mode(params)
+    # update juliet params with instrument mode
+    juliet_params = [p.replace('{INST_MODE}', inst_mode) for p in juliet_params]
     # deal with no parameters
     if juliet_params is None or len(juliet_params) == 0:
         msg = (f'No juliet parameters defined in '
@@ -470,6 +472,7 @@ def prepare_dataset(params: ParamDict, dataset: astropy.table.Table,
         GP_regressors_lc = None
     # -------------------------------------------------------------------------
     # add parameter for linear detrending
+    linear_regressors = None
     # temporal slope# check if the file exists
     if sparams['LINEAR_DETRENDING'] == 'time':
         # make sure to not fit baseline twice
@@ -666,7 +669,7 @@ def save_transit_model(params: ParamDict, results: juliet.fit,
     :return: None
     """
     # select instrumental mode
-    inst_mode = params['GLOBAL.INSTRUMENTMODE']
+    inst_mode = core.sorbet_inst_mode(params)
     # from juliet tutorial
     # extract the components of the model (transit, systematics, etc.)
     full_model, components = results.lc.evaluate(inst_mode, 
@@ -721,17 +724,16 @@ def save_transmission_spectrum(params: ParamDict, spec_tbl: astropy.table.Table)
     :return: None
     """
     # select instrumental mode
-    inst_mode = params['GLOBAL.INSTRUMENTMODE']
+    inst_mode = params['GLOBAL.INSTRUMENTMODE'].upper()
     # select channel
     channel = params['SORBET.SLCTA.CHANNEL']
     # output path
+    bargs = [inst_mode, channel]
+    basename = 'transmission_spectrum_{0}_ord{1}.csv'.format(*bargs)
     output_path = params['SORBET.SLCTA.OUTPUT_PATH']
-    filename = os.path.join(output_path,
-        'transmission_spectrum_{0}_ord{1}.csv'.format(inst_mode.replace('.', '_'),
-                                                      channel))
+    filename = os.path.join(output_path, basename)
     # save new path
     params['SORBET.SLCTA.TRANSMISSION_SPECTRUM_FILE'] = filename
-
     # save the transmission spectrum table
     io.save_table(filename, spec_tbl, fmt='csv')
 
@@ -764,12 +766,10 @@ def get_model_ld_coeffs(params: ParamDict):
     Teff = ex_params['STELLAR_TEFF']
     # Surface gravity [dex]
     logg = ex_params['STELLAR_LOGG']
-
     # load ExoTiC-LD 
     sld = StellarLimbDarkening(M_H, Teff, logg, ld_model, ld_data_path)
-
     # select instrumental mode
-    inst_mode = params['GLOBAL.INSTRUMENTMODE']
+    inst_mode = core.sorbet_inst_mode(params)
     # convert to instrumental profile supported in ExoTiC-LD
     # https://exotic-ld.readthedocs.io/en/latest/views/supported_instruments.html
     if inst_mode == 'JWST.NIRISS.SOSS':

@@ -3,15 +3,40 @@ PrOcessing General ObServations: A wrapper for TSOVORE, SOSSISSE, MIRIAM and SOR
 
 ## Table of contents
 
-1. [Installation](#1-installation)
-2. [Setup POGOS](#2-setting-up-pogos)
-3. [Running POGOS](#3-running-pogos)
-4. [Dev mode](#4-dev-mode)
-
+1. [Introduction](#introduction)
+2. [Installation](#1-installation)
+3. [Setup POGOS](#2-setting-up-pogos)
+4. [Running POGOS](#3-running-pogos)
+5. [Dev mode](#4-dev-mode)
 
 ---
 
-## 1. Installation
+## 2. Introduction
+
+POGOS (PrOcessing General ObServations) is a python package that wraps around 
+several exoplanet data analysis packages to provide a  simple interface for 
+processing JWST time-series data.
+
+It is currently separated into several parts:
+- TSOVORE: A package to simulate or "pre-process" JWST time-series data
+  - TSOVORE:SIM: Is the simulation package
+  - TSOVORE:IMCAL: Is the pre-processing package (similar to JWST pipeline stage 1 and some of stage 2)
+- SOSSISSE (SOSS Inspired SpectroScopic Extraction): A package to extract spectra from JWST time-series data.
+  - This is similar to some of the functionality of the JWST pipeline stage 2 and 3 but is optimised for time-series data.
+- MIRIAM (MIRI Imaging Analysis Module): A package to extract photometry from JWST:MIRI time-series data.
+- SORBET (Suite Of Reduction tools for Both Eclipse and Transit): A package to fit lightcurves and extract transit depths from JWST time-series data.
+  - This is similar to some of JWST pipeline stage 3 and what some would call stage 4.
+
+Note that SOSSISSE can also be run independently of POGOS ([see here](https://github.com/njcuk9999/sossisse)), 
+however we strongly recommend using POGOS to run SOSSISSE as it provides a simple interface and demos to set up 
+and run SOSSISSE.
+
+Note also that SOSSISSE requires some additional pre-processing than is provided in the base JWST pipeline, even though
+the default input to SOSSISSE is rateints files identical (in format) to those produced by the JWST pipeline.
+
+---
+
+## 2. Installation
 
 Note if you are a developer please see [Dev mode](#4-dev-mode)
 
@@ -63,7 +88,7 @@ if you are in the directory where you did your `git clone` then you need to chan
 
 ---
 
-## 2. Setting up POGOS
+## 3. Setting up POGOS
 
 From inside the `pogos-env` conda environment (or equivalanet), in any directory (except the directory where you downloaded the github directories), run:
 
@@ -77,7 +102,7 @@ This should ask you for several options, and create a file structure and a yaml 
 
 ---
 
-## 3. Running POGOS
+## 4. Running POGOS
 
 Once you have run `pogos_setup` and read and understood the yaml file you can run the main POGOS code.
 
@@ -94,7 +119,7 @@ where `{path_to_yaml_file}` is the path to the yaml file you created in the setu
 
 ---
 
-## 4. Dev mode
+## 5. Dev mode
 
 For dev mode (editable install of both apero-core and sossisse) please run the following:
 

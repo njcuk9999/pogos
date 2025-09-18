@@ -105,16 +105,12 @@ Cdict.set('OUTPUT_PATH', group=cgroup, source=__NAME__,
 # =============================================================================
 # Definition of general inputs SORBET_WLCTA
 # =============================================================================
-# Juliet instrument name (used in parameters that require an {INST_MODE} tag
-Cdict.set('JULIET_INSTRUMENT_NAME', group=cgroup, source=__NAME__,
-          value='JWST-NIRISS-SOSS')
-
 # Prior distributions for the default juliet parameterization
 jps_values = ['P_p1', 't0_p1', 'p_p1', 'b_p1', 'a_p1',
               'ecc_p1', 'omega_p1',
-              'q1_JWST-NIRISS-SOSS', 'q2_JWST-NIRISS-SOSS',
-              'mdilution_JWST-NIRISS-SOSS', 'mflux_JWST-NIRISS-SOSS',
-              'sigma_w_JWST-NIRISS-SOSS']
+              'q1_{INST_MODE}', 'q2_{INST_MODE}',
+              'mdilution_{INST_MODE}', 'mflux_{INST_MODE}',
+              'sigma_w_{INST_MODE}']
 Cdict.set('JULIET_PARAMETERS', group=cgroup, source=__NAME__,
           value=jps_values)
 
@@ -127,11 +123,11 @@ jpd_values['b_p1'] = 'truncatednormal'
 jpd_values['a_p1'] = 'uniform'
 jpd_values['ecc_p1'] = 'fixed'
 jpd_values['omega_p1'] = 'fixed'
-jpd_values['q1_JWST-NIRISS-SOSS'] = 'uniform'
-jpd_values['q2_JWST-NIRISS-SOSS'] = 'uniform'
-jpd_values['mdilution_JWST-NIRISS-SOSS'] = 'fixed'
-jpd_values['mflux_JWST-NIRISS-SOSS'] = 'fixed'
-jpd_values['sigma_w_JWST-NIRISS-SOSS'] = 'loguniform'
+jpd_values['q1_{INST_MODE}'] = 'uniform'
+jpd_values['q2_{INST_MODE}'] = 'uniform'
+jpd_values['mdilution_{INST_MODE}'] = 'fixed'
+jpd_values['mflux_{INST_MODE}'] = 'fixed'
+jpd_values['sigma_w_{INST_MODE}'] = 'loguniform'
 Cdict.set('JULIET_PRIOR_DISTS', group=cgroup, source=__NAME__,
           value=jpd_values)
 # Priors for the default juliet parameterization
@@ -144,11 +140,11 @@ jpv_values['b_p1'] = [0.095, 0.65, 0.0, 1.0]
 jpv_values['a_p1'] = [10, 30]
 jpv_values['ecc_p1'] = 0.0
 jpv_values['omega_p1'] = 90.0
-jpv_values['q1_JWST-NIRISS-SOSS'] = [0.0, 1.0]
-jpv_values['q2_JWST-NIRISS-SOSS'] = [0.0, 1.0]
-jpv_values['mdilution_JWST-NIRISS-SOSS'] = 1.0
-jpv_values['mflux_JWST-NIRISS-SOSS'] = 0.0
-jpv_values['sigma_w_JWST-NIRISS-SOSS'] = [1, 1000]
+jpv_values['q1_{INST_MODE}'] = [0.0, 1.0]
+jpv_values['q2_{INST_MODE}'] = [0.0, 1.0]
+jpv_values['mdilution_{INST_MODE}'] = 1.0
+jpv_values['mflux_{INST_MODE}'] = 0.0
+jpv_values['sigma_w_{INST_MODE}'] = [1, 1000]
 Cdict.set('JULIET_PRIOR_VALS', group=cgroup, source=__NAME__,
           value=jpv_values)
 
@@ -182,16 +178,12 @@ Cdict.set('RESOLUTION_BIN', group=cgroup, source=__NAME__,
 # =============================================================================
 # Definition of general inputs SORBET_SLCTA
 # =============================================================================
-# Juliet instrument name (used in parameters that require an {INST_MODE} tag
-Cdict.set('JULIET_INSTRUMENT_NAME', group=cgroup, source=__NAME__,
-          value='JWST-NIRISS-SOSS')
-
 # Prior distributions for the default juliet parameterization
 jps_values = ['P_p1', 't0_p1', 'p_p1', 'b_p1', 'a_p1',
               'ecc_p1', 'omega_p1',
-              'q1_JWST-NIRISS-SOSS', 'q2_JWST-NIRISS-SOSS',
-              'mdilution_JWST-NIRISS-SOSS', 'mflux_JWST-NIRISS-SOSS',
-              'sigma_w_JWST-NIRISS-SOSS']
+              'q1_{INST_MODE}', 'q2_{INST_MODE}',
+              'mdilution_{INST_MODE}', 'mflux_{INST_MODE}',
+              'sigma_w_{INST_MODE}']
 Cdict.set('JULIET_PARAMETERS', group=cgroup, source=__NAME__,
           value=jps_values)
 
@@ -204,11 +196,11 @@ jpd_values['b_p1'] = 'fixed'
 jpd_values['a_p1'] = 'fixed'
 jpd_values['ecc_p1'] = 'fixed'
 jpd_values['omega_p1'] = 'fixed'
-jpd_values['q1_JWST-NIRISS-SOSS'] = 'uniform'
-jpd_values['q2_JWST-NIRISS-SOSS'] = 'uniform'
-jpd_values['mdilution_JWST-NIRISS-SOSS'] = 'fixed'
-jpd_values['mflux_JWST-NIRISS-SOSS'] = 'fixed'
-jpd_values['sigma_w_JWST-NIRISS-SOSS'] = 'loguniform'
+jpd_values['q1_{INST_MODE}'] = 'uniform'
+jpd_values['q2_{INST_MODE}'] = 'uniform'
+jpd_values['mdilution_{INST_MODE}'] = 'fixed'
+jpd_values['mflux_{INST_MODE}'] = 'fixed'
+jpd_values['sigma_w_{INST_MODE}'] = 'loguniform'
 Cdict.set('JULIET_PRIOR_DISTS', group=cgroup, source=__NAME__,
           value=jpd_values)
 # Priors for the default juliet parameterization
@@ -221,11 +213,11 @@ jpv_values['b_p1'] = 0.098
 jpv_values['a_p1'] = 20.66
 jpv_values['ecc_p1'] = 0.0
 jpv_values['omega_p1'] = 90.0
-jpv_values['q1_JWST-NIRISS-SOSS'] = [0.0, 1.0]
-jpv_values['q2_JWST-NIRISS-SOSS'] = [0.0, 1.0]
-jpv_values['mdilution_JWST-NIRISS-SOSS'] = 1.0
-jpv_values['mflux_JWST-NIRISS-SOSS'] = 0.0
-jpv_values['sigma_w_JWST-NIRISS-SOSS'] = [1, 1000]
+jpv_values['q1_{INST_MODE}'] = [0.0, 1.0]
+jpv_values['q2_{INST_MODE}'] = [0.0, 1.0]
+jpv_values['mdilution_{INST_MODE}'] = 1.0
+jpv_values['mflux_{INST_MODE}'] = 0.0
+jpv_values['sigma_w_{INST_MODE}'] = [1, 1000]
 Cdict.set('JULIET_PRIOR_VALS', group=cgroup, source=__NAME__,
           value=jpv_values)
 

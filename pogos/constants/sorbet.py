@@ -87,17 +87,6 @@ SORBET_CDict.add('OUTPUT_PATH', value='sorbet_wlcta_fit', dtype=str,
                             '\n otherwise it will be relative to '
                             'GLOBAL.DATA_PATH/sorbet/')
 
-# Juliet instrument name - used in parameters that require an {INST_MODE} tag
-# (e.g. JWST-NIRISS-SOSS, HST-WFC3-IR, TESS, Kepler, Spitzer-IRAC1 etc).
-jn_desc = ('Juliet instrument name - used in parameters that require an '
-           '{INST_MODE} tag'
-           '\n(e.g. JWST-NIRISS-SOSS, HST-WFC3-IR, TESS, Kepler, '
-           'Spitzer-IRAC1 etc).')
-SORBET_CDict.add('JULIET_INSTRUMENT_NAME', value=None, dtype=str,
-                source=__NAME__,
-                user=True, active=True, group=group,
-                description=jn_desc)
-
 # Juliet parameters
 jps_desc = """
 Juliet transit parameters as a list, following the juliet docs
@@ -115,6 +104,9 @@ JULIET_PARAMETERS:
  - mdilution_{INST_MODE}
  - mflux_{INST_MODE}
  - sigma_w_{INST_MODE}
+ 
+Note those parameters that need an instrument should have _{INST_MODE} instead
+of instrument name.
 """
 
 SORBET_CDict.add('JULIET_PARAMETERS', value=None, dtype=list, dtypei=str,

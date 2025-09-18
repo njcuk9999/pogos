@@ -141,6 +141,21 @@ def sorbet_unique_id() -> str:
     return sid
 
 
+def sorbet_inst_mode(params: ParamDict) -> str:
+    """
+    Read the instrument mode and convert to a format used by Juliet
+
+    :param params:
+    :return:
+    """
+    # get instrument mode
+    inst_mode = params['GLOBAL.INSTRUMENTMODE'].upper()
+    # replace underscores with dots
+    inst_mode = inst_mode.replace('_', '.')
+    # return updated instrument mode
+    return inst_mode
+
+
 # =============================================================================
 # Start of code
 # =============================================================================
