@@ -18,13 +18,13 @@ several exoplanet data analysis packages to provide a  simple interface for
 processing JWST time-series data.
 
 It is currently separated into several parts:
-- TSOVORE: A package to simulate or "pre-process" JWST time-series data
-  - TSOVORE:SIM: Is the simulation package
-  - TSOVORE:IMCAL: Is the pre-processing package (similar to JWST pipeline stage 1 and some of stage 2)
-- SOSSISSE (SOSS Inspired SpectroScopic Extraction): A package to extract spectra from JWST time-series data.
-  - This is similar to some of the functionality of the JWST pipeline stage 2 and 3 but is optimised for time-series data.
-- MIRIAM (MIRI Imaging Analysis Module): A package to extract photometry from JWST:MIRI time-series data.
-- SORBET (Suite Of Reduction tools for Both Eclipse and Transit): A package to fit lightcurves and extract transit depths from JWST time-series data.
+- **TSOVORE**: A package to simulate or "pre-process" JWST time-series data
+  - **TSOVORE:SIM** is the simulation package
+  - **TSOVORE:IMCAL** is the pre-processing package (similar to JWST pipeline stage 1 and some of stage 2)
+- **SOSSISSE** (SOSS Inspired SpectroScopic Extraction): A package to extract spectra from JWST time-series data.
+  - This is similar to some of the functionality of the JWST pipeline stage 2 and 3 but is optimised for time-series data and extract is handled differentially which is unique amongst JWST pipelines.
+- **MIRIAM** (MIRI Imaging Analysis Module): A package to extract photometry from JWST:MIRI time-series data.
+- **SORBET** (Suite Of Reduction tools for Both Eclipse and Transit): A package to fit lightcurves and extract transit depths from JWST time-series data.
   - This is similar to some of JWST pipeline stage 3 and what some would call stage 4.
 
 Note that SOSSISSE can also be run independently of POGOS ([see here](https://github.com/njcuk9999/sossisse)), 
