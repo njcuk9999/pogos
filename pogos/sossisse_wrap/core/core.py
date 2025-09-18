@@ -15,6 +15,7 @@ from aperocore.constants.param_functions import ParamDict
 from aperocore.core import drs_misc
 from aperocore.core import drs_log
 from sossisse.recipes import run_sossisse as sossisse_run
+from sossisse.core.exceptions import SossisseFileException
 import sossisse
 
 from pogos.core import base
@@ -62,6 +63,24 @@ def run_sossisse_module(params: ParamDict):
     sparams = sossisse_params.as_param_dict()
     # make sure yaml file is set
     sparams['INPUTS.PARAM_FILE'] = str(params['GLOBAL.YAML_FILE'])
+
+
+    # SOSSISSE requires raw data to be copied to a specific location
+    # check here if that exists and if not prompt the user
+    spath = os.path.join(sparams['INPUTS.SOSSIOPATH'],
+                         params['GLOBAL.INSTRUMENTMODE'],
+                         sparams['INPUTS.OBJECTNAME'], 'rawdata')
+    # deal with SOSSISSE raw data path not existing
+    if not os.path.exists(spath):
+        msg = ('\n\nSOSSISSE requires raw data to be in a specific location:\n'
+               '  {0}\n'
+               'Please copy the raw data to this location and re-run.\n'
+               'Skipping SOSSISSE run.')
+        # create path if not there
+        os.makedirs(spath, exist_ok=True)
+        # return an error
+        raise SossisseFileException(msg.format(spath))
+
     # run the sossisse recipe
     return sossisse_run.main(__YAML_DICT__=sparams)
 

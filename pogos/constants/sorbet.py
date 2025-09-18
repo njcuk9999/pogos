@@ -242,13 +242,6 @@ SORBET_CDict.add('RESOLUTION_BIN', value=100, dtype=int, source=__NAME__,
                 description='Define the spectral resolution to bin to prior to fitting. '
                 'For native resolution set to -1')
 
-# Juliet instrument name - used in parameters that require an {INST_MODE} tag
-# (e.g. JWST-NIRISS-SOSS, HST-WFC3-IR, TESS, Kepler, Spitzer-IRAC1 etc).
-SORBET_CDict.add('JULIET_INSTRUMENT_NAME', value=None, dtype=str,
-                source=__NAME__,
-                user=True, active=True, group=group,
-                description=jn_desc)
-
 # Juliet parameters
 SORBET_CDict.add('JULIET_PARAMETERS', value=None, dtype=list, dtypei=str,
                  source=__NAME__, user=True, active=True, group=group,

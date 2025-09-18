@@ -560,16 +560,20 @@ def prepare_dataset(params: ParamDict, dataset: astropy.table.Table,
             # check if LD law are defined
             ld_law = slcta_params['EXOTIC-LD.LD_LAW']
             if ld_law is None:
-                raise ValueError("ExoTiC-LD law is not defined")
+                emsg = ('ExoTiC-LD law is not defined. '
+                        'Please define in SORBET.SLCTA.EXOTIC-LD.LD_LAW')
+                raise sorbet_base.SorbetException(emsg)
             # check if ExoTiC-LD path exists
             exotic_ld_path = slcta_params['EXOTIC-LD.MODEL_PATH']
             if not os.path.isdir(exotic_ld_path):
-                raise ValueError(f"ExoTiC-LD path '{exotic_ld_path}' does not exist")
+                emsg = (f'ExoTiC-LD path "{exotic_ld_path}" does not exist. '
+                        f'Please define in SORBET.SLCTA.EXOTIC-LD.MODEL_PATH')
+                raise sorbet_base.SorbetException(emsg)
             # check if ExoTiC-LD model grid is defined
             exotic_ld_model = slcta_params['EXOTIC-LD.MODEL_GRID']
             if exotic_ld_model is None:
-                msg = ('ExoTiC-LD model grid is not defined. '
-                       '\n\tFunction = {func_name}')
+                msg = ('ExoTiC-LD model grid is not defined.'
+                       ' Please define in SORBET.SLCTA.EXOTIC-LD.MODEL_GRID')
                 raise sorbet_base.SorbetException(msg)
             
             # compute the q1 and q2 quadratic coefficients
@@ -650,6 +654,12 @@ def fit_transit(params: ParamDict, dataset: juliet.load,
 
     :return: results, the juliet results
     """
+    # TODO: this breaks if pkl file already exists, do we want to remove
+    #       File is: dataset.out_folder + dataset.sampler_prefix +
+    #                                'posteriors.pkl'
+    #       Content is: dict_keys(['dynesty_output', 'lnZ', 'lnZerr', 'posterior_samples'])
+    #       Breaks when prior name is changed in posterior_samples
+    # pkl files from previous runs?
     # TODO allow more sampling options
     sampling_options = params[f'SORBET.{method}.SAMPLING_OPTIONS']
     # Fit the dataset

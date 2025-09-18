@@ -1,7 +1,7 @@
 # Define versionV
-DRS.VERSION: 0.0.017
+DRS.VERSION: 0.0.018
 # Define date of release
-DRS.DATE: 2025-07-29
+DRS.DATE: 2025-09-18
 # Define release type
 DRS.RELEASE: alpha
 # Define authors
@@ -20,5 +20,5 @@ MIRIAM.VERSION: 0.0.001
 MIRIAM.DATE: 2025-01-31
 
 # SORBET module - general
-SORBET.VERSION: 0.0.03
+SORBET.VERSION: 0.0.04
 SORBET.DATE: 2025-09-16

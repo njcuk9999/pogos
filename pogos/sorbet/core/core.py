@@ -150,7 +150,7 @@ def sorbet_inst_mode(params: ParamDict) -> str:
     """
     # get instrument mode
     inst_mode = params['GLOBAL.INSTRUMENTMODE'].upper()
-    # replace underscores with dots
+    # make sure inst_mode has no _ for juliet compatibility
     inst_mode = inst_mode.replace('_', '.')
     # return updated instrument mode
     return inst_mode
