@@ -26,6 +26,7 @@ It is currently separated into several parts:
 - **MIRIAM** (MIRI Imaging Analysis Module): A package to extract photometry from JWST:MIRI time-series data.
 - **SORBET** (Suite Of Reduction tools for Both Eclipse and Transit): A package to fit lightcurves and extract transit depths from JWST time-series data.
   - This is similar to some of JWST pipeline stage 3 and what some would call stage 4.
+  - SORBET will be able to ingest data from SOSSISSE and MIRIAM
 
 ### Important notes:
 - POGOS is currently under beta-development, please work with the developers when running the code on new data.
@@ -35,7 +36,7 @@ and run SOSSISSE.
 - Note also that SOSSISSE requires some additional pre-processing than is provided in the base JWST pipeline, even though
 the default input to SOSSISSE is rateints files identical (in format) to those produced by the JWST pipeline.
 - Note that currently TSOVORE is under alpha-development and not yet available for use. Please contact [Loic Albert](mailto:loic.albert@umontreal.ca) for more information.
-- Note that MIRAM is also under alpha-development and not yet available for use. Please contact [Etienne Artigau](mailto:etienne.artigau@umontreal.ca) for more information.
+- Note that MIRAM is under alpha-development and not yet available for use. Please contact [Etienne Artigau](mailto:etienne.artigau@umontreal.ca) for more information.
 
 All other issues should be reported to the [GitHub issues page](https://github.com/njcuk9999/pogos/issues).
 
