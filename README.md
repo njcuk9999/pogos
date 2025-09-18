@@ -13,12 +13,12 @@ PrOcessing General ObServations: A wrapper for TSOVORE, SOSSISSE, MIRIAM and SOR
 
 ## 2. Introduction
 
-POGOS (PrOcessing General ObServations) is a python package that wraps around 
+**POGOS** (PrOcessing General ObServations) is a python package that wraps around 
 several exoplanet data analysis packages to provide a  simple interface for 
 processing JWST time-series data.
 
 It is currently separated into several parts:
-- **TSOVORE**: A package to simulate or "pre-process" JWST time-series data
+- **TSOVORE**: A package to  "pre-process" JWST time-series data (it also includes a JWST simulator)
   - **TSOVORE:SIM** is the simulation package
   - **TSOVORE:IMCAL** is the pre-processing package (similar to JWST pipeline stage 1 and some of stage 2)
 - **SOSSISSE** (SOSS Inspired SpectroScopic Extraction): A package to extract spectra from JWST time-series data.
@@ -33,6 +33,11 @@ and run SOSSISSE.
 
 Note also that SOSSISSE requires some additional pre-processing than is provided in the base JWST pipeline, even though
 the default input to SOSSISSE is rateints files identical (in format) to those produced by the JWST pipeline.
+
+Note that currently TSOVORE is under alpha-development and not yet available for use. Please contact [Loic Albert](mailto:loic.albert@umontreal.ca) for more information.
+Note that MIRAM is also under alpha-development and not yet available for use. Please contact [Etienne Artigau](mailto:etienne.artigau@umontreal.ca) for more information.
+
+All other issues should be reported to the [GitHub issues page](https://github.com/njcuk9999/pogos/issues).
 
 ---
 
