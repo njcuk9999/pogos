@@ -55,7 +55,7 @@ git clone git@github.com:njcuk9999/pogos.git
 or if this doesn't work try:
 
 ```bash
-git clone https://github.com/njcuk9999/sossisse.git
+git clone https://github.com/njcuk9999/pogos.git
 ```
 
 #### Step 2: Make a new environment (recommended)
