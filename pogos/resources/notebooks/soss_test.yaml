@@ -1,0 +1,423 @@
+#############################################################################
+# POGOS
+#############################################################################
+# Version = 0.0.003
+#     Date    = 2025-02-18
+
+# If using a different version it is
+# recommended to 
+# run pogos_setup.py to generate a new yaml file.
+
+
+# =============================================================================
+# global settings (generally don't touch these)
+# =============================================================================
+GLOBAL:
+  # The data directory (required)
+  #         Default value=None
+  DATA_PATH: /scratch3/jwst/pogos-data/data
+  # Instrument mode e.g. one of the following: JWST.NIRISS.SOSS
+  # JWST.NIRISS.FGS
+  #         JWST.NIRSPEC.PRISM
+  #         JWST.NIRSPEC.G395
+  # JWST.NIRSPEC.G253
+  #         JWST.NIRSPEC.G140
+  #         Default value=None
+  INSTRUMENTMODE: JWST.NIRISS.SOSS
+
+
+# =============================================================================
+# Switches to turn on major features
+# =============================================================================
+RUN:
+  # Run TSOVORE
+  #         Default value=None
+  TSOVORE: false
+  # Run SOSSISSE
+  #         Default value=None
+  SOSSISSE: true
+  # Run MIRIAM
+  #         Default value=None
+  MIRIAM: false
+  # Run SORBET
+  #         Default value=None
+  SORBET: false
+
+
+# =============================================================================
+# #############################################################################
+# SOSSISSE
+# #############################################################################
+# Version = 0.1.057
+#     Date    = 2025-04-07
+
+# If using a different version it is
+# recommended to 
+# run sossisse_setup.py to generate a new yaml file.
+# =============================================================================
+SOSSISSE:
+
+
+  # =============================================================================
+  # Switches to turn large parts of the code on/off
+  # =============================================================================
+  RUN:
+    # Switch for turning on/off the linear reconstruction step
+    #         Default
+    # value=True
+    LINEAR_RECON: true
+    # Switch for turning on/off the spectral extraction
+    #         Default value=True
+    SPECTRAL_EXTRACTION: true
+
+
+  # =============================================================================
+  # Definition of inputs related to the data
+  # =============================================================================
+  INPUTS:
+    # The data directory
+    #         Default value=None
+    SOSSIOPATH: /scratch3/jwst/pogos-data/data/sossisse
+    # Set the SOSSISSE ID (SID) for using the same directory as before if left as None
+    # the code will work out whether this yaml is found before or whether we need to
+    # create a new SID
+    #         Default value=None
+    SID: SID-00017472301470485360-MF6R
+    # Log level (DEBUG, INFO, WARNING, ERROR, NONE)
+    #         Default value=INFO
+    LOG_LEVEL: INFO
+    # Name of the object (must match the object directory name)
+    #         Default
+    # value=None
+    OBJECTNAME: Trappist1b
+    # Instrument mode e.g. one of the following: JWST.NIRISS.SOSS
+    # JWST.NIRISS.FGS
+    #         JWST.NIRSPEC.PRISM
+    #         JWST.NIRSPEC.G395
+    # JWST.NIRSPEC.G253
+    #         JWST.NIRSPEC.G140
+    #         Default value=None
+    INSTRUMENTMODE: JWST.NIRISS.SOSS
+    # A suffix to identify this setup (e.g. a specific visit)
+    #         Default value=
+    SUFFIX: ''
+
+
+  # =============================================================================
+  # Definition of general inputs
+  # =============================================================================
+  GENERAL:
+    # List of files to be processed in form: 
+    # FILES:
+    #  - file1
+    #  - file2
+    #  - file3
+    # Default value=None
+    FILES:
+    - jw02589001001_04101_00001-seg001_nis_rateints.fits
+    - jw02589001001_04101_00001-seg002_nis_rateints.fits
+    # Background file, leave as None if there is no background available for the mode,
+    # if empty DO_BACKGROUND is set to False regardless of its value
+    #         Default
+    # value=None
+    BKGFILE: model_background256.fits
+    # Do background correction - must have BKGFILE defined to do this
+    #         Default
+    # value=False
+    DO_BACKGROUND: true
+    # Flat field file, leave as None if there is no flat field available for the mode
+    # Default value=None
+    FLATFILE: jwst_niriss_flat_0275.fits
+    # Trace position file
+    #         Default value=None
+    POS_FILE: SOSS_ref_trace_table_SUBSTRIP256.fits
+    # Wavelength calibration file
+    #         Default value=None
+    WAVE_FILE:
+    # Wavelength calibration file type [ext1d, fits, hdf5]
+    #         Default value=None
+    WAVE_FILE_TYPE:
+    # Allow for temporary files to speed the process if you run the code more than
+    # once
+    #         Default value=True
+    ALLOW_TEMPORARY: false
+    # Use temporary files (False we overwrite the files for a fresh start even if they
+    # exist on disk)
+    #         Default value=True
+    USE_TEMPORARY: false
+    # Save results at the end
+    #         Default value=True
+    SAVE_RESULTS: true
+    # Define which orders to use e.g. 
+    #  - 1 
+    #  - 2
+    #         Default value=None
+    TRACE_ORDERS:
+    - 1
+    - 2
+    # wavelength domain for the white light curve e.g. 
+    #  - 1.2 
+    #  - 1.6
+    #         Default
+    # value=None
+    WLC_DOMAIN:
+
+
+  # =============================================================================
+  # Definition of inputs related to plots
+  # =============================================================================
+  PLOTS:
+    # if you want to see the plots at the end of the code, add your login here. 
+    # This
+    # should be the string as returned by "os.getlogin()" or use PLOTS.SHOW to always
+    # show plots
+    #         Default value=[]
+    USER_SHOW: []
+    # Or you can use the following to always show plots regardless of the username
+    # Default value=False
+    SHOW: false
+    # output(s) type of figure
+    #         Default value=['png', 'pdf']
+    FIGURE_TYPES:
+    - png
+    - pdf
+
+
+  # =============================================================================
+  # Definition for white light curve
+  # =============================================================================
+  WLC:
+
+
+    # =============================================================================
+    # Definition of inputs related to the position within data cube timeseries
+    # =============================================================================
+    INPUTS:
+      # Apply DQ flags
+      #         Default value=True
+      APPLY_DQ_FLAGS: true
+      # DQ flags that we should use (list) e.g. 
+      #  -0 
+      #  -2
+      #         Default value=[0, 2]
+      VALID_DQ:
+      - 0
+      - 2
+      # Apply 1/f correction
+      #         Default value=True
+      APPLY_1F_CORR: true
+      # Integrations used to construct a model PSF. This should be a list of [start,
+      # end] lists. 
+      # Ideally, these would be out-of-transit (if any) and without flares.
+      # If you observed constantly a variable object (brown dwarf, phase curve), you
+      # should enter the first to last as frame IDs, except significant flares. Note
+      # that on a first pass of data reduction, you may not know the optimal parameters.
+      # You can enter a guess and fine-tune in a second step. As a starting point,
+      # BASELINE_INTS can be [0, NINTS-1] where NINTS can be found in your fits header.
+      # Note the 1st frame is zero (pythonic numbering). 
+      # Note that leaving this blank
+      # sets the baseline from 0 to NINTS-1.
+      #     E.g. 
+      #          BASELINE_INTS:
+      # - [0, 89]
+      #            - [111, 230]
+      #         Default value=None
+      BASELINE_INTS:
+      # Whether there is a transit/eclipse in the data. 
+      # If this is set to False
+      # TRANSIT_INTS is ignored. 
+      # If this is set to True and TRANSIT_INTS is None a
+      # graph will help you decide where the transit should be. 
+      #  If this is set to True
+      # and TRANSIT_INTS is set the code will process transits and treat the data as
+      # such
+      #         Default value=True
+      HAS_TRANSIT: true
+      # If there are transit(s)/eclipse(s) in the data, enter the frames corresponding
+      # to either the 1st, 2nd, 3rd and 4th contact [length 4 list] or the 1st to 4th
+      # contact [length 2 list]. These should not overlap with the BASELINE_INTS, but
+      # there may be some domain that is neither because of flares (i.e., not within a
+      # transit but not within baseline). 
+      # You can enter a guess and fine-tune in a
+      # second step.
+      # Note the 1st frame is zero (pythonic numbering)
+      # Note that leaving
+      # this blank assumes there is no transit/eclipse
+      # e.g. TRANSIT_INTS:
+      #          -
+      # [90, 97, 103, 110]
+      #         Default value=None
+      TRANSIT_INTS:
+        - [90,  97, 103, 110]
+      # Used to reject bits of domain from the analysis e.g. 
+      #  - [0, 600] 
+
+      #  if you want
+      # to reject two bits of domain, 0-600 and 3000-3200 just use 
+      #  - [0, 600] 
+      #  -
+      # [3000, 3200]
+      #         Default value=None
+      REJECT_DOMAIN:
+      # If PRISM data or saturated, you can perform a CDS between these two readouts
+      # e.g. 
+      #  - 0 # first 
+      #  - 2 # last
+      #         Default value=None
+      CDS_IDS:
+      # If input is a CDS file you must define the read out noise
+      #         Default
+      # value=None
+      CDS_RON:
+      # define the area around which we will optimize the background 
+      # This should be a
+      # length 4 list (x start, x end, y start, y end)
+      #         Default value=None
+      BACKGROUND_GLITCH_BOX:
+      - 650
+      - 750
+      - 200
+      - 240
+      # define the area around which the background will be optimized
+      #    should be a
+      # list (start, end, step)
+      #         Default value=None
+      BACKGROUND_SHIFTS:
+      - -5.0
+      - 5.2
+      - 0.2
+
+
+    # =============================================================================
+    # Definition of inputs to the linear model
+    # =============================================================================
+    LMODEL:
+      # fit the dx -- along the dispersion
+      #         Default value=True
+      FIT_DX: true
+      # fit the dy -- along the cross-dispersion
+      #         Default value=True
+      FIT_DY: true
+      # fit the before - after morphological change
+      #         Default value=False
+      FIT_BEFORE_AFTER: false
+      # fit the rotation in the linear reconstruction of the trace
+      #         Default
+      # value=True
+      FIT_ROTATION: true
+      # fit the zero point offset in the linear model for the trace, should not be used
+      # at the time as the quadratic term
+      #         Default value=True
+      FIT_ZERO_POINT_OFFSET: true
+      # fit a flux^2 dependency. This is mostly meant as a test of the quality of the
+      # non-linearity correction. Normally this term should be de-correlated with the
+      # amplitude term. Set to false for actual science analysis should not be used at
+      # the same time as the zero point offset
+      #         Default value=False
+      FIT_QUAD_TERM: false
+      # fit the 2nd derivative in y, good to find glitches!
+      #         Default value=True
+      FIT_DDY: true
+      # fit with a PCA
+      #         Default value=False
+      FIT_PCA: false
+      # Number of PCA components to use
+      #         Default value=0
+      FIT_N_PCA: 0
+      # Bin the input data cube in time
+      #         Default value=False
+      DATA_BIN_TIME: false
+      # Number of frames in each bin
+      #         Default value=1
+      DATA_BIN_NUMBER: 1
+
+
+    # =============================================================================
+    # Definition of inputs related to handling of the data within each frame
+    # =============================================================================
+    GENERAL:
+      # whether to patch isolated bad pixels
+      #         Default value=True
+      PATCH_ISOLATED_BADS: true
+      # whether to remove cosmic rays
+      #         Default value=True
+      REMOVE_COSMIC_RAYS: true
+      # sigma to flag cosmic rays at (away from the mean)
+      #         Default value=5
+      COSMIC_RAY_SIGMA: 5.0
+      # median of out-of-transit values for reference trace construction. If set to
+      # false, then we have the median of the entire timeseries
+      #         Default
+      # value=True
+      MEDIAN_OOT: true
+      # The number of pixels in the x direction to offset the trace by
+      #         Default
+      # value=0
+      X_TRACE_OFFSET: 0
+      # The number of pixels in the y direction to offset the trace by
+      #         Default
+      # value=0
+      Y_TRACE_OFFSET: 0
+      # Set the range of dys to scan over number of -nbypix/trace_y_scale to
+      # +nbypix/tace_y_scale
+      #         Default value=None
+      TRACE_Y_SCALE: 10
+      # Set the range of dys to scan over number of -nbxpix/trace_x_scale to
+      # +nbxpix/trace_x_scale
+      #         Default value=None
+      TRACE_X_SCALE: 10
+      # Whether to mask order zero
+      #         Default value=True
+      MASK_ORDER_ZERO: true
+      # Whether to recenter the trace position
+      #         Default value=True
+      RECENTER_TRACE_POSITION: true
+      # Use fancy centering of the trace (sets RECENTER_TRACE_POSITION to False
+      # Default value=True
+      USE_FANCY_CENTERING: true
+      # Whether to fit a per pixel baseline correction
+      #         Default value=True
+      PER_PIXEL_BASELINE_CORRECTION: true
+      # out of transit polynomial level correction
+      #         Default value=2
+      TRANSIT_BASELINE_POLYORD: 2
+      # out-of-trace baseline polynomial order
+      #         Default value=2
+      TRACE_BASELINE_POLYORD: 2
+      # degree of the polynomial for the 1/f correction
+      # 0 = just a constant through the
+      # pix spatial 
+      # 1 = slope ... and so on
+      #         Default value=0
+      DEGREE_1F_CORR: 0
+      # Trace extraction width. Set to 0 to use the full image. Should be equal or
+      # smaller than TRACE_WIDTH_MASKING.
+      #         Default value=40
+      TRACE_WIDTH_EXTRACTION: 40
+      # define the width for masking the white light curve trace
+      #         Default
+      # value=40
+      TRACE_WIDTH_MASKING: 40
+
+
+  # =============================================================================
+  # Definition for white light curve
+  # =============================================================================
+  SPEC_EXT:
+    # remove trend from out-of-transit
+    #         Default value=True
+    REMOVE_TREND: true
+    # define how the "white" transit depth is computed/assigned 
+    # "compute": Compute
+    # transit depth using median OOT relative flux from WLC, and mean in-transit
+    # relative flux from WLC 
+    # OR 
+    #  "known": provide the number in TDEPTH
+    # Default value=compute
+    TDEPTH_MODE: compute
+    # define the "white" transit depth if known
+    #         Default value=None
+    TDEPTH:
+    # Define the resolution to bin to
+    #         Default value=20
+    RESOLUTION_BIN: 20
