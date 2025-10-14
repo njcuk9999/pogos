@@ -146,7 +146,7 @@ cgroup = 'SOSSISSE.WLC.INPUTS'
 
 # Integrations used to construct a model PSF.
 #     This should be a list of [start, end] lists
-#     Ideally, these would be out-of-transit (if any) and without flares.
+#     These should be out-of-transit (if any) and without flares.
 #     If you observed constantly a variable object (brown dwarf, phase curve),
 #     you should enter the first to last as frame IDs, except significant
 #     flares.
@@ -159,32 +159,9 @@ cgroup = 'SOSSISSE.WLC.INPUTS'
 #     E.g.
 #         BASELINE_INTS:
 #               - [0, 89]
-#               - [111, 230]
+#               - [111, 153]
 Cdict.set('BASELINE_INTS', group=cgroup, source=__NAME__,
-          value=None)
-
-# Whether there is a transit/eclipse in the data.
-# If this is set to False TRANSIT_INTS is ignored
-# If this is set to True and TRANSIT_INTS is None a graph will help you
-#    decide where the transit should be
-# If this is set to True and TRANSIT_INTS is set the code will process transits
-#    and treat the data as such
-Cdict.set('HAS_TRANSIT', group=cgroup, source=__NAME__,
-          value=True)
-
-# If there are transit(s)/eclipse(s) in the data, enter the frames
-#     corresponding to either the 1st, 2nd, 3rd and 4th contact [length 4 list]
-#     or the 1st to 4th contact [length 2 list].
-#     These should not overlap with the BASELINE_INTS,
-#     but there may be some domain that is neither because of flares
-#     (i.e., not within a transit but not within baseline).
-#     You can enter a guess and fine-tune in a second step.
-#     Note the 1st frame is zero (pythonic numbering)
-#     Note that leaving this blank assumes there is no transit/eclipse
-#     e.g. TRANSIT_INTS:
-#           - [90, 97, 103, 110]
-Cdict.set('TRANSIT_INTS', group=cgroup, source=__NAME__,
-          value = [[8200, 9500, 14500, 15700]])
+          value=[[0, 8199], [15701, 21500]])
 
 # =============================================================================
 # Definition of inputs related to handling of the data within each frame
