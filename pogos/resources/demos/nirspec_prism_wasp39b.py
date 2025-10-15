@@ -189,11 +189,6 @@ Cdict.set('TRACE_X_SCALE', group=cgroup, source=__NAME__,
 # =============================================================================
 cgroup = 'SOSSISSE.SPEC_EXT'
 
-# Define the resolution to bin to
-Cdict.set('RESOLUTION_BIN', group=cgroup, source=__NAME__,
-          value=5)
-
-
 # =============================================================================
 # Start of code
 # =============================================================================
