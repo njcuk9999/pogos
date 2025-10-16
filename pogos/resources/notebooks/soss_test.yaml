@@ -175,7 +175,7 @@ SOSSISSE:
     USER_SHOW: []
     # Or you can use the following to always show plots regardless of the username
     # Default value=False
-    SHOW: true
+    SHOW: false
     # output(s) type of figure
     #         Default value=['png', 'pdf']
     FIGURE_TYPES:

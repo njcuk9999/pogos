@@ -36,7 +36,7 @@ __authors__ = base.__authors__
 # Define functions used by plots
 # =============================================================================
 # TODO same function in sossisse.general.plots using different paths
-def save_show_plot(params: ParamDict, outname: str):
+def save_show_plot(params: ParamDict, outname: str, description: str = ''):
     """
     Save and show the plot
     :param params: ParamDict, the parameter dictionary of constants
