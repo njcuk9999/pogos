@@ -1,0 +1,81 @@
+#############################################################################
+# POGOS
+#############################################################################
+# Version = 0.0.003
+#     Date    = 2025-02-18
+
+# If using a different version it is
+# recommended to 
+# run pogos_setup.py to generate a new yaml file.
+
+
+# =============================================================================
+# global settings (generally don't touch these)
+# =============================================================================
+GLOBAL:
+  # The data directory (required)
+  #         Default value=None
+  DATA_PATH: /scratch3/jwst/pogos-data/data
+  # Instrument mode e.g. one of the following: JWST.NIRISS.SOSS
+  # JWST.NIRISS.FGS
+  #         JWST.NIRSPEC.PRISM
+  #         JWST.NIRSPEC.G395
+  # JWST.NIRSPEC.G253
+  #         JWST.NIRSPEC.G140
+  #         Default value=None
+  INSTRUMENTMODE: JWST.NIRISS.SOSS
+
+
+# =============================================================================
+# Switches to turn on major features
+# =============================================================================
+RUN:
+  # Run TSOVORE
+  #         Default value=None
+  TSOVORE: false
+  # Run SOSSISSE
+  #         Default value=None
+  SOSSISSE: false
+  # Run MIRIAM
+  #         Default value=None
+  MIRIAM: true
+  # Run SORBET
+  #         Default value=None
+  SORBET: false
+
+
+# =============================================================================
+# #############################################################################
+# SOSSISSE
+# #############################################################################
+# Version = 0.1.057
+#     Date    = 2025-04-07
+
+# If using a different version it is
+# recommended to 
+# run sossisse_setup.py to generate a new yaml file.
+# =============================================================================
+MIRIAM:
+
+  # =============================================================================
+  # Switches to turn large parts of the code on/off
+  # =============================================================================
+  INPUTS:
+    # List of files to be processed in form:
+    # FILES:
+    #  - file1
+    #  - file2
+    #  - file3
+    FILES:
+      - jw03730009001_03101_00001-seg001_mirimage_rateints.fits
+      - jw03730009001_03101_00001-seg002_mirimage_rateints.fits
+      - jw03730009001_03101_00001-seg003_mirimage_rateints.fits
+      - jw03730009001_03101_00001-seg004_mirimage_rateints.fits
+      - jw03730009001_03101_00001-seg005_mirimage_rateints.fits
+    
+    # List of integrations to skip (0-indexed)
+    SKIP_INTEGRATIONS:
+      - 0
+      - 1
+
+

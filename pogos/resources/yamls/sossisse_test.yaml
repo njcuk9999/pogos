@@ -70,7 +70,6 @@ SOSSISSE:
     #         Default value=True
     SPECTRAL_EXTRACTION: true
 
-
   # =============================================================================
   # Definition of inputs related to the data
   # =============================================================================

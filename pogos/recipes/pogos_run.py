@@ -19,6 +19,7 @@ from pogos.core import base
 from pogos.core import general
 from pogos import tsovore
 from pogos import sossisse_wrap
+from pogos import miriam
 from pogos import sorbet
 from pogos.core import startup
 
@@ -64,6 +65,9 @@ def main(**kwargs):
     # run sossisse_wrap
     if params['RUN.SOSSISSE']:
         sossisse_wrap.run_sossisse(params)
+    # run miriam
+    if params['RUN.MIRIAM']:
+        miriam.run_miriam(params)
     # run sorbet
     if params['RUN.SORBET']:
         sorbet.run_sorbet(params)

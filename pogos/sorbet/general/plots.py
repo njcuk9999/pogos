@@ -19,7 +19,7 @@ from pogos.core import base
 from aperocore.constants.param_functions import ParamDict
 from sossisse.core import misc
 from sossisse.core import io
-from pogos import sorbet
+from pogos.sorbet.general import science
 
 import juliet
 import corner
@@ -124,7 +124,7 @@ def plot_transit(params: ParamDict, dataset: juliet.load, results: juliet.fit,
     # select instrumental mode
     inst_mode = params['GLOBAL.INSTRUMENTMODE']
     # load best-fit model components
-    components = sorbet.load_transit_model(params, method=method)
+    components = science.load_transit_model(params, method=method)
     # check if lm was indeed fitted (by default juliet reports a lm of zeros)
     if np.array_equal(components['lm'], 
                       np.zeros(len(dataset.times_lc[inst_mode]))):

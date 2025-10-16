@@ -26,7 +26,7 @@ __release__ = base.__release__
 
 # set constant dictionaries
 TSOVORE_CDict = tsovore.TSOVORE_CDict
-MIRIAM_CDict = miriam.CDict
+MIRIAM_CDict = miriam.MIRIAM_CDict
 SORBET_CDict = sorbet.SORBET_CDict
 
 

@@ -2,72 +2,82 @@
 # -*- coding: utf-8 -*-
 """
 
-Transit fit of the WLC
+Transit fit of the SLC
 
 Created on 2024-12-02
 
 @author: CharlesCadieux
 """
+import os
 
-import numpy as np
-from aperocore.constants.param_functions import ParamDict
-from sossisse.core import misc
-from pogos import sorbet
+from aperocore.core import drs_log
+from aperocore.constants import load_functions
+
+from pogos.constants.constants import CDict
 from pogos.core import base
-from pogos.sorbet.general import plots
+from pogos.core import general
+from pogos.core import startup
+from pogos import sorbet
+
 
 # =============================================================================
 # Define variables
 # =============================================================================
 __NAME__ = 'pogos.sorbet.recipes.run_sorbet_wlcta'
+__PACKAGE__ = base.__PACKAGE__
 __version__ = base.__version__
-__date__ = base.__date__
 __authors__ = base.__authors__
+__date__ = base.__date__
+__release__ = base.__release__
+# set description
+__description__ = 'Run the POGOS recipe'
+__inputs__ = ['GLOBAL.YAML_FILE']
+# get the logger
+WLOG = drs_log.wlog
 
 
 # =============================================================================
 # Define functions
 # =============================================================================
-def run_sorbet_wlcta(params: ParamDict):
-    """
-    Run the SORBET White Light Curve Transit Analysis recipe
+def main(**kwargs):
+    # print splash
+    general.start_splash('POGOS')
+    # get other configs (either internal like SORBET or external like SOSSISSE)
+    other_const = startup.initial_setup()
+    # get parameters
+    params = load_functions.get_all_params(name=__NAME__,
+                                           description=__description__,
+                                           inputargs=__inputs__,
+                                           param_file_path='GLOBAL.YAML_FILE',
+                                           config_list=[CDict],
+                                           external_const=other_const,
+                                           kwargs=kwargs)
+    # -------------------------------------------------------------------------
+    # print yaml file used
+    msg = f'Using yaml file: {os.path.realpath(params["GLOBAL.YAML_FILE"])}'
+    WLOG(params, 'info', msg)
+    # run the spectral light curve analysis
+    if params['SORBET.WLCTA.RUN']:
+        sorbet.general.run_sorbet_wlcta(params)
 
-    :param params: ParamDict, the parameter dictionary of constants
 
-    :return: Updated params, runs sorbet recipes
+def run():
     """
-    # set the function name
-    func_name = f'{__NAME__}.run_sorbet_wlcta'
-    # print the white light curve splash
-    print(misc.art('SORBET WLC Transit Analysis', 'yellow', 'CYAN'))
-    # -------------------------------------------------------------------------
-    # prepare output directory
-    sorbet.prepare_output_directory(params, method='WLCTA')
-    # load the dataset
-    dataset = sorbet.load_wlc(params)
-    # find outliers
-    medfilt_model, outlier_mask = sorbet.find_outliers(params,
-                                                       dataset,
-                                                       method='WLCTA')
-    # diagnostic plot for outlier removal
-    plots.plot_outlier(params, dataset, medfilt_model, outlier_mask,
-                       method='WLCTA')
-    # -------------------------------------------------------------------------
-    # prepare the dataset for juliet
-    dataset = sorbet.prepare_dataset(params, dataset, method='WLCTA',
-                                     outlier_mask=outlier_mask)
-    # -------------------------------------------------------------------------
-    # fit the dataset with juliet/batman
-    results = sorbet.fit_transit(params, dataset, method='WLCTA')
-    # -------------------------------------------------------------------------
-    # save the model components to disk
-    sorbet.save_transit_model(params, results, method='WLCTA')
-    # -------------------------------------------------------------------------
-    # plot the results (corner plot)
-    plots.plot_corner(params, dataset, results, method='WLCTA')
-    # -------------------------------------------------------------------------
-    # plot the best-fit model
-    plots.plot_transit(params, dataset, results, method='WLCTA')
-    
-    # return params
-    return params
+    Wrapper script for command line - no return
+    :return:
+    """
+    _ = main()
+
+
+# =============================================================================
+# Start of code
+# =============================================================================
+# Main code here
+if __name__ == "__main__":
+    _ = main()
+
+# =============================================================================
+# End of code
+# =============================================================================
+
+

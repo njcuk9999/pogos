@@ -31,17 +31,60 @@ ConstDict = constant_functions.ConstantsDict
 # =============================================================================
 # constants from MIRIAM
 # =============================================================================
-CDict = ConstDict(__NAME__)
+MIRIAM_CDict = ConstDict(__NAME__)
 
 # set the title for output yaml files
-CDict.title = CDict.yaml_title('MIRIAM',
-                               setup_program=None,
-                               version=base.MIRIAM_VERSION,
-                               date=base.MIRIAM_DATE)
+MIRIAM_CDict.title = MIRIAM_CDict.yaml_title('MIRIAM: MIRI Image Analysis '
+                                             'Module',
+                                     setup_program=None,
+                                     version=base.MIRIAM_VERSION,
+                                     date=base.MIRIAM_DATE)
 
-# Debug parameter
-CDict.add('DEBUG', value=False, dtype=bool, source=__NAME__,
-          user=True, active=True, description='Enable debugging')
+# =============================================================================
+# General settings (generally don't touch these)
+# =============================================================================
+# set the group for all WLCTA constants
+group = 'GENERAL'
+MIRIAM_CDict.add_group(group, description='General configs for SORBET',
+                source=__NAME__, user=True, active=True)
+# add the sid (to be used when default path required)
+MIRIAM_CDict.add('SID', value=None, dtype=str, source=__NAME__,
+                 user=True, active=True, group=group,
+                 description='A string ID for the observation (used for '
+                             'default paths etc)')
+
+# =============================================================================
+# Input settings
+# =============================================================================
+cgroup = 'INPUTS'
+MIRIAM_CDict.add_group(cgroup, source=__NAME__, user=True, active=True,
+                       description='Definition of inputs related to the data')
+# -----------------------------------------------------------------------------
+# Raw files
+fdesc = ('List of files to be processed in form: '
+         '\nFILES:\n - file1\n - file2\n - file3'
+         '\n\nBy default these should be placed in '
+         '<SOSSIOPATH>/{OBJECTNAME>/rawdata/'
+         '\n or whatever is set in <PATHS.RAW> (if defined)')
+MIRIAM_CDict.add('FILES', value=None, dtype=list, dtypei=str, not_none=False,
+                 source=__NAME__, user=True, active=True, group=cgroup,
+                 description=fdesc)
+
+# List of integrations to skip (0-indexed)
+MIRIAM_CDict.add('SKIP_INTEGRATIONS', value=None, dtype=list, dtypei=int,
+                 not_none=False, source=__NAME__, user=True, active=True,
+                 group=cgroup,
+                 description='List of integrations to skip (0-indexed)')
+
+# Output results folder
+MIRIAM_CDict.add('OUTPUT_PATH', value='results', dtype=str,
+                source=__NAME__,
+                user=True, active=True, group=group,
+                description='Output result folder or path to the output folder.'
+                            '\nIf this is an aboslute path it will be used as is'
+                            '\n otherwise it will be relative to '
+                            'GLOBAL.DATA_PATH/miriam/')
+
 
 # =============================================================================
 # Start of code

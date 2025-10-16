@@ -9,8 +9,6 @@ Created on 2025-03-25 at 09:57
 
 @author: cook
 """
-from isoduration.operations import quot2
-
 from pogos.constants import constants as pconst
 from pogos.constants import sorbet as sconst
 
