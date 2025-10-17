@@ -17,6 +17,7 @@ from pogos.constants.constants import CDict
 from pogos.core import base
 from pogos.core import general
 from pogos.core import startup
+from pogos.core import io as pogos_io
 from pogos import sorbet
 
 
@@ -59,7 +60,6 @@ def main(**kwargs):
     # run the spectral light curve analysis
     if params['SORBET.SLCTA.RUN']:
         sorbet.general.run_sorbet_slcta(params)
-
 
 def run():
     """

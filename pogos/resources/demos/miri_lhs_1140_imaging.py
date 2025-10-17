@@ -29,15 +29,16 @@ Cdict.add_sub_cdict('MIRIAM', MIRIAM_CDict, source=__NAME__)
 INFO = dict()
 INFO['title'] = 'JWST.MIRI.IMAGE LHS-1140 eclipse'
 INFO['object'] = 'LHS-1140'
-INFO['instrument'] = 'JWST.MIRI.IMAGE'
+INFO['instrument'] = 'JWST.MIRI.IMAGING'
 INFO['description'] = 'LHS-1140 eclipse observed on 2024-07-07'
 INFO['date'] = '2025-10-16'
 INFO['author'] = 'Etienne Artigau'
+INFO['mbid'] = 'DEMO-LHS-1140-MIRIAM-20240707'
 # url for data download
 URL = 'https://www.astro.umontreal.ca/~cook/pogo-data/'
 # download: key = file, value = local path
 DOWNLOAD = dict()
-DOWNLOAD['MIRIAM.INPUTS.FILES'] = 'MIRIAM.INPUTS.FILES'
+DOWNLOAD['MIRIAM.INPUTS.FILES'] = 'MIRIAM.INPUTS.INPUT_PATH'
 
 
 # =============================================================================
@@ -69,6 +70,16 @@ Cdict.set('MIRIAM', group=cgroup, source=__NAME__,
 # Run SORBET
 Cdict.set('SORBET', group=cgroup, source=__NAME__,
           value=False)
+
+
+# =============================================================================
+# General settings
+# =============================================================================
+cgroup = 'GENERAL'
+
+# Set the description for the MIRIAM run
+Cdict.set('DESCRIPTION', group=cgroup, source=__NAME__,
+          value=INFO['description'])
 
 # =============================================================================
 # Input settings

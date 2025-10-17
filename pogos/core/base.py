@@ -42,7 +42,8 @@ INSTRUMENTS = ['JWST.NIRISS.SOSS',
                'JWST.NIRSPEC.PRISM',
                'JWST.NIRSPEC.G395',
                'JWST.NIRSPEC.G253',
-               'JWST.NIRSPEC.G140']
+               'JWST.NIRSPEC.G140',
+               'JWST.MIRI.IMAGING']
 
 # =============================================================================
 # Define sub module functionality

@@ -14,6 +14,7 @@ from pogos.resources.demos import niriss_soss_trappist1b
 from pogos.resources.demos import sorbet_trappist1b
 from pogos.resources.demos import nirspec_prism_wasp39b
 from pogos.resources.demos import nirspec_g395_wasp39b
+from pogos.resources.demos import miri_lhs_1140_imaging
 
 # =============================================================================
 # Define storage
@@ -37,6 +38,9 @@ DEMOS['JWST.NIRSPEC.PRISM']['WASP 39b'] = nirspec_prism_wasp39b
 
 # JWST.NIRSPEC.G395 WASP 39b
 DEMOS['JWST.NIRSPEC.G395']['WASP 39b'] = nirspec_g395_wasp39b
+
+# JWST..MIRI.IMAGING demo
+DEMOS['JWST.MIRI.IMAGING']['LHS 1140'] = miri_lhs_1140_imaging
 
 
 # =============================================================================

@@ -9,6 +9,7 @@ Created on 2024-10-29 at 10:16
 
 @author: cook
 """
+import os
 import random
 import string
 import time
@@ -92,6 +93,44 @@ def unix_char_code() -> Tuple[float, str, str]:
     rval = ''.join(np.random.choice(list(CHARS), size=4))
     return unixtime, humantime, rval
 
+
+def prepare_directory(params: ParamDict, pkind: str, sid_path: str,
+                      sid_null: str, file_path: str, pmode: str,
+                      exception):
+    """
+    Prepare either an input or output directory for use in POGOS
+    :param params:
+    :param pkind:
+    :param sid_path:
+    :param file_path:
+    :param mode:
+    :return:
+    """
+    func_name = f'{__NAME__}.prepare_directory()'
+    # generate SID if not given
+    if params[sid_path] is None:
+        params[sid_path] = sid_null
+    # get the output path from the params
+    path_constant = params[file_path]
+    # get this to inputs by default
+    if os.path.exists(os.path.realpath(path_constant)):
+        my_path = os.path.realpath(path_constant)
+    else:
+        if path_constant is None:
+            my_path = pkind
+        else:
+            my_path = str(path_constant)
+        # if not, make it relative to the global database
+        my_path = os.path.join(params['GLOBAL.DATA_PATH'], pmode,
+                               params[sid_path], my_path)
+    # make sure the path is in the params
+    if not os.path.exists(my_path):
+        os.makedirs(my_path)
+    # print message on where outputs will be saved
+    msg = f'All {pkind} data will be saved under: {my_path}'
+    WLOG(params, 'info', msg)
+    # update output path
+    params.set(file_path, value=my_path, source=func_name)
 
 # =============================================================================
 # Start of code

@@ -3,3 +3,4 @@ include tools/setup/apero.*
 include */README.md
 include */*/README.md
 include apero/info.yaml
+include pogos/resources/*

@@ -30,17 +30,17 @@ INFO = dict()
 INFO['title'] = 'JWST.NIRISS.SOSS Trappist 1b transit fit with SORBET'
 INFO['object'] = 'Trappist 1b'
 INFO['instrument'] = 'JWST.NIRISS.SOSS'
-INFO['description'] = 'Extract the transit spectrum of Trappist 1b observed on 2022-07-18'
+INFO['description'] = 'Transit spectrum of Trappist 1b observed on 2022-07-18'
 INFO['date'] = '2025-08-28'
 # TODO: Check RUN_TSOVORE, RUN_SOSSISSE, RUN_SORBET
 INFO['author'] = 'Charles Cadieux'
-INFO['sid'] = 'Trappist1b-SOSS-20250828'
+INFO['sbid'] = 'DEMO-Trappist1b-SOSS-20250828'
 # url for data download
 URL = 'https://www.astro.umontreal.ca/~cook/pogo-data/'
 # download: key = file, value = local path
 DOWNLOAD = dict()
-DOWNLOAD['SORBET.WLCTA.INPUT_FILE'] = 'GLOBAL.DATA_PATH'
-DOWNLOAD['SORBET.SLCTA.INPUT_FILE'] = 'GLOBAL.DATA_PATH'
+DOWNLOAD['SORBET.WLCTA.INPUT_FILE'] = 'SORBET.WLCTA.INPUT_PATH'
+DOWNLOAD['SORBET.SLCTA.INPUT_FILE'] = 'SORBET.SLCTA.INPUT_PATH'
 
 
 # =============================================================================
@@ -78,7 +78,11 @@ Cdict.set('SORBET', group=cgroup, source=__NAME__,
 # =============================================================================
 cgroup = 'SORBET.GENERAL'
 # The SID to use
-Cdict.set('SID', group=cgroup, source=__NAME__, value=INFO['sid'])
+Cdict.set('SID', group=cgroup, source=__NAME__, value=INFO['sbid'])
+
+# Description of the SORBET run
+Cdict.set('DESCRIPTION', group=cgroup, source=__NAME__,
+          value=INFO['description'])
 
 # =============================================================================
 # Switches to turn large parts of the code on/off

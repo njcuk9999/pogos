@@ -20,6 +20,7 @@ from aperocore.constants.param_functions import ParamDict
 from sossisse.core import misc
 from sossisse.core import io
 from pogos.sorbet.general import science
+from pogos.core import plots as pogos_plots
 
 import juliet
 import corner
@@ -35,8 +36,8 @@ __authors__ = base.__authors__
 # =============================================================================
 # Define functions used by plots
 # =============================================================================
-# TODO same function in sossisse.general.plots using different paths
-def save_show_plot(params: ParamDict, outname: str, description: str = ''):
+def save_show_plot(params: ParamDict, outname: str, method: str,
+                   title: str, description: str = ''):
     """
     Save and show the plot
     :param params: ParamDict, the parameter dictionary of constants
@@ -44,21 +45,12 @@ def save_show_plot(params: ParamDict, outname: str, description: str = ''):
 
     :return:
     """
-    # loop around figure types
-    for figtype in params['SOSSISSE.PLOTS.FIGURE_TYPES']:
-        # construct the basename with extension
-        basename = f'{outname}.{figtype}'
-        # say that we are plotting graph
-        msg = f'Plotting graph: {basename}'
-        misc.printc(msg, msg_type='info')
-        # save the figure
-        plt.savefig(basename)
-    # if we want to show the plot do it now
-    if params['SOSSISSE.PLOTS.SHOW']:
-        # show the plot
-        plt.show()
-    # finally close the plot
-    plt.close()
+    figure_types = params[f'SORBET.PLOTS.FIGURE_TYPES']
+    plot_path = params[f'SORBET.{method}.PLOT_PATH']
+    plot_show = params[f'SORBET.SHOW']
+
+    pogos_plots.save_show_plot(params, outname, figure_types, plot_path,
+                               plot_show, title, description)
 
 
 def plot_corner(params: ParamDict, dataset: juliet.load, results: juliet.fit,
@@ -72,6 +64,11 @@ def plot_corner(params: ParamDict, dataset: juliet.load, results: juliet.fit,
 
     return: None
     """
+    # set title
+    title = 'Posterior distributions of fitted parameters'
+    description = ('Corner plot of the posterior distributions of the '
+                   'fitted parameters')
+    # -------------------------------------------------------------------------
     # labels and list of fitted parameters
     juliet_params = []
     for key in dataset.priors.keys():
@@ -99,13 +96,7 @@ def plot_corner(params: ParamDict, dataset: juliet.load, results: juliet.fit,
     # standard save/show plot for SOSSISSE
 
     # save and show the plot
-    if method == 'SLCTA':
-        outname = os.path.join(params[f'SORBET.{method}.OUTPUT_SUBPATH'],
-                               'corner_plot')
-    else:
-        outname = os.path.join(params[f'SORBET.{method}.OUTPUT_PATH'],
-                               'corner_plot')
-    save_show_plot(params, outname)
+    save_show_plot(params, 'corner_plot', method, title, description)
 
 
 
@@ -121,6 +112,11 @@ def plot_transit(params: ParamDict, dataset: juliet.load, results: juliet.fit,
 
     return: None
     """
+    # set title
+    title = 'Transit fit to the light curve'
+    description = ('Plot showing the transit fit to the light curve, '
+                   'including the data, best-fit model, and residuals')
+    # -------------------------------------------------------------------------
     # select instrumental mode
     inst_mode = params['GLOBAL.INSTRUMENTMODE']
     # load best-fit model components
@@ -231,13 +227,7 @@ def plot_transit(params: ParamDict, dataset: juliet.load, results: juliet.fit,
     #tag = inst.get_variable('TAG1', func_name)
 
     # save and show the plot
-    if method == 'SLCTA':
-        outname = os.path.join(params[f'SORBET.{method}.OUTPUT_SUBPATH'],
-                               'transit_fit')
-    else:
-        outname = os.path.join(params[f'SORBET.{method}.OUTPUT_PATH'],
-                                'transit_fit')
-    save_show_plot(params, outname)
+    save_show_plot(params, 'transit_fit', method, title, description)
 
 
 def plot_outlier(params: ParamDict, dataset: astropy.table.Table,
@@ -249,6 +239,11 @@ def plot_outlier(params: ParamDict, dataset: astropy.table.Table,
     """
     # set function name
     func_name = f'{__NAME__}.plot_outlier()'
+    # set title
+    title = 'Outlier removal diagnostic plot'
+    description = ('Diagnostic plot showing the outlier removal '
+                   'from the light curve')
+    # -------------------------------------------------------------------------
     # plot the outlier removal
     fig, frame = plt.subplots(figsize=(8, 6))
     # plot the light curve
@@ -271,8 +266,6 @@ def plot_outlier(params: ParamDict, dataset: astropy.table.Table,
     frame.xaxis.set_ticks_position('both')
     # set the legend
     frame.legend(loc='best', fontsize=12)
-
-
     # -------------------------------------------------------------------------
     # force a tight layout
     plt.tight_layout()
@@ -281,12 +274,11 @@ def plot_outlier(params: ParamDict, dataset: astropy.table.Table,
     #tag = inst.get_variable('TAG1', func_name)
 
     # save and show the plot
-    outname = os.path.join(params[f'SORBET.{method}.OUTPUT_PATH'],
-                           'outlier_removal')
-    save_show_plot(params, outname)
+    save_show_plot(params, 'outlier_removal', method, title, description)
 
 
-def plot_transmission_spectrum(params: ParamDict):
+def plot_transmission_spectrum(params: ParamDict,
+                               method: Literal['WLCTA', 'SLCTA']):
     """
     Plot the transmission spectrum from the SLCTA
     :param params: ParamDict, the parameter dictionary of constants
@@ -294,7 +286,10 @@ def plot_transmission_spectrum(params: ParamDict):
     """
     # set function name
     func_name = f'{__NAME__}.plot_transmission_spectrum()'
-
+    # set title
+    title = 'Transmission Spectrum'
+    description = 'Plot showing the transmission spectrum from the SLCTA'
+    # -------------------------------------------------------------------------
     # get slcta parameters
     slcta_params = params.get('SORBET.SLCTA')
     # load the transmission spectrum
@@ -341,5 +336,4 @@ def plot_transmission_spectrum(params: ParamDict):
     # standard save/show plot for SOSSISSE
 
     # save and show the plot
-    outname = os.path.join(slcta_params['OUTPUT_PATH'], 'transmission_spectrum')
-    save_show_plot(params, outname)
+    save_show_plot(params, 'transmission_spectrum', method, title, description)

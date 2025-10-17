@@ -9,23 +9,21 @@ Created on 2025-10-16 at 14:10
 
 @author: cook
 """
-import string
-import os
-import numpy as np
-
 from aperocore.constants.param_functions import ParamDict
 from aperocore.core import drs_log
 from aperocore.core import drs_misc
 from pogos.core import base
-from pogos.sorbet.general import science
-from pogos.sorbet.general import plots
+from pogos.core import general as pogos_general
+from pogos.miriam.core import base as miriam_base
 from sossisse.core import misc
 from pogos.miriam.core import general as mc_general
+from pogos.miriam.general import science as mc_science
+from pogos.miriam.general import plots as mc_plots
 
 # =============================================================================
 # Define variables
 # =============================================================================
-__NAME__ = 'pogos.sorbet.core.core'
+__NAME__ = 'pogos.miriam.general.general'
 __PACKAGE__ = base.__PACKAGE__
 __version__ = base.__version__
 __authors__ = base.__authors__
@@ -48,10 +46,73 @@ def run_miriam(params: ParamDict):
     func_name = f'{__NAME__}.run_sorbet_wlcta'
     # print the white light curve splash
     print(misc.art('MIRIAM', 'yellow', 'CYAN'))
+    # prepare the input directory
+    prepare_input_directory(params)
     # prepare the output directory
     prepare_output_directory(params)
 
-    pass
+    # -------------------------------------------------------------------------
+    # Step 1: merge all input files into a single (cropped) data structure
+    # -------------------------------------------------------------------------
+    cube, cube_err, mtbl, weights = mc_science.merge_inputs(params)
+
+    # -------------------------------------------------------------------------
+    # Step 2: perform systematics correction on the data
+    # -------------------------------------------------------------------------
+    cube2, cube2_err = mc_science.correct_systematics(params, cube, cube_err)
+
+    # -------------------------------------------------------------------------
+    # Step 3: Change the cube to photometry
+    # -------------------------------------------------------------------------
+    ptbl0 = mc_science.cube2phot(params, cube2, cube2_err, mtbl, weights,
+                                d2flag=True)
+    ptbl1 = mc_science.cube2phot(params, cube2, cube2_err, mtbl, weights,
+                                d2flag=False)
+
+    # -------------------------------------------------------------------------
+    # Step 4: plot results
+    # -------------------------------------------------------------------------
+    mc_plots.plot_correlations(params, ptbl0, d2flag=True)
+    mc_plots.plot_correlations(params, ptbl1, d2flag=False)
+    mc_plots.plot_photometry(params, ptbl0, ptbl1)
+
+    # -------------------------------------------------------------------------
+    # Step 5: save results
+    # -------------------------------------------------------------------------
+    mc_science.write_photometry_results(params, ptbl0, ptbl1)
+
+
+def setup_miriam_module(params: ParamDict) -> ParamDict:
+    """
+    Setup the MIRIAM module within POGOS.
+
+    :param params: ParamDict, the parameter dictionary of constants
+
+    :return: ParamDict, the updated parameter dictionary of constants
+    """
+    # set the function name
+    func_name = f'{__NAME__}.setup_miriam_module'
+    # deal with no requiring to run miriam
+    if not params['RUN.MIRIAM']:
+        return params
+    # setup input and output directories
+    prepare_input_directory(params)
+    prepare_output_directory(params)
+    # return params
+    return params
+
+
+def prepare_input_directory(params: ParamDict):
+    # set parameters for preparing directory
+    pkind = 'input'
+    sid_path = 'MIRIAM.GENERAL.SID'
+    sid_null = mc_general.miriam_unique_id()
+    file_path = f'MIRIAM.PATHS.INPUT_PATH'
+    mode = 'miriam'
+    # runt the prepare directory function
+    pogos_general.prepare_directory(params, pkind, sid_path, sid_null,
+                                    file_path, mode,
+                                    miriam_base.MiriamException)
 
 
 def prepare_output_directory(params: ParamDict):
@@ -60,31 +121,16 @@ def prepare_output_directory(params: ParamDict):
 
     :param params: ParamDict, the parameter dictionary of constants
     """
-    # generate SID if not given
-    if params['SORBET.GENERAL.SID'] is None:
-        params['SORBET.GENERAL.SID'] = mc_general.miriam_unique_id()
-    # get the output path from the params
-    output_path = params[f'MIRIAM.INPUTS.OUTPUT_PATH']
-    # make sure we have the full path
-    output_path = os.path.realpath(output_path)
-    # deal with output path being an absolute path
-    if os.path.exists(output_path):
-        # print message on where outputs will be saved
-        msg = f'All outputs will be saved under: {output_path}'
-        WLOG(params, 'info', msg)
-        return
-    # if not, make it relative to the global database
-    output_path = os.path.join(params['GLOBAL.DATA_PATH'], 'sorbet',
-                               params['SORBET.GENERAL.SID'],
-                               params[f'MIRIAM.INPUTS.OUTPUT_PATH'])
-    # make sure the path is in the params
-    if not os.path.exists(output_path):
-        os.makedirs(output_path)
-    # update output path
-    params[f'MIRIAM.INPUTS.OUTPUT_PATH'] = output_path
-    # print message on where outputs will be saved
-    msg = f'All outputs will be saved under: {output_path}'
-    WLOG(params, 'info', msg)
+    # set parameters for preparing directory
+    pkind = 'output'
+    sid_path = 'MIRIAM.PATHS.SID'
+    sid_null = mc_general.miriam_unique_id()
+    file_path = f'MIRIAM.INPUTS.OUTPUT_PATH'
+    mode = 'miriam'
+    # runt the prepare directory function
+    pogos_general.prepare_directory(params, pkind, sid_path, sid_null,
+                                    file_path, mode,
+                                    miriam_base.MiriamException)
 
 
 # =============================================================================

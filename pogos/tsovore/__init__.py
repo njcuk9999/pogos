@@ -9,9 +9,13 @@ Created on 2025-01-31 at 15:03
 
 @author: cook
 """
+from pogos.tsovore.core import general
 
-# replace this with a import to a sub module function
-run_tsovore = lambda x: print('Hello world')
+
+run_tsovore = general.run_tsovore
+
+# setup function for TSOVORE module
+setup_tsovore_module = general.setup_tsovore_module
 
 # =============================================================================
 # End of code

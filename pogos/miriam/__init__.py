@@ -14,6 +14,9 @@ from pogos.miriam.general import general
 # replace this with a import to a sub module function
 run_miriam = general.run_miriam
 
+# setup miram
+setup_miriam_module = general.setup_miriam_module
+
 # =============================================================================
 # End of code
 # =============================================================================

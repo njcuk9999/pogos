@@ -18,6 +18,9 @@ from pogos.sorbet.general import general
 # import to a sub module function
 run_sorbet = general.run_sorbet_module
 
+# setup sorbet module
+setup_sorbet_module = general.setup_sorbet_module
+
 
 
 # =============================================================================

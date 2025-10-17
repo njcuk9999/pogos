@@ -16,7 +16,10 @@ from pogos.constants.constants import CDict
 from pogos.core import base
 from pogos.core import startup
 from pogos.core import general
+from pogos import tsovore
 from pogos import sossisse_wrap
+from pogos import miriam
+from pogos import sorbet
 
 # =============================================================================
 # Define variables
@@ -51,7 +54,11 @@ def main(**kwargs):
     # setup using parameters
     cdict = startup.setup(params)
     # -------------------------------------------------------------------------
+    # setup individual modules
+    params = tsovore.setup_tsovore_module(params)
     sossisse_wrap.setup_sossisse_module(params, cdict)
+    params = miriam.setup_miriam_module(params)
+    params = sorbet.setup_sorbet_module(params)
     # -------------------------------------------------------------------------
     # ask for data download
     load_functions.download_data(params)

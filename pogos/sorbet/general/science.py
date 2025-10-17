@@ -2,11 +2,13 @@
 # -*- coding: utf-8 -*-
 """
 # sorbet.general.general.py
-# General functions for SORBET
+# Science functions for SORBET
 
 Created on 2025-02-19 at 13:43
 
 @author: CharlesCadieux
+
+No imports from sorbet.general.general
 """
 
 import os
@@ -47,39 +49,6 @@ WLOG = drs_log.wlog
 # =============================================================================
 # Define functions
 # =============================================================================
-def prepare_output_directory(params: ParamDict,
-                             method: Literal['WLCTA', 'SLCTA']):
-    """
-    Prepare the output directory for SORBET results.
-
-    :param params: ParamDict, the parameter dictionary of constants
-    """
-    # generate SID if not given
-    if params['SORBET.GENERAL.SID'] is None:
-        params['SORBET.GENERAL.SID'] = core.sorbet_unique_id()
-    # get the output path from the params
-    output_path = params[f'SORBET.{method}.OUTPUT_PATH']
-    # make sure we have the full path
-    output_path = os.path.realpath(output_path)
-    # deal with output path being an absolute path
-    if os.path.exists(output_path):
-        # print message on where outputs will be saved
-        msg = f'All outputs will be saved under: {output_path}'
-        WLOG(params, 'info', msg)
-        return
-    # if not, make it relative to the global database
-    output_path = os.path.join(params['GLOBAL.DATA_PATH'], 'sorbet',
-                               params['SORBET.GENERAL.SID'],
-                               params[f'SORBET.{method}.OUTPUT_PATH'])
-    # make sure the path is in the params
-    if not os.path.exists(output_path):
-        os.makedirs(output_path)
-    # update output path
-    params[f'SORBET.{method}.OUTPUT_PATH'] = output_path
-    # print message on where outputs will be saved
-    msg = f'All outputs will be saved under: {output_path}'
-    WLOG(params, 'info', msg)
-
 def load_wlc(params: ParamDict):
     """
     Load the WLC dataset using configs from the yaml file
@@ -94,13 +63,17 @@ def load_wlc(params: ParamDict):
     if params['SORBET.WLCTA.RUN'] is None:
         msg = f'Cannot use "{func_name}" without SORBET.WLCTA.RUN = True'
         raise sorbet_base.SorbetException(msg)
+
     # input file with the white light curve data
     input_file = params['SORBET.WLCTA.INPUT_FILE']
     # check if the file exists
     if os.path.isfile(input_file):
         filename = input_file
     else:
-        filename = os.path.join(params['GLOBAL.DATA_PATH'], input_file)
+        # get input path
+        inpath = params[f'SORBET.WLCTA.INPUT_PATH']
+        # construct full filename
+        filename = os.path.join(inpath, input_file)
     # load the light curve table
     try:
         dataset = io.load_table(filename)
@@ -135,7 +108,10 @@ def load_slc(params: ParamDict):
     if os.path.isfile(input_file):
         filename = input_file
     else:
-        filename = os.path.join(params['GLOBAL.DATA_PATH'], input_file)
+        # get input path
+        inpath = params[f'SORBET.WLCTA.INPUT_PATH']
+        # construct full filename
+        filename = os.path.join(inpath, input_file)
     # load the light curve data
     # TODO why are the data >f8 dtype?
     try:
