@@ -75,7 +75,7 @@ Cdict.set('SORBET', group=cgroup, source=__NAME__,
 # =============================================================================
 # General settings
 # =============================================================================
-cgroup = 'GENERAL'
+cgroup = 'MIRIAM.GENERAL'
 
 # Set the description for the MIRIAM run
 Cdict.set('DESCRIPTION', group=cgroup, source=__NAME__,
