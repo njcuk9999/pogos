@@ -34,6 +34,7 @@ INFO['instrument'] = 'JWST.NIRISS.SOSS'
 INFO['description'] = 'Trappist 1b transit observed on 2022-07-18'
 INFO['date'] = '2025-03-25'
 INFO['author'] = 'Etienne Artigau'
+
 # url for data download
 URL = 'https://www.astro.umontreal.ca/~cook/pogo-data/'
 # download: key = file, value = local path

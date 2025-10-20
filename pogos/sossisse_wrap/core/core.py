@@ -19,6 +19,7 @@ from sossisse.core.exceptions import SossisseFileException
 import sossisse
 
 from pogos.core import base
+from pogos.core import io as pogo_io
 
 
 # =============================================================================
@@ -80,9 +81,43 @@ def run_sossisse_module(params: ParamDict):
         os.makedirs(spath, exist_ok=True)
         # return an error
         raise SossisseFileException(msg.format(spath))
-
+    # -------------------------------------------------------------------------
     # run the sossisse recipe
-    return sossisse_run.main(__YAML_DICT__=sparams)
+    _ = sossisse_run.main(__YAML_DICT__=sparams)
+    # -------------------------------------------------------------------------
+    # after sossisse run we may need to copy files to SORBET input location
+    if params['RUN.SORBET']:
+        # get sorbet parameters
+        sb_params = params.get('SORBET')
+        # get the output SOSSISSE directory
+        sossisse_output_dir = params['SOSSISSE.PATHS.OUT_PATH']
+
+        # deal with sossisse output directory not existing
+        if not os.path.exists(sossisse_output_dir):
+            msg = ('\n\nSOSSISSE output directory does not exist:\n'
+                   '  {0}\n'
+                   'Cannot copy files to SORBET input locations.\n'
+                   'Skipping SORBET file copy - SORBET may fail!')
+            WLOG(params, 'warning', msg.format(sossisse_output_dir))
+            return
+
+        # deal with WLCTA files
+        if sb_params['WLCTA.RUN']:
+            # get the sorbet input directory for WLCTA
+            sorbet_wlcta_input_dir = sb_params['WLCTA.INPUT_PATH']
+            # copy all files from SOSSISSE output to SORBET WLCTA input
+            pogo_io.copy_file_directory(params, sossisse_output_dir,
+                                        sorbet_wlcta_input_dir)
+        # deal with SLCTA files
+        if sb_params['SLCTA.RUN']:
+            # get the sorbet input directory for SLCTA
+            sorbet_slcta_input_dir = sb_params['SLCTA.INPUT_PATH']
+            # copy all files from SOSSISSE output to SORBET SLCTA input
+            pogo_io.copy_file_directory(params, sossisse_output_dir,
+                                        sorbet_slcta_input_dir)
+
+
+
 
 
 def setup_sossisse_module(params: ParamDict, cdict):

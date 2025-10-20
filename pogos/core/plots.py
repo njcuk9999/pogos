@@ -37,7 +37,8 @@ __authors__ = base.__authors__
 # =============================================================================
 # TODO: same function in sossisse.general.plots -> move to aperocore
 def plot_file(params: ParamDict, outname: str, plot_path, title,
-              description: str = ''):
+              description: str = 'No description',
+              func_name = 'Unknown'):
     # get plot file
     plotfile = os.path.join(params[plot_path], 'plots.yaml')
     # read yaml file
@@ -52,6 +53,7 @@ def plot_file(params: ParamDict, outname: str, plot_path, title,
     blocks[outname]['title'] = title
     blocks[outname]['description'] = description
     blocks[outname]['time'] = float(time.time())
+    blocks[outname]['func'] = func_name
     # ------------------------------------------------------------------------
     # save the yaml file
     aperobase.write_yaml(blocks, plotfile)
@@ -60,7 +62,8 @@ def plot_file(params: ParamDict, outname: str, plot_path, title,
 # TODO: same function in sossisse.general.plots -> move to aperocore
 def save_show_plot(params: ParamDict, outname: str, figure_types: str,
                    plot_path: str, plot_show: str,
-                   title: str = '', description: str = ''):
+                   title: str = '', description: str = 'No description',
+                   func_name = 'Unknown'):
     """
     Save and show the plot
     :param params: dict, the parameters for the instrument
@@ -69,7 +72,7 @@ def save_show_plot(params: ParamDict, outname: str, figure_types: str,
     :return:
     """
     # save to yaml file (for html writing)
-    plot_file(params, outname, plot_path, title, description)
+    plot_file(params, outname, plot_path, title, description, func_name)
     # loop around figure types
     for figtype in params[figure_types]:
         # construct the basename with extension

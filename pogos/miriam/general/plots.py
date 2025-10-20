@@ -37,7 +37,8 @@ __authors__ = base.__authors__
 # =============================================================================
 # TODO same function in sossisse.general.plots using different paths
 def save_show_plot(params: ParamDict, outname: str, title: str,
-                   description: str = ''):
+                   description: str = 'No description',
+                   func_name='Unknown'):
     """
     Save and show the plot
     :param params: ParamDict, the parameter dictionary of constants
@@ -50,7 +51,7 @@ def save_show_plot(params: ParamDict, outname: str, title: str,
     plot_show = params[f'MIRIAM.PLOTS.SHOW']
 
     pogos_plots.save_show_plot(params, outname, figure_types, plot_path,
-                               plot_show, title, description)
+                               plot_show, title, description, func_name)
 
 
 def plot_correlations(params: ParamDict, ptbl: Table, d2flag: bool):

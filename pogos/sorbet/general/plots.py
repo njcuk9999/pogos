@@ -37,7 +37,8 @@ __authors__ = base.__authors__
 # Define functions used by plots
 # =============================================================================
 def save_show_plot(params: ParamDict, outname: str, method: str,
-                   title: str, description: str = ''):
+                   title: str, description: str = 'No description',
+                   func_name = 'Unknown'):
     """
     Save and show the plot
     :param params: ParamDict, the parameter dictionary of constants
@@ -50,7 +51,7 @@ def save_show_plot(params: ParamDict, outname: str, method: str,
     plot_show = params[f'SORBET.SHOW']
 
     pogos_plots.save_show_plot(params, outname, figure_types, plot_path,
-                               plot_show, title, description)
+                               plot_show, title, description, func_name)
 
 
 def plot_corner(params: ParamDict, dataset: juliet.load, results: juliet.fit,
@@ -64,6 +65,9 @@ def plot_corner(params: ParamDict, dataset: juliet.load, results: juliet.fit,
 
     return: None
     """
+    # set function name
+    func_name = f'{__NAME__}.plot_corner()'
+    # -------------------------------------------------------------------------
     # set title
     title = 'Posterior distributions of fitted parameters'
     description = ('Corner plot of the posterior distributions of the '
@@ -96,7 +100,7 @@ def plot_corner(params: ParamDict, dataset: juliet.load, results: juliet.fit,
     # standard save/show plot for SOSSISSE
 
     # save and show the plot
-    save_show_plot(params, 'corner_plot', method, title, description)
+    save_show_plot(params, 'corner_plot', method, title, description, func_name)
 
 
 
@@ -112,6 +116,9 @@ def plot_transit(params: ParamDict, dataset: juliet.load, results: juliet.fit,
 
     return: None
     """
+    # set function name
+    func_name = f'{__NAME__}.plot_transit()'
+    # -------------------------------------------------------------------------
     # set title
     title = 'Transit fit to the light curve'
     description = ('Plot showing the transit fit to the light curve, '
@@ -223,11 +230,8 @@ def plot_transit(params: ParamDict, dataset: juliet.load, results: juliet.fit,
     # force a tight layout
     plt.tight_layout()
     # -------------------------------------------------------------------------
-    # get tag
-    #tag = inst.get_variable('TAG1', func_name)
-
     # save and show the plot
-    save_show_plot(params, 'transit_fit', method, title, description)
+    save_show_plot(params, 'transit_fit', method, title, description, func_name)
 
 
 def plot_outlier(params: ParamDict, dataset: astropy.table.Table,
@@ -274,7 +278,8 @@ def plot_outlier(params: ParamDict, dataset: astropy.table.Table,
     #tag = inst.get_variable('TAG1', func_name)
 
     # save and show the plot
-    save_show_plot(params, 'outlier_removal', method, title, description)
+    save_show_plot(params, 'outlier_removal', method, title, description,
+                   func_name)
 
 
 def plot_transmission_spectrum(params: ParamDict,
@@ -336,4 +341,5 @@ def plot_transmission_spectrum(params: ParamDict,
     # standard save/show plot for SOSSISSE
 
     # save and show the plot
-    save_show_plot(params, 'transmission_spectrum', method, title, description)
+    save_show_plot(params, 'transmission_spectrum', method, title, description,
+                   func_name)

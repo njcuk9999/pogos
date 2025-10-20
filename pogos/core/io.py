@@ -12,8 +12,8 @@ Created on 2025-10-17 at 15:06
 import datetime
 import glob
 import os
+import shutil
 from string import Template
-from typing import Any, Dict
 
 import numpy as np
 
@@ -46,18 +46,20 @@ WLOG = drs_log.wlog
 PACKAGE_PATH = os.path.dirname(os.path.dirname(__file__))
 HTML_TEMPLATE_FILE = os.path.join(PACKAGE_PATH, 'resources',
                                   'html_template.html')
-
+# all valid file extensions to include in html file list (not plots)
+FILE_EXTS = ['.csv', '.fits', '.h5', '.txt', '.tex']
 
 # =============================================================================
 # Define variables
 # =============================================================================
-# TODO: This is a carbon-copy of the sossisse functionality --> move to aperocore
+
 
 # -----------------------------------------------------------------------------
 
 # =============================================================================
 # Define functions
 # =============================================================================
+# TODO: This is a carbon-copy of the sossisse functionality --> move to aperocore
 def params_to_html(params: ParamDict, html: str = ''):
     """
     Convert a dictionary of parameters to an html list
@@ -137,6 +139,7 @@ def params_to_html(params: ParamDict, html: str = ''):
     return html
 
 
+# TODO: This is a carbon-copy of the sossisse functionality --> move to aperocore
 def plots_to_html(params: ParamDict, plot_path: str):
     """
     Grab the png files from the PLOT_PATH and push them into html
@@ -158,7 +161,7 @@ def plots_to_html(params: ParamDict, plot_path: str):
     # loop around all png files
     for png_file in plotdict:
         # get the filename
-        abspath = os.path.join(params[plot_path], f'{png_file}.png')
+        abspath =os.path.join(params[plot_path], f'{png_file}.png')
         # skip files that don't exist
         if not os.path.exists(abspath):
             continue
@@ -167,10 +170,17 @@ def plots_to_html(params: ParamDict, plot_path: str):
         # get title and description
         title = plotdict[png_file]['title']
         description = plotdict[png_file]['description']
+        time = Time(plotdict[png_file]['time'], format='unix').iso
+        func_name = plotdict[png_file]['func']
         # create the html string
         html_image = f'<h3>Figure {figcounter}: {title}</h3>\n'
+        # add the description
         if description is not None:
-            html_image += f'<br>{description}<br>\n'
+            html_image += f'<br>{description}<br><br>\n'
+        # add the time and function
+        html_image += f'<b>Generated on</b>: {time} <br><br>\n'
+        html_image += f'<b>Function</b>: {func_name} <br><br>\n'
+        # generate the image
         html_image += (f'<img src="{basename}" alt="{png_file}" '
                        f'style="width:"600"">\n')
         html_image += '<br><br><br>\n'
@@ -181,6 +191,7 @@ def plots_to_html(params: ParamDict, plot_path: str):
     return html
 
 
+# TODO: This is a carbon-copy of the sossisse functionality --> move to aperocore
 def files_to_html(params: ParamDict, sid_name: str):
     """
     Grab the csv files from the PLOT_PATH and push them into html
@@ -188,16 +199,22 @@ def files_to_html(params: ParamDict, sid_name: str):
     :param params:
     :return:
     """
+    # get sid path
+    sid_path = params[sid_name]
+
     # get all files in SID path
-    csv_files = glob.glob(os.path.join(params['PATHS.OTHER_PATH'], '*.csv'))
+    files = []
+    for file_ext in FILE_EXTS:
+        files += glob.glob(os.path.join(sid_path, f'*{file_ext}'))
+
     # define the html string
     html = '<br><ul>'
     # loop around all csv files
-    for csv_file in csv_files:
+    for filename in files:
         # get the filename
-        filename = os.path.basename(csv_file)
+        file_str = os.path.basename(filename)
         # create the html string
-        html_list = '<li><a href="{0}">{0}</a></li>'
+        html_list = f'<li><a href="{filename}">{file_str}</a></li>'
         html += html_list.format(filename)
     # end the list
     html += '</ul>'
@@ -205,6 +222,7 @@ def files_to_html(params: ParamDict, sid_name: str):
     return html
 
 
+# TODO: This is a carbon-copy of the sossisse functionality --> move to aperocore
 def info_html(params: ParamDict, sid_name: str):
 
     # get time now
@@ -222,8 +240,9 @@ def info_html(params: ParamDict, sid_name: str):
     return html
 
 
+# TODO: This is a carbon-copy of the sossisse functionality --> move to aperocore
 def summary_html(params: ParamDict, module: str, plot_path: str,
-                 sid_name: str, title: str, imode: str = None):
+                 sid_name: str, title: str):
     """
     Create a summary html file
 
@@ -245,8 +264,6 @@ def summary_html(params: ParamDict, module: str, plot_path: str,
     targs = [module, title]
     # add title
     data['title'] = '{0} Summary: <br> {1}'.format(*targs)
-    if imode is not None:
-        data['title'] += f' [{imode}]'
     # add info section
     data['info'] = info_html(params, sid_name)
     # add plot section
@@ -254,7 +271,10 @@ def summary_html(params: ParamDict, module: str, plot_path: str,
     # add file section
     data['filelist'] = files_to_html(params, sid_name)
     # add param section
-    data['paramlist'] = params_to_html(params.get(module))
+    mod_params = params.get(module)
+    if mod_params is None:
+        mod_params = params
+    data['paramlist'] = params_to_html(mod_params)
     # Substitute variables in the template
     rendered_html = template.safe_substitute(data)
     # construct filename for html file
@@ -262,6 +282,26 @@ def summary_html(params: ParamDict, module: str, plot_path: str,
     # write the html file
     with open(html_file, 'w') as html_file:
         html_file.write(rendered_html)
+
+
+def copy_file_directory(params: ParamDict, inpath: str, outpath: str):
+    """
+    Copy all files from input directory to output directory
+
+    :param inpath: str, the input directory
+    :param outpath: str, the output directory
+
+    :return: None, copies files
+    """
+    # loop around all files in input directory
+    for infilepath in glob.glob(os.path.join(inpath, '*')):
+        # construct output filepath
+        outfilepath = os.path.join(outpath, os.path.basename(infilepath))
+        # print what we are doing
+        msg = 'Copying file from {0} to {1}'
+        WLOG(params, '', msg.format(infilepath, outfilepath))
+        # copy the file
+        shutil.copy(infilepath, outfilepath)
 
 
 # =============================================================================
