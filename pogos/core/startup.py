@@ -9,10 +9,8 @@ Created on 2024-10-29 at 10:16
 
 @author: cook
 """
-import argparse
 import os
-import string
-from typing import Optional
+from typing import Any
 
 from aperocore.constants import param_functions
 from aperocore.constants import load_functions
@@ -76,9 +74,12 @@ def setup(params: ParamDict):
     :return: None
     """
     # ------------------------------------------------------------------------
+    # deal with user selecting instrument, mode and reduction steps
+    params, demo_list = core_setup(params, demo_mod)
+
     # deal with start point (setup only) - ask user to start from demo or blank
     params = load_functions.starting_point(params, 'GLOBAL.INSTRUMENTMODE',
-                                           demo_mod)
+                                           demo_list)
     # -------------------------------------------------------------------------
     # print progress
     WLOG(params, 'info', params['LOG.HEADER'])
@@ -159,6 +160,132 @@ def setup(params: ParamDict):
     cdict.save_yaml(params, outpath=yaml_file, log=False)
 
     return cdict
+
+
+
+def core_setup(params: ParamDict, demo_mod: Any):
+    """
+    Deal with user selecting instrument, mode and reduction steps
+
+    :param params: ParamDict, the parameters dictionary
+    :return: ParamDict, the updated parameters dictionary
+    """
+    # -------------------------------------------------------------------------
+    # define function name
+    func_name = f'{__NAME__}.core_setup()'
+    # -------------------------------------------------------------------------
+    # get instrument modes
+    instrument_modes = base.INSTRUMENT_MODES
+    imode = None
+    # -------------------------------------------------------------------------
+    while imode is None:
+        insts = list(instrument_modes.keys())
+        ivalues = list(range(1, len(insts) + 1))
+        # ask user for instrument
+        question = 'Select instrument:'
+        inst_choice = drs_text.user_input(question, dtype=int, options=ivalues,
+                                          optiondescs=insts)
+        instrument = insts[inst_choice - 1]
+        # ---------------------------------------------------------------------
+        # set the instrument modes
+        imodes = list(instrument_modes[instrument])
+        imode_values = list(range(1, len(imodes) + 1))
+        # ask user for instrument mode
+        question = 'Select instrument mode:'
+        imode_choice = drs_text.user_input(question, dtype=int,
+                                           options=imode_values,
+                                           optiondescs=imodes)
+        instrument_mode = imodes[imode_choice - 1]
+        # ---------------------------------------------------------------------
+        # deal with instrument mode not supported
+        if instrument_modes[instrument][instrument_mode] is None:
+            msg = ('Instrument mode {0} is not yet supported, '
+                   'please choose another')
+            WLOG(params, '', msg.format(instrument_mode), color='magenta')
+            continue
+        # ---------------------------------------------------------------------
+        # set imode
+        imode = instrument_modes[instrument][instrument_mode]
+        # set instrument and mode in params
+        params['GLOBAL.INSTRUMENTMODE'] = imode
+        params.set_source('GLOBAL.INSTRUMENTMODE', func_name)
+    # --------------------------------------------------------------------------
+    # now ask about reduction steps
+    # -------------------------------------------------------------------------
+    # get the list of reduction steps
+    red_steps = base.RED_STEPS
+    # loop around red steps until we have all that are supported by this imode
+    supported_steps = []
+    # loop around reduction dictionary
+    for core_step in red_steps:
+        for mod_step in red_steps[core_step]:
+            # deal with step not supported
+            if red_steps[core_step][mod_step] is None:
+                continue
+            # deal with step not supported by this instrument mode
+            if imode not in red_steps[core_step][mod_step]:
+                continue
+            # add to supported steps
+            supported_steps.append(f'{core_step}:{mod_step}')
+    # -------------------------------------------------------------------------
+    # deal with no supported steps
+    if len(supported_steps) == 0:
+        emsg = 'No supported steps for instrument mode: {0}'
+        eargs = [imode]
+        raise base.pogosException(emsg.format(*eargs))
+    # -------------------------------------------------------------------------
+    # now ask user to select which steps to use
+    demo_modes = []
+    # set up options
+    options = ['0']
+    options += [str(opt) for opt in range(1, len(supported_steps) + 1)]
+    options += ['']
+    optiondescs = ['All'] + supported_steps + ['Exit selection']
+    question = ('Select a reduction step '
+                '(select 0 for all, leave blank to continue):')
+    # loop around until all choices made
+    while True:
+        step_choice = drs_text.user_input(question, options=options,
+                                          optiondescs=optiondescs)
+        if step_choice == '0':
+            demo_modes = supported_steps
+            break
+        elif step_choice == '':
+            break
+        else:
+            demo_modes.append(supported_steps[int(step_choice) - 1])
+        # don't continue if we have all supported steps
+        if len(demo_modes) == len(supported_steps):
+            break
+    # make sure demo_modes is unique
+    demo_modes = list(set(demo_modes))
+    # -------------------------------------------------------------------------
+    # now we want to cut down demo_mod.DEMOS to only those selected
+    demo_dict = dict()
+    # loop around demo_mod demos to find those that match our criteria
+    for inst_key in demo_mod.DEMOS:
+        for demo_name in demo_mod.DEMOS[inst_key]:
+            # get this specific demo
+            demo = demo_mod.DEMOS[inst_key][demo_name]
+            # get the INFO criteria
+            info = demo.INFO
+            # get the red steps
+            red_steps = info.get('red_steps', [])
+            # assume this demo passes our criteria below
+            passed = False
+            # loop around demo_modes
+            for demo_mode in demo_modes:
+                if demo_mode in red_steps:
+                    passed = True
+            # if passed we add this demo to the demo_dict
+            if passed:
+                # make sure instrument is in the demo_dict
+                if inst_key not in demo_dict:
+                    demo_dict[inst_key] = dict()
+                # add mode
+                demo_dict[inst_key][demo_name] = demo
+    # -------------------------------------------------------------------------
+    return params, demo_dict
 
 
 def initial_setup():

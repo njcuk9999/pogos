@@ -34,6 +34,7 @@ INFO['description'] = 'LHS-1140 eclipse observed on 2024-07-07'
 INFO['date'] = '2025-10-16'
 INFO['author'] = 'Etienne Artigau'
 INFO['mbid'] = 'DEMO-LHS-1140-MIRIAM-20240707'
+INFO['red_steps'] = ['Extraction:MIRIAM']
 # url for data download
 URL = 'https://www.astro.umontreal.ca/~cook/pogo-data/'
 # download: key = file, value = local path

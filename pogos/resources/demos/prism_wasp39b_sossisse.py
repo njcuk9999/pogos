@@ -33,6 +33,7 @@ INFO['instrument'] = 'JWST.NIRSPEC.PRISM'
 INFO['description'] = 'WASP 39b transit observed XXX'
 INFO['date'] = '2025-03-25'
 INFO['author'] = 'Loic Albert'
+INFO['red_steps'] = ['Extraction:SOSSISSE']
 # url for data download
 URL = 'https://www.astro.umontreal.ca/~cook/pogo-data/'
 # download: key = file, value = local path

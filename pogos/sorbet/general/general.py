@@ -174,7 +174,8 @@ def run_sorbet_wlcta(params: ParamDict):
     # produce summary html
     stitle = params.get('SORBET.GENERAL.DESCRIPTION', '')
     pogos_io.summary_html(params, 'SORBET:WLCTA', 'SORBET.WLCTA.PLOT_PATH',
-                          'SORBET.GENERAL.SID', stitle)
+                          'SORBET.GENERAL.SID', 'SORBET.WLCTA.OUTPUT_PATH',
+                          stitle)
     # return params
     return params
 
@@ -271,7 +272,8 @@ def run_sorbet_slcta(params: ParamDict):
     # produce summary html
     stitle = params.get('SORBET.GENERAL.DESCRIPTION', '')
     pogos_io.summary_html(params, 'SORBET:SLCTA', 'SORBET.SLCTA.PLOT_PATH',
-                          'SORBET.GENERAL.SID', stitle)
+                          'SORBET.GENERAL.SID', 'SORBET.SLCTA.OUTPUT_PATH',
+                          stitle)
 
     # return params
     return params

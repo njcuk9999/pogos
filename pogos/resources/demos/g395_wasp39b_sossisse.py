@@ -15,7 +15,7 @@ from pogos.constants import constants as pconst
 # =============================================================================
 # Define variables
 # =============================================================================
-__NAME__ = 'soss_trappist1b.py'
+__NAME__ = 'nirspec_g395_wasp39b.py'
 
 # copy of CDict
 Cdict = pconst.CDict.copy(source=__NAME__)
@@ -23,26 +23,23 @@ S_Cdict = sconst.CDict.copy(source=__NAME__)
 # copy sossisse constants into Cdict
 Cdict.add_sub_cdict('SOSSISSE', S_Cdict, source=__NAME__)
 
-
 # =============================================================================
 # Define info (must contain "title")
 # =============================================================================
 INFO = dict()
-INFO['title'] = 'JWST.NIRISS.SOSS Trappist 1b transit'
-INFO['object'] = 'Trappist 1b'
-INFO['instrument'] = 'JWST.NIRISS.SOSS'
-INFO['description'] = 'Trappist 1b transit observed on 2022-07-18'
+INFO['title'] = 'JWST.NIRSPEC.G395 WASP 39b transit'
+INFO['object'] = 'WASP 39b'
+INFO['instrument'] = 'JWST.NIRSPEC.G395'
+INFO['description'] = 'WASP 39b transit observed XXX'
 INFO['date'] = '2025-03-25'
-INFO['author'] = 'Etienne Artigau'
-
+INFO['author'] = 'Loic Albert'
+INFO['red_steps'] = ['Extraction:SOSSISSE']
 # url for data download
 URL = 'https://www.astro.umontreal.ca/~cook/pogo-data/'
 # download: key = file, value = local path
 DOWNLOAD = dict()
 DOWNLOAD['SOSSISSE.GENERAL.FILES'] = 'SOSSISSE.PATHS.RAWPATH'
-DOWNLOAD['SOSSISSE.GENERAL.BKGFILE'] = 'SOSSISSE.PATHS.CALIBPATH'
-DOWNLOAD['SOSSISSE.GENERAL.FLATFILE'] = 'SOSSISSE.PATHS.CALIBPATH'
-DOWNLOAD['SOSSISSE.GENERAL.POS_FILE'] = 'SOSSISSE.PATHS.CALIBPATH'
+DOWNLOAD['SOSSISSE.GENERAL.WAVE_FILE'] = 'SOSSISSE.PATHS.CALIBPATH'
 
 # =============================================================================
 # global settings (generally don't touch these)
@@ -98,7 +95,7 @@ Cdict.set('INSTRUMENTMODE', group=cgroup, source=__NAME__,
 
 # Name of the object (must match the object directory name)
 Cdict.set('OBJECTNAME', group=cgroup, source=__NAME__,
-          value='Trappist1b')
+          value='Wasp39b')
 
 # =============================================================================
 # Definition of general inputs
@@ -111,39 +108,35 @@ cgroup = 'SOSSISSE.GENERAL'
 #  - file2
 #  - file3
 Cdict.set('FILES', group=cgroup, source=__NAME__,
-          value=['jw02589001001_04101_00001-seg001_nis_rateints.fits',
-                 'jw02589001001_04101_00001-seg002_nis_rateints.fits'])
+          value=['jw01366003001_04101_00001-seg001_nrs2_rateints.fits',
+                 'jw01366003001_04101_00001-seg002_nrs2_rateints.fits',
+                 'jw01366003001_04101_00001-seg003_nrs2_rateints.fits'])
 
 # background file --> leave as None if the is no background available for
 #    the mode - if empty DO_BACKGROUND is set to False regardless of the value
 Cdict.set('BKGFILE', group=cgroup, source=__NAME__,
-          value='model_background256.fits')
+          value=None)
 
 # do background correction - must have BKGFILE defined to do this
-Cdict.set('DO_BACKGROUND', value=True, group=cgroup, source=__NAME__)
+Cdict.set('DO_BACKGROUND', value=False, group=cgroup, source=__NAME__)
 
 # flat field file --> leave as '' if there is no flat field available
 #     for the mode
 Cdict.set('FLATFILE', group=cgroup, source=__NAME__,
-          value='jwst_niriss_flat_0275.fits')
+          value=None)
 
 # trace position file
 Cdict.set('POS_FILE', group=cgroup, source=__NAME__,
-          value='SOSS_ref_trace_table_SUBSTRIP256.fits')
+          value=None)
 
 # Wavelength calibration file
 Cdict.set('WAVE_FILE', group=cgroup, source=__NAME__,
-          value=None)
+          value='jw01366003001_04101_00001-seg001_nrs2_x1dints.fits')
 
 # Wavelength calibration file type
 Cdict.set('WAVE_FILE_TYPE', group=cgroup, source=__NAME__,
-          value=None)
+          value='ext1d')
 
-# Define which orders to use e.g.
-# - 1
-# - 2
-Cdict.set('TRACE_ORDERS', group=cgroup, source=__NAME__,
-          value=[1,2])
 
 # =============================================================================
 # Definition of inputs related to the position within data cube timeseries
@@ -167,17 +160,7 @@ cgroup = 'SOSSISSE.WLC.INPUTS'
 #               - [0, 89]
 #               - [111, 153]
 Cdict.set('BASELINE_INTS', group=cgroup, source=__NAME__,
-          value=[[0, 89], [111, 153]])
-
-# define the area around which we will optimize the background
-#   this should be a length 4 list (x start, x end, y start, y end)
-Cdict.set('BACKGROUND_GLITCH_BOX', group=cgroup, source=__NAME__,
-          value=[650, 750, 200, 240])
-
-# define the area around which the background will be optimized
-#    should be a list (start, end, step)
-Cdict.set('BACKGROUND_SHIFTS', group=cgroup, source=__NAME__,
-          value=[-5.0, 5.2, 0.2])
+          value=[[0, 159], [341, 465]])
 
 # =============================================================================
 # Definition of inputs related to handling of the data within each frame
@@ -186,12 +169,12 @@ cgroup = 'SOSSISSE.WLC.GENERAL'
 
 # Trace extraction width. Set to 0 to use the full image
 Cdict.set('LINRECON_TRACE_WIDTH', group=cgroup, source=__NAME__,
-          value=40)
+          value=7)
 
 # define the width for masking the white light curve trace
 #         Default
 Cdict.set('TRACE_WIDTH_MASKING', group=cgroup, source=__NAME__,
-          value=40)
+          value=5)
 # Set the range of dys to scan over number of -nbypix/trace_y_scale to
 #     +nbyix/trace_y_scale
 Cdict.set('TRACE_Y_SCALE', group=cgroup, source=__NAME__,
@@ -200,12 +183,10 @@ Cdict.set('TRACE_Y_SCALE', group=cgroup, source=__NAME__,
 #     +nbxpix/trace_x_scale
 Cdict.set('TRACE_X_SCALE', group=cgroup, source=__NAME__,
           value=10)
-
 # =============================================================================
 # Definition for white light curve
 # =============================================================================
 cgroup = 'SOSSISSE.SPEC_EXT'
-
 
 # =============================================================================
 # Start of code

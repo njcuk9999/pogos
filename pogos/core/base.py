@@ -46,6 +46,77 @@ INSTRUMENTS = ['JWST.NIRISS.SOSS',
                'JWST.MIRI.IMAGING']
 
 # =============================================================================
+# Define all instruments and their sub-modes (related to our instrument names)
+# =============================================================================
+INSTRUMENT_MODES = dict()
+
+# JWST NIRISS
+INSTRUMENT_MODES['JWST.NIRISS'] = dict()
+INSTRUMENT_MODES['JWST.NIRISS']['SOSS'] = 'JWST.NIRISS.SOSS'
+INSTRUMENT_MODES['JWST.NIRISS']['FGS'] = 'JWST.NIRISS.FGS'
+INSTRUMENT_MODES['JWST.NIRISS']['AMI'] = None
+# JWST NIRSPEC
+INSTRUMENT_MODES['JWST.NIRSPEC'] = dict()
+INSTRUMENT_MODES['JWST.NIRSPEC']['BOTS.PRISM'] = 'JWST.NIRSPEC.PRISM'
+INSTRUMENT_MODES['JWST.NIRSPEC']['BOTS.G395'] = 'JWST.NIRSPEC.G395'
+INSTRUMENT_MODES['JWST.NIRSPEC']['BOTS.G253'] = 'JWST.NIRSPEC.G253'
+INSTRUMENT_MODES['JWST.NIRSPEC']['BOTS.G140'] = 'JWST.NIRSPEC.G140'
+INSTRUMENT_MODES['JWST.NIRSPEC']['FS'] = None
+INSTRUMENT_MODES['JWST.NIRSPEC']['MOSS'] = None
+INSTRUMENT_MODES['JWST.NIRSPEC']['IFU'] = None
+# JWST NIRCam
+INSTRUMENT_MODES['JWST.NIRCAM'] = dict()
+INSTRUMENT_MODES['JWST.NIRCAM']['IMAGING'] = None
+INSTRUMENT_MODES['JWST.NIRCAM']['WFSS'] = None
+INSTRUMENT_MODES['JWST.NIRCAM']['CORON'] = None
+INSTRUMENT_MODES['JWST.NIRCAM']['TSO-IMAGING'] = None
+INSTRUMENT_MODES['JWST.NIRCAM']['TSO-GRISM'] = None
+# JWST MIRI
+INSTRUMENT_MODES['JWST.MIRI'] = dict()
+INSTRUMENT_MODES['JWST.MIRI']['IMAGING'] = 'JWST.MIRI.IMAGING'
+INSTRUMENT_MODES['JWST.MIRI']['LRS'] = None
+INSTRUMENT_MODES['JWST.MIRI']['MRS'] = None
+INSTRUMENT_MODES['JWST.MIRI']['CORON'] = None
+INSTRUMENT_MODES['JWST.MIRI']['WFSS'] = None
+
+# =============================================================================
+# Define all reduction steps
+# =============================================================================
+RED_STEPS = dict()
+RED_STEPS['Pre-extraction'] = dict()
+RED_STEPS['Pre-extraction']['IDT:SOSS'] = None
+RED_STEPS['Pre-extraction']['TSOVORE'] = None
+RED_STEPS['Pre-extraction']['NAMELESS'] = None
+RED_STEPS['Pre-extraction']['Eureka'] = None
+RED_STEPS['Pre-extraction']['exoTEFRF'] = None
+
+RED_STEPS['Extraction'] = dict()
+RED_STEPS['Extraction']['SOSSISSE'] = ['JWST.NIRISS.SOSS',
+                                       'JWST.NIRSPEC.PRISM',
+                                       'JWST.NIRSPEC.G395',
+                                       'JWST.NIRSPEC.G253',
+                                       'JWST.NIRSPEC.G140']
+RED_STEPS['Extraction']['MIRIAM'] = ['JWST.MIRI.IMAGING']
+RED_STEPS['Extraction']['NAMELESS'] = None
+RED_STEPS['Extraction']['Eureka'] = None
+RED_STEPS['Extraction']['exoTEFRF'] = None
+RED_STEPS['Extraction']['SimpleBox'] = None
+
+RED_STEPS['Post-extraction'] = dict()
+RED_STEPS['Post-extraction']['SORBET.WLCA'] = ['JWST.NIRISS.SOSS',
+                                               'JWST.NIRSPEC.PRISM',
+                                               'JWST.NIRSPEC.G395',
+                                               'JWST.NIRSPEC.G253',
+                                               'JWST.NIRSPEC.G140']
+RED_STEPS['Post-extraction']['SORBET.SPCA'] = ['JWST.NIRISS.SOSS',
+                                               'JWST.NIRSPEC.PRISM',
+                                               'JWST.NIRSPEC.G395',
+                                               'JWST.NIRSPEC.G253',
+                                               'JWST.NIRSPEC.G140']
+RED_STEPS['Post-extraction']['SORBET.TransitFit'] = None
+RED_STEPS['Post-extraction']['SORBET.RVA'] = None
+
+# =============================================================================
 # Define sub module functionality
 # =============================================================================
 

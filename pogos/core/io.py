@@ -192,7 +192,7 @@ def plots_to_html(params: ParamDict, plot_path: str):
 
 
 # TODO: This is a carbon-copy of the sossisse functionality --> move to aperocore
-def files_to_html(params: ParamDict, sid_name: str):
+def files_to_html(params: ParamDict, file_path: str):
     """
     Grab the csv files from the PLOT_PATH and push them into html
 
@@ -200,12 +200,15 @@ def files_to_html(params: ParamDict, sid_name: str):
     :return:
     """
     # get sid path
-    sid_path = params[sid_name]
-
+    filepath = params[file_path]
     # get all files in SID path
     files = []
-    for file_ext in FILE_EXTS:
-        files += glob.glob(os.path.join(sid_path, f'*{file_ext}'))
+    # walk through the directory
+    for _root, _dirs, filenames in os.walk(filepath):
+        for file in filenames:
+            # only add files with valid extensions
+            if any(file.endswith(ext) for ext in FILE_EXTS):
+                files.append(os.path.join(_root, file))
 
     # define the html string
     html = '<br><ul>'
@@ -242,7 +245,7 @@ def info_html(params: ParamDict, sid_name: str):
 
 # TODO: This is a carbon-copy of the sossisse functionality --> move to aperocore
 def summary_html(params: ParamDict, module: str, plot_path: str,
-                 sid_name: str, title: str):
+                 sid_name: str, out_path:str, title: str):
     """
     Create a summary html file
 
@@ -269,7 +272,7 @@ def summary_html(params: ParamDict, module: str, plot_path: str,
     # add plot section
     data['plots'] = plots_to_html(params, plot_path)
     # add file section
-    data['filelist'] = files_to_html(params, sid_name)
+    data['filelist'] = files_to_html(params, out_path)
     # add param section
     mod_params = params.get(module)
     if mod_params is None:

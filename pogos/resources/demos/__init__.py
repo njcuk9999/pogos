@@ -10,11 +10,21 @@ Created on 2025-03-25 at 09:57
 @author: cook
 """
 from pogos.core import base
-from pogos.resources.demos import niriss_soss_trappist1b
-from pogos.resources.demos import sorbet_trappist1b
-from pogos.resources.demos import nirspec_prism_wasp39b
-from pogos.resources.demos import nirspec_g395_wasp39b
-from pogos.resources.demos import miri_lhs_1140_imaging
+from pogos.resources.demos import soss_t1b_sossisse
+from pogos.resources.demos import soss_t1b_sossisse_sorbet
+from pogos.resources.demos import soss_t1b_sorbet
+from pogos.resources.demos import prism_wasp39b_sossisse
+from pogos.resources.demos import g395_wasp39b_sossisse
+from pogos.resources.demos import miri_im_lhs1140_miriam
+
+
+# =============================================================================
+# Define instrument short names
+# =============================================================================
+soss = 'JWST.NIRISS.SOSS'
+prism = 'JWST.NIRSPEC.PRISM'
+g395 = 'JWST.NIRSPEC.G395'
+miri_im = 'JWST.MIRI.IMAGING'
 
 # =============================================================================
 # Define storage
@@ -27,20 +37,17 @@ for instrument in base.INSTRUMENTS:
 # =============================================================================
 # Define usable demos
 # =============================================================================
-# JWST.NIRISS.SOSS Trappist-1 demo
-DEMOS['JWST.NIRISS.SOSS']['TRAPPIST 1b'] = niriss_soss_trappist1b
+# JWST.NIRISS.SOSS demos
+DEMOS[soss]['t1b.sossisse'] = soss_t1b_sossisse
+DEMOS[soss]['t1b.sorbet'] = soss_t1b_sorbet
+DEMOS[soss]['t1b.sossisse+sorbet'] = soss_t1b_sossisse_sorbet
 
-# SORBET Trappist-1 demo
-DEMOS['JWST.NIRISS.SOSS']['SORBET TRAPPIST 1b'] = sorbet_trappist1b
+# JWST.NIRSPEC.PRISM demos
+DEMOS[prism]['wasp39b.sossisse'] = prism_wasp39b_sossisse
+DEMOS[g395]['wasp39b.sossisse'] = g395_wasp39b_sossisse
 
-# JWST.NIRSPEC.PRISM WASP 39b
-DEMOS['JWST.NIRSPEC.PRISM']['WASP 39b'] = nirspec_prism_wasp39b
-
-# JWST.NIRSPEC.G395 WASP 39b
-DEMOS['JWST.NIRSPEC.G395']['WASP 39b'] = nirspec_g395_wasp39b
-
-# JWST..MIRI.IMAGING demo
-DEMOS['JWST.MIRI.IMAGING']['LHS 1140'] = miri_lhs_1140_imaging
+# JWST.MIRI.IMAGING demo
+DEMOS[miri_im]['miri.im.lhs1140.miriam'] = miri_im_lhs1140_miriam
 
 
 # =============================================================================
