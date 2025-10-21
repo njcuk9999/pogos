@@ -9,9 +9,10 @@ Created on 2025-10-16 at 13:39
 
 @author: cook
 """
+import shutil
 import string
 import os
-from typing import Literal
+from typing import Optional
 
 import numpy as np
 
@@ -26,6 +27,7 @@ from pogos.sorbet.core import core as sorbet_core
 from pogos.sorbet.general import science as sorbet_science
 from pogos.sorbet.general import plots as sorbet_plots
 from sossisse.core import misc
+from sossisse.instruments import default
 
 # =============================================================================
 # Define variables
@@ -81,7 +83,8 @@ def setup_sorbet_module(params: ParamDict):
     return params
 
 
-def run_sorbet_module(params: ParamDict):
+def run_sorbet_module(params: ParamDict,
+                      sossisse_inst: Optional[default.Instrument] = None):
     """
     Run the sorbet recipes
 
@@ -99,6 +102,12 @@ def run_sorbet_module(params: ParamDict):
     if not run_any:
         WLOG(params, 'warning', 'No SORBET recipes set to run - skipping.')
         return params
+
+    # ----------------------------------------------------------------------
+    # Deal with input from SOSSISSE if available
+    # ----------------------------------------------------------------------
+    if sossisse_inst is not None:
+        params = sossisse_input(params, sossisse_inst)
 
     # ----------------------------------------------------------------------
     # White Light Curve Transit Analysis
@@ -124,6 +133,55 @@ def run_sorbet_module(params: ParamDict):
     # if params['SORBET.RV.RUN']:
     #    params = run_sorbet_rv(params)
 
+    return params
+
+
+def sossisse_input(params: ParamDict,
+                   sossisse_inst: Optional[default.Instrument] = None):
+    # set function name
+    func_name = f'{__NAME__}.sossisse_input'
+    # -------------------------------------------------------------------------
+    # after sossisse run we may need to copy files to SORBET input location
+    sossisse_output_dir = sossisse_inst.params['PATHS.OUT_PATH']
+    # get sorbet parameters
+    sb_params = params.get('SORBET')
+    # get sossisse
+    # get sossisse files to copy
+    sossisse_wlc_file = sossisse_inst.get_variable('OUT_WLC_FILE',
+                                                   func_name)
+    sossisse_spec_lc_file = sossisse_inst.get_variable('OUT_SPEC_LC_FILE',
+                                                       func_name)
+    # ---------------------------------------------------------------------
+    # deal with WLCTA files
+    if sb_params['WLCTA.RUN']:
+        # prepare input directory
+        prepare_input_directory(params, method='WLCTA',
+                                           verbose=False)
+        # get the sorbet input directory for WLCTA
+        sorbet_wlcta_input_dir = sb_params['WLCTA.INPUT_PATH']
+        # get absolute path to
+        sorbet_file = str(os.path.join(sorbet_wlcta_input_dir,
+                                       os.path.basename(sossisse_wlc_file)))
+        # copy linear recon coeffs csv file
+        shutil.copy(sossisse_wlc_file, sorbet_file)
+        # update params
+        params['SORBET.WLCTA.INPUT_FILE'] = os.path.basename(sorbet_file)
+    # ---------------------------------------------------------------------
+    # deal with SLCTA files
+    if sb_params['SLCTA.RUN']:
+        # prepare input directory
+        prepare_input_directory(params, method='SLCTA',
+                                           verbose=False)
+        # get the sorbet input directory for SLCTA
+        sorbet_slcta_input_dir = sb_params['SLCTA.INPUT_PATH']
+        # get absolute path to
+        sorbet_file = str(os.path.join(sorbet_slcta_input_dir,
+                                       os.path.basename(sossisse_spec_lc_file)))
+        # copy linear recon coeffs csv file
+        shutil.copy(sossisse_spec_lc_file, sorbet_file)
+        # update params
+        params['SORBET.SLCTA.INPUT_FILE'] = os.path.basename(sorbet_file)
+    # return params
     return params
 
 
@@ -279,7 +337,8 @@ def run_sorbet_slcta(params: ParamDict):
     return params
 
 
-def prepare_input_directory(params: ParamDict, method: str):
+def prepare_input_directory(params: ParamDict, method: str,
+                            verbose: bool = True):
     # set parameters for preparing directory
     pkind = 'input'
     sid_path = 'SORBET.GENERAL.SID'
@@ -288,11 +347,11 @@ def prepare_input_directory(params: ParamDict, method: str):
     mode = 'sorbet'
     # runt the prepare directory function
     pogos_general.prepare_directory(params, pkind, sid_path, sid_null,
-                                    file_path, mode,
-                                    sorbet_base.SorbetException)
+                                    file_path, mode, verbose=verbose)
 
 
-def prepare_output_directory(params: ParamDict, method: str):
+def prepare_output_directory(params: ParamDict, method: str,
+                             verbose: bool = True):
     """
     Prepare the output directory for SORBET results.
 
@@ -306,8 +365,7 @@ def prepare_output_directory(params: ParamDict, method: str):
     mode = 'sorbet'
     # runt the prepare directory function
     pogos_general.prepare_directory(params, pkind, sid_path, sid_null,
-                                    file_path, mode,
-                                    sorbet_base.SorbetException)
+                                    file_path, mode, verbose)
 
 
 # =============================================================================

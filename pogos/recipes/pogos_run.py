@@ -64,13 +64,15 @@ def main(**kwargs):
         tsovore.run_tsovore(params)
     # run sossisse_wrap
     if params['RUN.SOSSISSE']:
-        sossisse_wrap.run_sossisse(params)
+        sossisse_inst = sossisse_wrap.run_sossisse(params)
+    else:
+        sossisse_inst = None
     # run miriam
     if params['RUN.MIRIAM']:
         miriam.run_miriam(params)
     # run sorbet
     if params['RUN.SORBET']:
-        sorbet.run_sorbet(params)
+        sorbet.run_sorbet(params, sossisse_inst)
     # -------------------------------------------------------------------------
     # print splash
     general.end_splash()

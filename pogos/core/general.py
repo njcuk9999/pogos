@@ -96,7 +96,7 @@ def unix_char_code() -> Tuple[float, str, str]:
 
 def prepare_directory(params: ParamDict, pkind: str, sid_path: str,
                       sid_null: str, file_path: str, pmode: str,
-                      exception):
+                      verbose: bool = True):
     """
     Prepare either an input or output directory for use in POGOS
     :param params:
@@ -127,8 +127,9 @@ def prepare_directory(params: ParamDict, pkind: str, sid_path: str,
     if not os.path.exists(my_path):
         os.makedirs(my_path)
     # print message on where outputs will be saved
-    msg = f'All {pkind} data will be saved under: {my_path}'
-    WLOG(params, 'info', msg)
+    if verbose:
+        msg = f'All {pkind} data will be saved under: {my_path}'
+        WLOG(params, 'info', msg)
     # update output path
     params.set(file_path, value=my_path, source=func_name)
 
