@@ -71,8 +71,17 @@ MIRIAM_CDict.add('INPUT_PATH', value='inputs', dtype=str, source=__NAME__,
                  user=False, active=False, group=cgroup,
                  description='Input data folder or path to the input folder.')
 
+# Temporary results folder
+MIRIAM_CDict.add('TEMP_PATH', value='temporary', dtype=str,
+                 source=__NAME__,
+                 user=False, active=False, group=cgroup,
+                 description='Temporary result folder or path to the output folder.'
+                             '\nIf this is an aboslute path it will be used as is'
+                             '\n otherwise it will be relative to '
+                             'GLOBAL.DATA_PATH/miriam/')
+
 # Output results folder
-MIRIAM_CDict.add('OUTPUT_PATH', value='results', dtype=str,
+MIRIAM_CDict.add('OUTPUT_PATH', value='outputs', dtype=str,
                  source=__NAME__,
                  user=False, active=False, group=cgroup,
                  description='Output result folder or path to the output folder.'
@@ -119,12 +128,32 @@ fdesc = ('List of files to be processed in form: '
 MIRIAM_CDict.add('FILES', value=None, dtype=list, dtypei=str, not_none=False,
                  source=__NAME__, user=True, active=True, group=cgroup,
                  description=fdesc)
-
+# -----------------------------------------------------------------------------
 # List of integrations to skip (0-indexed)
 MIRIAM_CDict.add('SKIP_INTEGRATIONS', value=None, dtype=list, dtypei=int,
                  not_none=False, source=__NAME__, user=True, active=True,
                  group=cgroup,
                  description='List of integrations to skip (0-indexed)')
+# -----------------------------------------------------------------------------
+# Whether to use previously merged data if available
+MIRIAM_CDict.add('USE_PREVIOUS_MERGED_DATA', value=False, dtype=bool,
+                 source=__NAME__, user=True, active=True, group=cgroup,
+                 description='Whether to use previously merged data if '
+                             'available')
+# -----------------------------------------------------------------------------
+# The cut down size of the cubes (width around center) in pixels
+MIRIAM_CDict.add('CUT_DOWNSIZE', value=32, dtype=int,
+                 source=__NAME__, user=True, active=True, group=cgroup,
+                 description='The cut down size of the cubes (width around '
+                             'center) in pixels')
+# the offset in x and y of the cut down from the center of the images
+#   in pixels
+MIRIAM_CDict.add('CUT_DOWNSIZE_CENTER_OFFSET',
+                 value=[0, 0], dtype=list, dtypei=int,
+                 source=__NAME__, user=True, active=True, group=cgroup,
+                 description='the offset in x and y of the cut down from the '
+                             'center of the images in pixels')
+
 
 # =============================================================================
 # Start of code

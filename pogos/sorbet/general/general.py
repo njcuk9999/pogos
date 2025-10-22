@@ -161,6 +161,7 @@ def sossisse_input(params: ParamDict,
         shutil.copy(sossisse_wlc_file, sorbet_file)
         # update params
         params['SORBET.WLCTA.INPUT_FILE'] = os.path.basename(sorbet_file)
+        params.set_source('SORBET.WLCTA.INPUT_FILE', func_name)
     # ---------------------------------------------------------------------
     # deal with SLCTA files
     if sb_params['SLCTA.RUN']:
@@ -174,7 +175,8 @@ def sossisse_input(params: ParamDict,
         # copy linear recon coeffs csv file
         shutil.copy(sossisse_spec_lc_file, sorbet_file)
         # update params
-        params['SORBET.SLCTA.INPUT_FILE'] = os.path.basename(sorbet_file)
+        params['SORBET.SLCTA.INPUT_FILES'] = [os.path.basename(sorbet_file)]
+        params.set_source('SORBET.SLCTA.INPUT_FILES', func_name)
     # return params
     return params
 
@@ -247,16 +249,18 @@ def run_sorbet_slcta(params: ParamDict):
     # prepare directories
     prepare_directories(params, method='SLCTA')
     # check the dataset (multiple channels/orders?)
-    input_file = slcta_params['INPUT_FILE']
-    if isinstance(input_file, str):
+    input_files = slcta_params['INPUT_FILES']
+    # get the trace order
+    trace_orders = slcta_params['TRACE_ORDERS']
+    # deal with single string input
+    if isinstance(input_files, str):
         raise ValueError("Input file of SORBET.SLCTA must be a list.")
     else:
-        len_channel = len(input_file)
+        len_channel = len(input_files)
     for chl in range(len_channel):
-        # select dataset
-        slcta_params['INPUT_FILE'] = input_file[chl]
         # load the dataset
-        sout = sorbet_science.load_slc(params)
+        sout = sorbet_science.load_slc(params, input_files[chl],
+                                       trace_orders[chl])
         bjd, wave_tuple, flux_bin, eflux_bin, channel = sout
         # TODO
         # eflux_bin = np.ones_like(flux_bin) * 10e-6

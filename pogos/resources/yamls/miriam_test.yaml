@@ -1,11 +1,10 @@
 #############################################################################
 # POGOS
 #############################################################################
-# Version = 0.0.003
-#     Date    = 2025-02-18
+#     Version = 0.0.020
+#     Date    = 2025-10-16
 
-# If using a different version it is
-# recommended to 
+# If using a different version it is recommended to
 # run pogos_setup.py to generate a new yaml file.
 
 
@@ -17,13 +16,14 @@ GLOBAL:
   #         Default value=None
   DATA_PATH: /scratch3/jwst/pogos-data/data
   # Instrument mode e.g. one of the following: JWST.NIRISS.SOSS
-  # JWST.NIRISS.FGS
+  #         JWST.NIRISS.FGS
   #         JWST.NIRSPEC.PRISM
   #         JWST.NIRSPEC.G395
-  # JWST.NIRSPEC.G253
+  #         JWST.NIRSPEC.G253
   #         JWST.NIRSPEC.G140
+  #         JWST.MIRI.IMAGING
   #         Default value=None
-  INSTRUMENTMODE: JWST.NIRISS.SOSS
+  INSTRUMENTMODE: JWST.MIRI.IMAGING
 
 
 # =============================================================================
@@ -46,19 +46,44 @@ RUN:
 
 # =============================================================================
 # #############################################################################
-# SOSSISSE
+# MIRIAM: MIRI Image Analysis Module
 # #############################################################################
-# Version = 0.1.057
-#     Date    = 2025-04-07
+#     Version = 0.0.001
+#     Date    = 2025-01-31
 
-# If using a different version it is
-# recommended to 
-# run sossisse_setup.py to generate a new yaml file.
+
 # =============================================================================
 MIRIAM:
 
+
   # =============================================================================
-  # Switches to turn large parts of the code on/off
+  # General configs for SORBET
+  # =============================================================================
+  GENERAL:
+    # A string ID for the observation (used for default paths etc)
+    #         Default value=None
+    SID: DEMO-LHS-1140-MIRIAM-20240707
+    # Description of the MIRIAM run
+    #         Default value=
+    DESCRIPTION: LHS-1140 eclipse observed on 2024-07-07
+
+
+  # =============================================================================
+  # Definition of inputs related to plots
+  # =============================================================================
+  PLOTS:
+    # Or you can use the following to always show plots regardless of the username
+    #         Default value=False
+    SHOW: false
+    # output(s) type of figure
+    #         Default value=['png', 'pdf']
+    FIGURE_TYPES:
+    - png
+    - pdf
+
+
+  # =============================================================================
+  # Definition of inputs related to the data
   # =============================================================================
   INPUTS:
     # List of files to be processed in form:
@@ -66,16 +91,16 @@ MIRIAM:
     #  - file1
     #  - file2
     #  - file3
+
+    # By default these should be placed in {GLOBAL.DATA_PATH}/{MIRIAM.PATHS.INTPUT_PATH}/
+    #  or whatever is set in {MIRIAM.PATHS.INTPUT_PATH} (if absolute)
+    #         Default value=None
     FILES:
-      - jw03730009001_03101_00001-seg001_mirimage_rateints.fits
-      - jw03730009001_03101_00001-seg002_mirimage_rateints.fits
-      - jw03730009001_03101_00001-seg003_mirimage_rateints.fits
-      - jw03730009001_03101_00001-seg004_mirimage_rateints.fits
-      - jw03730009001_03101_00001-seg005_mirimage_rateints.fits
-    
+    - jw03730009001_03101_00001-seg001_mirimage_rateints.fits
+    - jw03730009001_03101_00001-seg002_mirimage_rateints.fits
+    - jw03730009001_03101_00001-seg003_mirimage_rateints.fits
+    - jw03730009001_03101_00001-seg004_mirimage_rateints.fits
+    - jw03730009001_03101_00001-seg005_mirimage_rateints.fits
     # List of integrations to skip (0-indexed)
+    #         Default value=None
     SKIP_INTEGRATIONS:
-      - 0
-      - 1
-
-

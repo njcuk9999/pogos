@@ -199,9 +199,9 @@ def core_setup(params: ParamDict, demo_mod: Any):
         # ---------------------------------------------------------------------
         # deal with instrument mode not supported
         if instrument_modes[instrument][instrument_mode] is None:
-            msg = ('Instrument mode {0} is not yet supported, '
-                   'please choose another')
-            WLOG(params, '', msg.format(instrument_mode), color='magenta')
+            msg = ('{0}:{1} is not yet supported, please choose another')
+            margs = [instrument, instrument_mode]
+            WLOG(params, '', msg.format(*margs), colour='magenta')
             continue
         # ---------------------------------------------------------------------
         # set imode
@@ -237,10 +237,15 @@ def core_setup(params: ParamDict, demo_mod: Any):
     # now ask user to select which steps to use
     demo_modes = []
     # set up options
-    options = ['0']
-    options += [str(opt) for opt in range(1, len(supported_steps) + 1)]
-    options += ['']
-    optiondescs = ['All'] + supported_steps + ['Exit selection']
+    if len(supported_steps) > 1:
+        options = ['0']
+        options += [str(opt) for opt in range(1, len(supported_steps) + 1)]
+        options += ['']
+        optiondescs = ['All'] + supported_steps + ['Exit selection']
+    else:
+        options = ['1', '']
+        optiondescs = supported_steps + ['Exit selection']
+    # set up question
     question = ('Select a reduction step '
                 '(select 0 for all, leave blank to continue):')
     # loop around until all choices made

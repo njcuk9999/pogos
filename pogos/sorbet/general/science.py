@@ -85,7 +85,8 @@ def load_wlc(params: ParamDict):
     return dataset
 
 
-def load_slc(params: ParamDict):
+def load_slc(params: ParamDict, input_file: str,
+             trace_order: int = 1):
     """
     Load the wavelength grid and spectral light curves for the
     transmission spectrum
@@ -102,26 +103,32 @@ def load_slc(params: ParamDict):
         raise sorbet_base.SorbetException(msg)
     # get the sorbet parameters
     slcta_params = params.get('SORBET.SLCTA')
-    # load data
-    input_file = slcta_params['INPUT_FILE']
     # check if the file exists
-    if os.path.isfile(input_file):
+    if os.path.exists(input_file):
         filename = input_file
     else:
         # get input path
-        inpath = params[f'SORBET.WLCTA.INPUT_PATH']
+        inpath = slcta_params['INPUT_PATH']
         # construct full filename
         filename = os.path.join(inpath, input_file)
+        # ---------------------------------------------------------------------
+        # deal with file not existing
+        if not os.path.exists(filename):
+            msg = f'SORBET.SLCTA.INPUT_FILE="{filename}" does not exist.'
+            raise sorbet_base.SorbetException(msg)
     # -------------------------------------------------------------------------
-    # get the trace order
-    trace_order = slcta_params['TRACE_ORDER']
     # load the light curve data
     try:
         with fits.open(filename) as hdulist:
-            wave = hdulist[f'WAVELENGTH_{trace_order}'].astype(np.float64)
-            flux = hdulist[f'RELFLUX_{trace_order}'].astype(np.float64)
-            eflux = hdulist[f'RELFLUX_ERROR_{trace_order}'].astype(np.float64)
-            bjd = hdulist[f'BJD_{trace_order}'].astype(np.float64)
+            wave = np.array(hdulist[f'WAVELENGTH_{trace_order}'].data)
+            flux = np.array(hdulist[f'RELFLUX_{trace_order}'].data)
+            eflux = np.array(hdulist[f'RELFLUX_ERROR_{trace_order}'].data)
+            bjd = np.array(hdulist[f'BJD_{trace_order}'].data)
+            # cast as np.float64
+            wave = wave.astype(np.float64)
+            flux = flux.astype(np.float64)
+            eflux = eflux.astype(np.float64)
+            bjd = bjd.astype(np.float64)
     except Exception as e:
         msg = (f'Failed to load data from file "{filename}": {e}'
                f'\n\tFunction = {func_name}')

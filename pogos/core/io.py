@@ -16,6 +16,7 @@ import shutil
 from string import Template
 
 import numpy as np
+from astropy.time import Time
 
 from aperocore.base import base as aperobase
 from aperocore.constants.constant_functions import ConstantsDict

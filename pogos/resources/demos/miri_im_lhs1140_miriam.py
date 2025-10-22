@@ -36,10 +36,10 @@ INFO['author'] = 'Etienne Artigau'
 INFO['mbid'] = 'DEMO-LHS-1140-MIRIAM-20240707'
 INFO['red_steps'] = ['Extraction:MIRIAM']
 # url for data download
-URL = 'https://www.astro.umontreal.ca/~cook/pogo-data/'
+URL = 'http://206.12.93.77/ari/data/pogos/demos/'
 # download: key = file, value = local path
 DOWNLOAD = dict()
-DOWNLOAD['MIRIAM.INPUTS.FILES'] = 'MIRIAM.INPUTS.INPUT_PATH'
+DOWNLOAD['MIRIAM.INPUTS.FILES'] = 'MIRIAM.PATHS.INPUT_PATH'
 
 
 # =============================================================================
@@ -77,6 +77,9 @@ Cdict.set('SORBET', group=cgroup, source=__NAME__,
 # General settings
 # =============================================================================
 cgroup = 'MIRIAM.GENERAL'
+
+# The SID to use
+Cdict.set('SID', group=cgroup, source=__NAME__, value=INFO['mbid'])
 
 # Set the description for the MIRIAM run
 Cdict.set('DESCRIPTION', group=cgroup, source=__NAME__,

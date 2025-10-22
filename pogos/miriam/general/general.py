@@ -46,10 +46,8 @@ def run_miriam(params: ParamDict):
     func_name = f'{__NAME__}.run_sorbet_wlcta'
     # print the white light curve splash
     print(misc.art('MIRIAM', 'yellow', 'CYAN'))
-    # prepare the input directory
-    prepare_input_directory(params)
-    # prepare the output directory
-    prepare_output_directory(params)
+    # prepare the directories
+    prepare_directories(params)
 
     # -------------------------------------------------------------------------
     # Step 1: merge all input files into a single (cropped) data structure
@@ -96,41 +94,42 @@ def setup_miriam_module(params: ParamDict) -> ParamDict:
     if not params['RUN.MIRIAM']:
         return params
     # setup input and output directories
-    prepare_input_directory(params)
-    prepare_output_directory(params)
+    prepare_directories(params)
     # return params
     return params
 
 
-def prepare_input_directory(params: ParamDict):
-    # set parameters for preparing directory
-    pkind = 'input'
+def prepare_directories(params: ParamDict):
+
     sid_path = 'MIRIAM.GENERAL.SID'
     sid_null = mc_general.miriam_unique_id()
-    file_path = f'MIRIAM.PATHS.INPUT_PATH'
     mode = 'miriam'
+    # -------------------------------------------------------------------------
+    # set parameters for preparing directory
+    pkind = 'input'
+    file_path = f'MIRIAM.PATHS.INPUT_PATH'
+    # run the prepare directory function
+    pogos_general.prepare_directory(params, pkind, sid_path, sid_null,
+                                    file_path, mode)
+    # -------------------------------------------------------------------------
+    pkind = 'temp'
+    file_path = f'MIRIAM.PATHS.TEMP_PATH'
+    # run the prepare directory function
+    pogos_general.prepare_directory(params, pkind, sid_path, sid_null,
+                                    file_path, mode)
+    # -------------------------------------------------------------------------
+    pkind = 'plot'
+    file_path = f'MIRIAM.PATHS.PLOT_PATH'
     # runt the prepare directory function
     pogos_general.prepare_directory(params, pkind, sid_path, sid_null,
-                                    file_path, mode,
-                                    miriam_base.MiriamException)
-
-
-def prepare_output_directory(params: ParamDict):
-    """
-    Prepare the output directory for SORBET results.
-
-    :param params: ParamDict, the parameter dictionary of constants
-    """
+                                    file_path, mode)
+    # -------------------------------------------------------------------------
     # set parameters for preparing directory
     pkind = 'output'
-    sid_path = 'MIRIAM.PATHS.SID'
-    sid_null = mc_general.miriam_unique_id()
-    file_path = f'MIRIAM.INPUTS.OUTPUT_PATH'
-    mode = 'miriam'
+    file_path = f'MIRIAM.PATHS.OUTPUT_PATH'
     # runt the prepare directory function
     pogos_general.prepare_directory(params, pkind, sid_path, sid_null,
-                                    file_path, mode,
-                                    miriam_base.MiriamException)
+                                    file_path, mode)
 
 
 # =============================================================================
