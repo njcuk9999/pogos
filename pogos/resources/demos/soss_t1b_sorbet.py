@@ -99,11 +99,7 @@ Cdict.set('RUN', group=cgroup, source=__NAME__,
 # =============================================================================
 # Path to input file relative to GLOBAL data path defined by the user
 Cdict.set('INPUT_FILE', group=cgroup, source=__NAME__,
-          value='stability.csv')
-
-# Path to the result folder relative to GLOBAL data path defined by the user
-Cdict.set('OUTPUT_PATH', group=cgroup, source=__NAME__,
-          value='sorbet_wlcta_fit')
+          value='white_light_curve.fits')
 
 # =============================================================================
 # Definition of general inputs SORBET_WLCTA
@@ -168,12 +164,15 @@ Cdict.set('RUN', group=cgroup, source=__NAME__,
 # Definition of inputs related to the data
 # =============================================================================
 # Path to input file relative to GLOBAL data path defined by the user
-Cdict.set('INPUT_FILE', group=cgroup, source=__NAME__,
-          value=['spectra_ord1.fits'])
+Cdict.set('INPUT_FILES', group=cgroup, source=__NAME__,
+          value=['spectroscopy_light_curves.fits'])
 
-# Path to the result folder relative to GLOBAL data path defined by the user
-Cdict.set('OUTPUT_PATH', group=cgroup, source=__NAME__,
-          value='sorbet_slcta_fit')
+# Trace orders, must be a list the same length as INPUT_FILES
+#     (Set each item to 1 if there is only one order) otherwise set each item
+#     to the order number
+Cdict.set('TRACE_ORDERS', group=cgroup, source=__NAME__,
+          value=[1])
+
 # Degrading spectral resolution before fitting
 Cdict.set('RESOLUTION_BIN', group=cgroup, source=__NAME__,
           value=20)

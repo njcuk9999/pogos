@@ -16,10 +16,10 @@ import pickle as pkl
 import warnings
 from typing import Any, Literal, List
 
-import astropy.table
 import juliet
 import numpy as np
 from astropy.table import Table
+from astropy.io import fits
 from exotic_ld import StellarLimbDarkening
 from scipy.signal import medfilt
 
@@ -112,17 +112,16 @@ def load_slc(params: ParamDict):
         inpath = params[f'SORBET.WLCTA.INPUT_PATH']
         # construct full filename
         filename = os.path.join(inpath, input_file)
+    # -------------------------------------------------------------------------
+    # get the trace order
+    trace_order = slcta_params['TRACE_ORDER']
     # load the light curve data
-    # TODO why are the data >f8 dtype?
     try:
-        wave = io.load_fits(filename,
-                            extname='WAVELENGTH').astype(np.float64)
-        flux = io.load_fits(filename,
-                            extname='RELFLUX').astype(np.float64)
-        eflux = io.load_fits(filename,
-                             extname='RELFLUX_ERROR').astype(np.float64)
-        bjd = io.load_fits(filename,
-                           extname='BJD').astype(np.float64)
+        with fits.open(filename) as hdulist:
+            wave = hdulist[f'WAVELENGTH_{trace_order}'].astype(np.float64)
+            flux = hdulist[f'RELFLUX_{trace_order}'].astype(np.float64)
+            eflux = hdulist[f'RELFLUX_ERROR_{trace_order}'].astype(np.float64)
+            bjd = hdulist[f'BJD_{trace_order}'].astype(np.float64)
     except Exception as e:
         msg = (f'Failed to load data from file "{filename}": {e}'
                f'\n\tFunction = {func_name}')
@@ -232,7 +231,7 @@ def bin_spectrum(wavegrid: np.ndarray, spec_in: np.ndarray,
         return wave_bin, flux_bin, err_bin
 
 
-def find_outliers(params: ParamDict, dataset: astropy.table.Table,
+def find_outliers(params: ParamDict, data_table: Table,
                   method: Literal['WLCTA', 'SLCTA']):
     """
     Find outliers in the dataset using a median filter
@@ -242,8 +241,8 @@ def find_outliers(params: ParamDict, dataset: astropy.table.Table,
     :return: None
     """
     # load the dataset
-    bjd = dataset['bjd'].data
-    flux = dataset['amplitude'].data
+    bjd = np.array(data_table['Time']).astype(np.float64)
+    flux = np.array(data_table['RelFlux']).astype(np.float64)
 
     # apply median filter to remove outliers
     # transits are roughly the same duration so number of integration may be a 
@@ -385,14 +384,14 @@ def test_juliet_values(params: ParamDict,
     return prior_vals
 
 
-def prepare_dataset(params: ParamDict, dataset: astropy.table.Table,
+def prepare_dataset(params: ParamDict, data_table: Table,
                     method: Literal['WLCTA', 'SLCTA'],
                     outlier_mask: np.ndarray):
     """
     Prepare the dataset for juliet
 
     :param params: ParamDict, the parameter dictionary of constants
-    :param dataset: astropy.table.Table, the dataset to prepare
+    :param data_table: astropy.table.Table, the dataset to prepare
 
     :return: dataset, the juliet dataset
     """
@@ -408,9 +407,9 @@ def prepare_dataset(params: ParamDict, dataset: astropy.table.Table,
     times, fluxes, fluxes_error = {},{},{}
     # -------------------------------------------------------------------------
     # put data arrays into dictionaries so we can fit it with juliet
-    times[inst_mode] = dataset['bjd'].data[~outlier_mask]
-    fluxes[inst_mode] = dataset['amplitude'].data[~outlier_mask]
-    fluxes_error[inst_mode] = dataset['amplitude_error'].data[~outlier_mask]
+    times[inst_mode] = np.array(data_table['Time'])[~outlier_mask]
+    fluxes[inst_mode] = np.array(data_table['RelFlux'])[~outlier_mask]
+    fluxes_error[inst_mode] = np.array(data_table['RelFlux_Err'])[~outlier_mask]
     # -------------------------------------------------------------------------
     # load the juliet parameters, prior distributions, and prior parameters
     #  in SORBET these are a list, a two dictionaries but we need to do some
@@ -633,7 +632,7 @@ def fit_transit(params: ParamDict, dataset: juliet.load,
     #                                'posteriors.pkl'
     #       Content is: dict_keys(['dynesty_output', 'lnZ', 'lnZerr', 'posterior_samples'])
     #       Breaks when prior name is changed in posterior_samples
-    # pkl files from previous runs?
+    #       pkl files from previous runs?
     # TODO allow more sampling options
     sampling_options = params[f'SORBET.{method}.SAMPLING_OPTIONS']
     # Fit the dataset
@@ -698,7 +697,7 @@ def load_transit_model(params: ParamDict, method: Literal['WLCTA', 'SLCTA']):
     return components
 
 
-def save_transmission_spectrum(params: ParamDict, spec_tbl: astropy.table.Table):
+def save_transmission_spectrum(params: ParamDict, spec_tbl: Table):
     """
     Save the transmission spectrum
 

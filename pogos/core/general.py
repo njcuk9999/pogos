@@ -126,10 +126,6 @@ def prepare_directory(params: ParamDict, pkind: str, sid_path: str,
     # make sure the path is in the params
     if not os.path.exists(my_path):
         os.makedirs(my_path)
-    # print message on where outputs will be saved
-    if verbose:
-        msg = f'All {pkind} data will be saved under: {my_path}'
-        WLOG(params, 'info', msg)
     # update output path
     params.set(file_path, value=my_path, source=func_name)
 

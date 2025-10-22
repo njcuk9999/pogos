@@ -9,6 +9,7 @@ Created on 2024-10-29 at 09:30
 
 @author: cook
 """
+import os
 import site
 
 from aperocore.constants import constant_functions
@@ -94,22 +95,23 @@ SORBET_CDict.add('RUN', value=False, dtype=bool, source=__NAME__,
                 user=True, active=True, group=cgroup,
                 description='Run SORBET.WLCTA')
 # Input data path
-SORBET_CDict.add('INPUT_PATH', value='inputs', dtype=str, source=__NAME__,
+SORBET_CDict.add('INPUT_PATH', value=f'wlcta{os.sep}inputs',
+                 dtype=str, source=__NAME__,
                  user=True, active=True, group=cgroup,
                  description='Input data path. If not absolute path'
                              ' it will be set to GLOBAL.DATA_PATH/'
                              'sorbet/{SID}/wlcta/{INPUT_PATH}/')
 # Input data file
-SORBET_CDict.add('INPUT_FILE', value='stability.csv', dtype=str, source=__NAME__,
-                user=True, active=True, group=cgroup,
-                description='Input data file or path to the data file')
+SORBET_CDict.add('INPUT_FILE', value='white_light_curve.fits', dtype=str,
+                 source=__NAME__, user=True, active=True, group=cgroup,
+                 description='Input data file or path to the data file')
 # Output sub directory path for channel/bin (set internally)
 SORBET_CDict.add('OUTPUT_SUBPATH', value=None, dtype=str, source=__NAME__,
                 user=False, active=False, group=cgroup,
                 description='Output sub-directory path for channel/bin. '
                             '(set internally)')
 # Output results folder
-SORBET_CDict.add('OUTPUT_PATH', value='sorbet_wlcta_fit', dtype=str,
+SORBET_CDict.add('OUTPUT_PATH', value=f'wlcta{os.sep}outputs', dtype=str,
                 source=__NAME__,
                 user=True, active=True, group=cgroup,
                 description='Output result folder or path to the output folder.'
@@ -119,7 +121,7 @@ SORBET_CDict.add('OUTPUT_PATH', value='sorbet_wlcta_fit', dtype=str,
                             '{SID}/wlcta/{OUTPUT_PATH}/')
 
 # Plot path
-SORBET_CDict.add('PLOT_PATH', value='sorbet_wlcta_plots', dtype=str,
+SORBET_CDict.add('PLOT_PATH', value=f'wlcta{os.sep}plots', dtype=str,
                 source=__NAME__,
                 user=True, active=True, group=cgroup,
                 description='Output plot folder or path to the output folder.'
@@ -263,24 +265,35 @@ SORBET_CDict.add('RUN', value=False, dtype=bool, source=__NAME__,
                 user=True, active=True, group=cgroup,
                 description='Run SORBET.SLCTA')
 # Input data path
-SORBET_CDict.add('INPUT_PATH', value='inputs', dtype=str, source=__NAME__,
+SORBET_CDict.add('INPUT_PATH', value=f'slcta{os.sep}inputs',
+                 dtype=str, source=__NAME__,
                  user=True, active=True, group=cgroup,
                  description='Input data path. If not absolute path'
                              ' it will be set to GLOBAL.DATA_PATH/'
-                             'sorbet/{SID}/slcta/{INPUT_PATH}/')
+                             'sorbet/{SID}/{INPUT_PATH}/')
 # Input data file
-SORBET_CDict.add('INPUT_FILE', value=['spectra_ord1.fits'], dtype=list,
-                source=__NAME__,
-                user=True, active=True, group=cgroup,
-                description='Input data file or path to the data file')
+SORBET_CDict.add('INPUT_FILES', value=['spectroscopy_light_curves.fits'],
+                 dtype=list, source=__NAME__,
+                 user=True, active=True, group=cgroup,
+                 description='Input data file or path to the data file')
+# Trace orders, must be a list the same length as INPUT_FILES
+#     (Set each item to 1 if there is only one order) otherwise set each item
+#     to the order number
+SORBET_CDict.add('TRACE_ORDERS', value=[1], dtype=list, dtypei=int,
+                 source=__NAME__, user=True, active=True, group=cgroup,
+                 description='Trace orders, must be a list the same length as'
+                             'INPUT_FILES '
+                             '\n\t(Set each item to 1 if there is '
+                             'only one order) otherwise set each item '
+                             'to the order number')
 # Output sub directory path for channel/bin (set internally)
 SORBET_CDict.add('OUTPUT_SUBPATH', value=None, dtype=str, source=__NAME__,
                 user=False, active=False, group=cgroup,
                 description='Output sub-directory path for channel/bin. '
                             '(set internally)')
 # Output results folder
-SORBET_CDict.add('OUTPUT_PATH', value='sorbet_slcta_fit', dtype=str,
-                source=__NAME__,
+SORBET_CDict.add('OUTPUT_PATH', value=f'slcta{os.sep}outputs',
+                 dtype=str, source=__NAME__,
                 user=True, active=True, group=cgroup,
                 description='Output result folder or path to the output folder.'
                             '\nIf this is an aboslute path it will be used as is'
@@ -289,7 +302,7 @@ SORBET_CDict.add('OUTPUT_PATH', value='sorbet_slcta_fit', dtype=str,
                             '{SID}/slcta/{OUTPUT_PATH}/')
 
 # Plot path
-SORBET_CDict.add('PLOT_PATH', value='sorbet_slcta_plots', dtype=str,
+SORBET_CDict.add('PLOT_PATH', value=f'slcta{os.sep}plots',  dtype=str,
                 source=__NAME__,
                 user=True, active=True, group=cgroup,
                 description='Output plot folder or path to the output folder.'

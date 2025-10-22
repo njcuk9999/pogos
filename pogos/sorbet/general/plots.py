@@ -11,19 +11,19 @@ Created on 2024-08-13 at 11:23
 import os
 from typing import Literal
 
-import matplotlib.pyplot as plt
-import matplotlib
-import numpy as np
-import astropy.table
-from pogos.core import base
-from aperocore.constants.param_functions import ParamDict
-from sossisse.core import misc
-from sossisse.core import io
-from pogos.sorbet.general import science
-from pogos.core import plots as pogos_plots
-
-import juliet
 import corner
+import juliet
+import matplotlib
+import matplotlib.pyplot as plt
+import numpy as np
+from astropy.table import Table
+
+from aperocore.constants.param_functions import ParamDict
+from pogos.core import base
+from pogos.core import plots as pogos_plots
+from pogos.sorbet.general import science
+from sossisse.core import io
+from sossisse.core import misc
 
 # =============================================================================
 # Define variables
@@ -46,9 +46,9 @@ def save_show_plot(params: ParamDict, outname: str, method: str,
 
     :return:
     """
-    figure_types = params[f'SORBET.PLOTS.FIGURE_TYPES']
-    plot_path = params[f'SORBET.{method}.PLOT_PATH']
-    plot_show = params[f'SORBET.SHOW']
+    figure_types = f'SORBET.PLOTS.FIGURE_TYPES'
+    plot_path = f'SORBET.{method}.PLOT_PATH'
+    plot_show = f'SORBET.PLOTS.SHOW'
 
     pogos_plots.save_show_plot(params, outname, figure_types, plot_path,
                                plot_show, title, description, func_name)
@@ -234,7 +234,7 @@ def plot_transit(params: ParamDict, dataset: juliet.load, results: juliet.fit,
     save_show_plot(params, 'transit_fit', method, title, description, func_name)
 
 
-def plot_outlier(params: ParamDict, dataset: astropy.table.Table,
+def plot_outlier(params: ParamDict, data_table: Table,
                  medfilt_model: np.ndarray, outlier_mask: np.ndarray,
                  method: Literal['WLCTA', 'SLCTA']):
     """
@@ -247,17 +247,18 @@ def plot_outlier(params: ParamDict, dataset: astropy.table.Table,
     title = 'Outlier removal diagnostic plot'
     description = ('Diagnostic plot showing the outlier removal '
                    'from the light curve')
+    # get
+    bjd = np.array(data_table['Time'])
+    flux = np.array(data_table['RelFlux'])
     # -------------------------------------------------------------------------
     # plot the outlier removal
     fig, frame = plt.subplots(figsize=(8, 6))
     # plot the light curve
-    frame.scatter(dataset['bjd'][~outlier_mask],
-    dataset['amplitude'][~outlier_mask],
+    frame.scatter(bjd[~outlier_mask], flux[~outlier_mask],
                   marker='o', s=5, c='k', label='Data')
-    frame.scatter(dataset['bjd'][outlier_mask],
-    dataset['amplitude'][outlier_mask],
+    frame.scatter(bjd[outlier_mask], flux[outlier_mask],
                   marker='o', s=15, c='r', label='Outliers')
-    frame.plot(dataset['bjd'], medfilt_model,
+    frame.plot(bjd, medfilt_model,
                color='r', alpha=0.5, label='Medfilt model')
     # set the labels
     frame.set_xlabel('Time (BJD)', fontsize=16)

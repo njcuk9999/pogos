@@ -68,17 +68,13 @@ def setup_sorbet_module(params: ParamDict):
     # ----------------------------------------------------------------------
     # setup the wlcta  input and output directories
     if params['SORBET.WLCTA.RUN']:
-        # prepare input directory
-        prepare_input_directory(params, method='WLCTA')
-        # prepare output directory
-        prepare_output_directory(params, method='WLCTA')
+        # prepare directories
+        prepare_directories(params, method='WLCTA')
     # ----------------------------------------------------------------------
     # setup the slcta  input and output directories
     if params['SORBET.SLCTA.RUN']:
-        # prepare input directory
-        prepare_input_directory(params, method='SLCTA')
-        # prepare output directory
-        prepare_output_directory(params, method='SLCTA')
+        # prepare directories
+        prepare_directories(params, method='SLCTA')
 
     return params
 
@@ -155,8 +151,7 @@ def sossisse_input(params: ParamDict,
     # deal with WLCTA files
     if sb_params['WLCTA.RUN']:
         # prepare input directory
-        prepare_input_directory(params, method='WLCTA',
-                                           verbose=False)
+        prepare_directories(params, method='WLCTA', verbose=False)
         # get the sorbet input directory for WLCTA
         sorbet_wlcta_input_dir = sb_params['WLCTA.INPUT_PATH']
         # get absolute path to
@@ -170,8 +165,7 @@ def sossisse_input(params: ParamDict,
     # deal with SLCTA files
     if sb_params['SLCTA.RUN']:
         # prepare input directory
-        prepare_input_directory(params, method='SLCTA',
-                                           verbose=False)
+        prepare_directories(params, method='SLCTA', verbose=False)
         # get the sorbet input directory for SLCTA
         sorbet_slcta_input_dir = sb_params['SLCTA.INPUT_PATH']
         # get absolute path to
@@ -198,24 +192,21 @@ def run_sorbet_wlcta(params: ParamDict):
     # print the white light curve splash
     print(misc.art('SORBET WLC Transit Analysis', 'yellow', 'CYAN'))
     # --------------------------------------------------------------------------
-    # prepare input directory
-    prepare_input_directory(params, method='WLCTA')
-    # -------------------------------------------------------------------------
-    # prepare output directory
-    prepare_output_directory(params, method='WLCTA')
+    # prepare input directories
+    prepare_directories(params, method='WLCTA')
     # load the dataset
-    dataset = sorbet_science.load_wlc(params)
+    data_table = sorbet_science.load_wlc(params)
     # find outliers
     medfilt_model, outlier_mask = sorbet_science.find_outliers(params,
-                                                               dataset,
+                                                               data_table,
                                                                method='WLCTA')
     # diagnostic plot for outlier removal
-    sorbet_plots.plot_outlier(params, dataset, medfilt_model, outlier_mask,
+    sorbet_plots.plot_outlier(params, data_table, medfilt_model, outlier_mask,
                               method='WLCTA')
     # -------------------------------------------------------------------------
     # prepare the dataset for juliet
-    dataset = sorbet_science.prepare_dataset(params, dataset, method='WLCTA',
-                                      outlier_mask=outlier_mask)
+    dataset = sorbet_science.prepare_dataset(params, data_table, method='WLCTA',
+                                             outlier_mask=outlier_mask)
     # -------------------------------------------------------------------------
     # fit the dataset with juliet/batman
     results = sorbet_science.fit_transit(params, dataset, method='WLCTA')
@@ -253,11 +244,8 @@ def run_sorbet_slcta(params: ParamDict):
     # get the sorbet parameters
     slcta_params = params.get('SORBET.SLCTA')
     # --------------------------------------------------------------------------
-    # prepare input directory
-    prepare_input_directory(params, method='SLCTA')
-    # --------------------------------------------------------------------------
-    # prepare output directory
-    prepare_output_directory(params, method='SLCTA')
+    # prepare directories
+    prepare_directories(params, method='SLCTA')
     # check the dataset (multiple channels/orders?)
     input_file = slcta_params['INPUT_FILE']
     if isinstance(input_file, str):
@@ -268,11 +256,13 @@ def run_sorbet_slcta(params: ParamDict):
         # select dataset
         slcta_params['INPUT_FILE'] = input_file[chl]
         # load the dataset
-        bjd, wave_tuple, flux_bin, eflux_bin, channel = sorbet_science.load_slc(params)
+        sout = sorbet_science.load_slc(params)
+        bjd, wave_tuple, flux_bin, eflux_bin, channel = sout
         # TODO
         # eflux_bin = np.ones_like(flux_bin) * 10e-6
         # initiate transmission spectrum table
-        spec_tbl, nbin = sorbet_science.initiate_transmission_spectrum(wave_tuple)
+        tout = sorbet_science.initiate_transmission_spectrum(wave_tuple)
+        spec_tbl, nbin = tout
         # set the instrumental channel
         slcta_params['CHANNEL'] = channel
         # looping through spectral bins
@@ -286,25 +276,27 @@ def run_sorbet_slcta(params: ParamDict):
             # set the wavelength bin limits
             slcta_params['WAVE_BIN_LOW'] = wave_tuple[1][0, wb]
             slcta_params['WAVE_BIN_HIGH'] = wave_tuple[2][0, wb]
-            # ----------------------------------------------------------------------
+            # -----------------------------------------------------------------
             # prepare the dataset
-            dataset = sorbet_science.create_dataset_table(bjd, flux_bin[:, wb],
-                                                   eflux_bin[:, wb])
-            # TODO some bins are nan everywhere
-            if np.isnan(dataset['amplitude']).all():
+            data_table = sorbet_science.create_dataset_table(bjd,
+                                                             flux_bin[:, wb],
+                                                             eflux_bin[:, wb])
+            # make sure we don't have a whole row of nans
+            if np.isnan(data_table['RelFlux']).all():
                 msg = f'Wavelength bin {wb + 1}/{nbin} is empty, skipping...'
                 misc.printc(msg, msg_type='warning')
                 continue
             # find outliers
-            medfilt_model, outlier_mask = sorbet_science.find_outliers(params,
-                                                                dataset,
-                                                                method='SLCTA')
+            fout = sorbet_science.find_outliers(params, data_table,
+                                                method='SLCTA')
+            medfilt_model, outlier_mask = fout
             # diagnostic plot for outlier removal
-            sorbet_plots.plot_outlier(params, dataset, medfilt_model, outlier_mask,
-                               method='SLCTA', )
+            sorbet_plots.plot_outlier(params, dataset, medfilt_model,
+                                      outlier_mask, method='SLCTA', )
             # prepare the dataset for juliet
-            dataset = sorbet_science.prepare_dataset(params, dataset, method='SLCTA',
-                                              outlier_mask=outlier_mask)
+            dataset = sorbet_science.prepare_dataset(params, dataset,
+                                                     method='SLCTA',
+                                                     outlier_mask=outlier_mask)
             # -----------------------------------------------------------------
             # fit the dataset with juliet/batman
             results = sorbet_science.fit_transit(params, dataset, method='SLCTA')
@@ -319,8 +311,10 @@ def run_sorbet_slcta(params: ParamDict):
             sorbet_plots.plot_transit(params, dataset, results, method='SLCTA')
             # -----------------------------------------------------------------
             # append to transmission spectrum table
-            spec_tbl = sorbet_science.append_transmission_spectrum(params, results,
-                                                            spec_tbl, wb)
+            spec_tbl = sorbet_science.append_transmission_spectrum(params,
+                                                                   results,
+                                                                   spec_tbl,
+                                                                   wb)
 
         # save the transmission spectrum table
         sorbet_science.save_transmission_spectrum(params, spec_tbl)
@@ -337,32 +331,29 @@ def run_sorbet_slcta(params: ParamDict):
     return params
 
 
-def prepare_input_directory(params: ParamDict, method: str,
-                            verbose: bool = True):
+def prepare_directories(params: ParamDict, method: str, verbose: bool = True):
+
+    sid_path = 'SORBET.GENERAL.SID'
+    sid_null = sorbet_core.sorbet_unique_id()
+    mode = f'sorbet'
+    # -------------------------------------------------------------------------
     # set parameters for preparing directory
     pkind = 'input'
-    sid_path = 'SORBET.GENERAL.SID'
-    sid_null = sorbet_core.sorbet_unique_id()
     file_path = f'SORBET.{method}.INPUT_PATH'
-    mode = 'sorbet'
-    # runt the prepare directory function
+    # run the prepare directory function
     pogos_general.prepare_directory(params, pkind, sid_path, sid_null,
                                     file_path, mode, verbose=verbose)
-
-
-def prepare_output_directory(params: ParamDict, method: str,
-                             verbose: bool = True):
-    """
-    Prepare the output directory for SORBET results.
-
-    :param params: ParamDict, the parameter dictionary of constants
-    """
+    # -------------------------------------------------------------------------
+    # prepare the plots directory
+    pkind = 'plot'
+    file_path = f'SORBET.{method}.PLOT_PATH'
+    # run the prepare directory function
+    pogos_general.prepare_directory(params, pkind, sid_path, sid_null,
+                                    file_path, mode, verbose=verbose)
+    # -------------------------------------------------------------------------
     # set parameters for preparing directory
     pkind = 'output'
-    sid_path = 'SORBET.GENERAL.SID'
-    sid_null = sorbet_core.sorbet_unique_id()
     file_path = f'SORBET.{method}.OUTPUT_PATH'
-    mode = 'sorbet'
     # runt the prepare directory function
     pogos_general.prepare_directory(params, pkind, sid_path, sid_null,
                                     file_path, mode, verbose)
