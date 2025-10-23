@@ -12,17 +12,12 @@ import os
 import time
 
 import matplotlib.pyplot as plt
-import matplotlib
-import numpy as np
-import astropy.table
-from pogos.core import base
-from aperocore.constants.param_functions import ParamDict
-from sossisse.core import misc
-from sossisse.core import io
-from pogos.sorbet.general import science
+
 from aperocore.base import base as aperobase
-
-
+from aperocore.constants.param_functions import ParamDict
+from aperocore.core import drs_log
+from pogos.core import base
+from sossisse.core import misc
 
 # =============================================================================
 # Define variables
@@ -31,6 +26,9 @@ __NAME__ = 'pogos.sorbet.general.plots'
 __version__ = base.__version__
 __date__ = base.__date__
 __authors__ = base.__authors__
+# Get Logging function
+WLOG = drs_log.wlog
+
 
 # =============================================================================
 # Define functions used by plots
@@ -81,14 +79,15 @@ def save_show_plot(params: ParamDict, outname: str, figure_types: str,
         abspath = os.path.join(params[plot_path], basename)
         # say that we are plotting graph
         msg = f'Plotting graph: {basename}'
-        misc.printc(msg, msg_type='info')
+        WLOG(params, '', msg)
         # save the figure
         plt.savefig(abspath)
     # if we want to show the plot do it now
     if params[plot_show]:
         # deal with description
         if len(description) > 0:
-            misc.printc(f'PLOT: {title} \n\n{description}', 'plot')
+            msg = f'PLOT: {title} \n\n{description}'
+            WLOG(params, '', msg, colour='magenta')
         # show the plot
         plt.show(block=True)
     # finally close the plot

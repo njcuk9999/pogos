@@ -55,7 +55,7 @@ def save_show_plot(params: ParamDict, outname: str, method: str,
 
 
 def plot_corner(params: ParamDict, dataset: juliet.load, results: juliet.fit,
-                method: Literal['WLCTA', 'SLCTA']):
+                method: Literal['WLCTA', 'SLCTA'], suffix: str = None):
     """
     Plot the posterior distributions of the fitted parameters (corner plot)
 
@@ -96,17 +96,15 @@ def plot_corner(params: ParamDict, dataset: juliet.load, results: juliet.fit,
                   plot_datapoints=False, smooth=1., levels=(0.393,0.865,0.989))
     # -------------------------------------------------------------------------
     # get tag
-    #tag = inst.get_variable('TAG1', func_name)
-    # standard save/show plot for SOSSISSE
-
+    tag = 'corner_plot'
+    if suffix is not None:
+        tag += f'_{suffix}'
     # save and show the plot
-    save_show_plot(params, 'corner_plot', method, title, description, func_name)
-
-
+    save_show_plot(params, tag, method, title, description, func_name)
 
 
 def plot_transit(params: ParamDict, dataset: juliet.load, results: juliet.fit,
-                 method: Literal['WLCTA', 'SLCTA']):
+                 method: Literal['WLCTA', 'SLCTA'], suffix: str = None):
     """
     Plot the transit photometry and best-fit transit model
 
@@ -230,13 +228,18 @@ def plot_transit(params: ParamDict, dataset: juliet.load, results: juliet.fit,
     # force a tight layout
     plt.tight_layout()
     # -------------------------------------------------------------------------
+    # get tag
+    tag = 'transit_fit'
+    if suffix is not None:
+        tag += f'_{suffix}'
     # save and show the plot
-    save_show_plot(params, 'transit_fit', method, title, description, func_name)
+    save_show_plot(params, tag, method, title, description, func_name)
 
 
 def plot_outlier(params: ParamDict, data_table: Table,
                  medfilt_model: np.ndarray, outlier_mask: np.ndarray,
-                 method: Literal['WLCTA', 'SLCTA']):
+                 method: Literal['WLCTA', 'SLCTA'],
+                 suffix: str = None):
     """
     Plot the outlier removal diagnostic plot
     :param params: ParamDict, the parameter dictionary of constants
@@ -276,15 +279,16 @@ def plot_outlier(params: ParamDict, data_table: Table,
     plt.tight_layout()
     # -------------------------------------------------------------------------
     # get tag
-    #tag = inst.get_variable('TAG1', func_name)
-
+    tag = 'outlier_removal'
+    if suffix is not None:
+        tag += f'_{suffix}'
     # save and show the plot
-    save_show_plot(params, 'outlier_removal', method, title, description,
-                   func_name)
+    save_show_plot(params, tag, method, title, description, func_name)
 
 
 def plot_transmission_spectrum(params: ParamDict,
-                               method: Literal['WLCTA', 'SLCTA']):
+                               method: Literal['WLCTA', 'SLCTA'],
+                               suffix: str = None):
     """
     Plot the transmission spectrum from the SLCTA
     :param params: ParamDict, the parameter dictionary of constants
@@ -338,9 +342,8 @@ def plot_transmission_spectrum(params: ParamDict,
     plt.tight_layout()
     # -------------------------------------------------------------------------
     # get tag
-    #tag = inst.get_variable('TAG1', func_name)
-    # standard save/show plot for SOSSISSE
-
+    tag = 'transmission_spectrum'
+    if suffix is not None:
+        tag += f'_{suffix}'
     # save and show the plot
-    save_show_plot(params, 'transmission_spectrum', method, title, description,
-                   func_name)
+    save_show_plot(params, tag, method, title, description, func_name)

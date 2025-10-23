@@ -14,7 +14,7 @@ No imports from sorbet.general.general
 import os
 import pickle as pkl
 import warnings
-from typing import Any, Literal, List
+from typing import Any, Dict, Literal, List, Optional
 
 import juliet
 import numpy as np
@@ -393,7 +393,8 @@ def test_juliet_values(params: ParamDict,
 
 def prepare_dataset(params: ParamDict, data_table: Table,
                     method: Literal['WLCTA', 'SLCTA'],
-                    outlier_mask: np.ndarray):
+                    outlier_mask: np.ndarray,
+                    bin_params: Optional[Dict[str, Any]] = None) -> juliet.load:
     """
     Prepare the dataset for juliet
 
@@ -404,6 +405,11 @@ def prepare_dataset(params: ParamDict, data_table: Table,
     """
     # get function name
     func_name = __NAME__ + '.prepare_dataset()'
+    # deal with no bin params
+    if bin_params is None:
+        bin_params = dict(CHANNEL=None, BINNUMBER=None,
+                          WAVE_BIN_LOW=None, WAVE_BIN_HIGH=None,
+                          suffix=None)
     # get the sorbet params (based on method)
     sparams = params.get(f'SORBET.{method}')
     slcta_params = params.get('SORBET.SLCTA')
@@ -559,7 +565,7 @@ def prepare_dataset(params: ParamDict, data_table: Table,
             # compute the q1 and q2 quadratic coefficients
             try:
                 if ld_law == 'quadratic':
-                    u1, u2 = get_model_ld_coeffs(params)
+                    u1, u2 = get_model_ld_coeffs(params, bin_params)
                     # overwrite the priors
                     idx = juliet_params.index(f'u1_{inst_mode}')
                     prior_dists[idx] = 'fixed'
@@ -568,7 +574,7 @@ def prepare_dataset(params: ParamDict, data_table: Table,
                     prior_dists[idx] = 'fixed'
                     prior_vals[idx] = u2
                 elif ld_law == 'kipping':
-                    q1, q2 = get_model_ld_coeffs(params)
+                    q1, q2 = get_model_ld_coeffs(params, bin_params)
                     # overwrite the priors
                     idx = juliet_params.index(f'q1_{inst_mode}')
                     prior_dists[idx] = 'fixed'
@@ -577,7 +583,7 @@ def prepare_dataset(params: ParamDict, data_table: Table,
                     prior_dists[idx] = 'fixed'
                     prior_vals[idx] = q2
                 elif ld_law == 'nonlinear':
-                    c1, c2, c3, c4 = get_model_ld_coeffs(params)
+                    c1, c2, c3, c4 = get_model_ld_coeffs(params, bin_params)
                     # overwrite the priors
                     idx = juliet_params.index(f'c1_{inst_mode}')
                     prior_dists[idx] = 'fixed'
@@ -603,16 +609,17 @@ def prepare_dataset(params: ParamDict, data_table: Table,
     out_folder = sparams['OUTPUT_PATH']
     # if spectral bins
     if method == 'SLCTA':
-        wb = slcta_params['BINNUMBER']
-        channel = slcta_params['CHANNEL']
+        suffix = str(bin_params['suffix'])
         # check if the folder exists
         if os.path.isdir(out_folder):
-            out_folder = os.path.join(out_folder, f'ord{channel}bin{wb}')
+            out_folder = os.path.join(out_folder, suffix)
         else:
             os.mkdir(out_folder)
-            out_folder = os.path.join(out_folder, f'ord{channel}bin{wb}')
+            out_folder = os.path.join(out_folder, suffix)
         # update the output path
         sparams['OUTPUT_SUBPATH'] = out_folder
+
+
 
     # Load and fit dataset with juliet:
     dataset = juliet.load(priors=priors,
@@ -648,7 +655,7 @@ def fit_transit(params: ParamDict, dataset: juliet.load,
     return results
 
 
-def save_transit_model(params: ParamDict, results: juliet.fit,
+def save_transit_model(params: ParamDict, dataset, results: juliet.fit,
                        method: Literal['WLCTA', 'SLCTA']):
     """
     Save the best-fit model (transit + systematics)
@@ -673,13 +680,26 @@ def save_transit_model(params: ParamDict, results: juliet.fit,
     # file path
     if method == 'SLCTA':
         filepath = os.path.join(params[f'SORBET.{method}.OUTPUT_SUBPATH'],
-                             'model_components.pkl')
+                                'model_components.pkl')
     else:
         filepath = os.path.join(params[f'SORBET.{method}.OUTPUT_PATH'],
-                             'model_components.pkl')
+                                'model_components.pkl')
     # save the best-fit model
     with open(filepath, "wb") as pfile:
         pkl.dump(components, pfile)
+    # -------------------------------------------------------------------------
+    # construct table filename
+    model_tbl_filename = filepath.replace('.pkl', '.fits')
+    # save as a Table
+    model_tbl = Table()
+    model_tbl['Time'] = dataset.t_lc
+    for key in components.keys():
+        model_tbl[key] = components[key]
+    # print progress
+    msg = f'Saving best-fit model components to "{model_tbl_filename}"'
+    WLOG(params, '', msg)
+    # save table file as fits file
+    model_tbl.write(model_tbl_filename, overwrite=True)
 
 
 def load_transit_model(params: ParamDict, method: Literal['WLCTA', 'SLCTA']):
@@ -728,7 +748,7 @@ def save_transmission_spectrum(params: ParamDict, spec_tbl: Table):
     io.save_table(filename, spec_tbl, fmt='csv')
 
 
-def get_model_ld_coeffs(params: ParamDict):
+def get_model_ld_coeffs(params: ParamDict, bin_params: Dict[str, Any]):
     """
     Get the quadratic limb darkening parameters (Kipping 2013) for a
     given wavelength range using the ExoTiC-LD package.
@@ -775,8 +795,8 @@ def get_model_ld_coeffs(params: ParamDict):
         raise ValueError('Provide a valid instrument mode')
 
     # convert wavelength range in microns to Angstrom (ExoTiC-LD)
-    wave_low = params['SORBET.SLCTA.WAVE_BIN_LOW']
-    wave_high = params['SORBET.SLCTA.WAVE_BIN_HIGH']
+    wave_low = bin_params['WAVE_BIN_LOW']
+    wave_high = bin_params['WAVE_BIN_HIGH']
     wave_range = np.array([wave_low, wave_high]) * 1e4
 
     # compute the limb-darkening coefficients
@@ -806,9 +826,9 @@ def create_dataset_table(bjd, flux, eflux):
     """
     # create the dataset table
     dataset = Table()
-    dataset['bjd'] = bjd
-    dataset['amplitude'] = flux
-    dataset['amplitude_error'] = eflux
+    dataset['Time'] = bjd
+    dataset['RelFlux'] = flux
+    dataset['RelFlux_Err'] = eflux
 
     return dataset
 
@@ -836,8 +856,8 @@ def initiate_transmission_spectrum(wave_tuple):
     return spec_tbl, nbin
 
 
-def append_transmission_spectrum(params: ParamDict, results: juliet.fit,
-                                 spec_tbl: Table, wb: int):
+def append_transmission_spec(params: ParamDict, results: juliet.fit,
+                             spec_tbl: Table, wb: int):
     """
     Append the transit depth to the transmission spectrum table.
     :param params: ParamDict, the parameter dictionary of constants

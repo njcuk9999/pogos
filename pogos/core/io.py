@@ -48,7 +48,7 @@ PACKAGE_PATH = os.path.dirname(os.path.dirname(__file__))
 HTML_TEMPLATE_FILE = os.path.join(PACKAGE_PATH, 'resources',
                                   'html_template.html')
 # all valid file extensions to include in html file list (not plots)
-FILE_EXTS = ['.csv', '.fits', '.h5', '.txt', '.tex']
+FILE_EXTS = ['.csv', '.fits', '.h5', '.txt', '.tex', '.dat']
 
 # =============================================================================
 # Define variables
@@ -206,10 +206,11 @@ def files_to_html(params: ParamDict, file_path: str):
     files = []
     # walk through the directory
     for _root, _dirs, filenames in os.walk(filepath):
-        for file in filenames:
+        for _file in filenames:
             # only add files with valid extensions
-            if any(file.endswith(ext) for ext in FILE_EXTS):
-                files.append(os.path.join(_root, file))
+            for ext in FILE_EXTS:
+                if _file.endswith(ext):
+                    files.append(os.path.join(_root, _file))
 
     # define the html string
     html = '<br><ul>'
