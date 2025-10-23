@@ -9,16 +9,17 @@ Created on 2025-10-16 at 14:10
 
 @author: cook
 """
+import numpy as np
+
 from aperocore.constants.param_functions import ParamDict
 from aperocore.core import drs_log
 from aperocore.core import drs_misc
 from pogos.core import base
 from pogos.core import general as pogos_general
-from pogos.miriam.core import base as miriam_base
-from sossisse.core import misc
 from pogos.miriam.core import general as mc_general
-from pogos.miriam.general import science as mc_science
 from pogos.miriam.general import plots as mc_plots
+from pogos.miriam.general import science as mc_science
+from sossisse.core import misc
 
 # =============================================================================
 # Define variables
@@ -48,7 +49,8 @@ def run_miriam(params: ParamDict):
     print(misc.art('MIRIAM', 'yellow', 'CYAN'))
     # prepare the directories
     prepare_directories(params)
-
+    # get miriam specific parameters
+    mparams = params.get('MIRIAM')
     # -------------------------------------------------------------------------
     # Step 1: merge all input files into a single (cropped) data structure
     # -------------------------------------------------------------------------
@@ -57,25 +59,32 @@ def run_miriam(params: ParamDict):
     # -------------------------------------------------------------------------
     # Step 2: perform systematics correction on the data
     # -------------------------------------------------------------------------
-    cube2, cube2_err = mc_science.correct_systematics(params, cube, cube_err)
+    cube2, mtbl = mc_science.remove_background_cube(params, cube, mtbl)
+    # -------------------------------------------------------------------------
+    # Step 3: Calculate errors in the cube
+    # -------------------------------------------------------------------------
+    # TODO decide if we want to compute errors or keep errors from
+    #     the original cube files
+    cube2, cube2_err = mc_science.calculate_cube_errors(params, cube2)
+    if mparams['INPUTS.USE_ORIGINAL_ERRORS']:
+        cube2_err = np.array(cube_err)
 
     # -------------------------------------------------------------------------
-    # Step 3: Change the cube to photometry
+    # Step 4: Change the cube to photometry
     # -------------------------------------------------------------------------
     ptbl0 = mc_science.cube2phot(params, cube2, cube2_err, mtbl, weights,
                                 d2flag=True)
     ptbl1 = mc_science.cube2phot(params, cube2, cube2_err, mtbl, weights,
                                 d2flag=False)
-
     # -------------------------------------------------------------------------
-    # Step 4: plot results
+    # Step 5: plot results
     # -------------------------------------------------------------------------
     mc_plots.plot_correlations(params, ptbl0, d2flag=True)
     mc_plots.plot_correlations(params, ptbl1, d2flag=False)
     mc_plots.plot_photometry(params, ptbl0, ptbl1)
 
     # -------------------------------------------------------------------------
-    # Step 5: save results
+    # Step 6: save results
     # -------------------------------------------------------------------------
     mc_science.write_photometry_results(params, ptbl0, ptbl1)
 

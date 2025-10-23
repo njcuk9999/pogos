@@ -54,12 +54,69 @@ def save_show_plot(params: ParamDict, outname: str, title: str,
                                plot_show, title, description, func_name)
 
 
+def plot_fit_params(params, psf, psf2ortho, gradx, grady):
+    # set function name
+    func_name = f'{__NAME__}.plot_fit_params'
+    # -------------------------------------------------------------------------
+    # set title and description
+    title = 'MIRIAM Fit Parameters'
+    description = ('Plot of the MIRIAM fit parameters used in the PSF fitting. '
+                   'M is the PSF model, D is the orthogonalized PSF, '
+                   'and the gradients are the derivatives of M with respect to '
+                   'x and y.')
+    # -------------------------------------------------------------------------
+    # list the images
+    images = [psf, psf2ortho, gradx, grady]
+    ftitles = [r'$M_{i,j}$',
+               r'$D_{i,j}$',
+               r'$\frac{\partial M_{i,j}}{\partial x}$',
+               r'$\frac{\partial M_{i,j}}{\partial y}$']
+    # -------------------------------------------------------------------------
+    fig, frames = plt.subplots(2, 2, figsize=(16, 16))
+    # loop around frames
+    for frame, image, ftitle in zip(frames.flat, images, ftitles):
+        # plot the image for this frame
+        frame.imshow(image, origin='lower', cmap='viridis', vmin=-1, vmax=1)
+        # turn off x and y ticks
+        frame.set_xticks([])
+        frame.set_yticks([])
+        # add title to the figure
+        frame.text(0.04, 0.96, ftitle,
+                   transform=a.transAxes,
+                   fontsize=24,
+                   va='top', ha='left',
+                   bbox=dict(facecolor='wheat', edgecolor='none',
+                             boxstyle='round,pad=0.3'))
+    # Make spacing much tighter
+    plt.subplots_adjust(wspace=0.02, hspace=0.02)
+    # -------------------------------------------------------------------------
+    # save and show the plot
+    save_show_plot(params, 'fit_params', title, description, func_name)
+
 def plot_correlations(params: ParamDict, ptbl: Table, d2flag: bool):
-    pass
+    # set function name
+    func_name = f'{__NAME__}.plot_correlations'
+    # set title and description
+
+    # -------------------------------------------------------------------------
+    # work out the segments
+
+
+    # -------------------------------------------------------------------------
+    # save and show the plot
+    save_show_plot(params, 'fit_params', title, description, func_name)
 
 
 def plot_photometry(params: ParamDict, ptbl0: Table, ptbl1: Table):
-    pass
+    # set function name
+    func_name = f'{__NAME__}.plot_photometry'
+    # set title and description
+
+    # -------------------------------------------------------------------------
+
+    # -------------------------------------------------------------------------
+    # save and show the plot
+    save_show_plot(params, 'fit_params', title, description, func_name)
 
 # =============================================================================
 # Start of code

@@ -9,7 +9,7 @@ Created on 2024-08-13 at 11:23
 @author: cook
 """
 import os
-from typing import Literal
+from typing import Any, Dict, Literal
 
 import corner
 import juliet
@@ -55,7 +55,8 @@ def save_show_plot(params: ParamDict, outname: str, method: str,
 
 
 def plot_corner(params: ParamDict, dataset: juliet.load, results: juliet.fit,
-                method: Literal['WLCTA', 'SLCTA'], suffix: str = None):
+                method: Literal['WLCTA', 'SLCTA'],
+                bin_params: Dict[str, Any] = None):
     """
     Plot the posterior distributions of the fitted parameters (corner plot)
 
@@ -72,6 +73,11 @@ def plot_corner(params: ParamDict, dataset: juliet.load, results: juliet.fit,
     title = 'Posterior distributions of fitted parameters'
     description = ('Corner plot of the posterior distributions of the '
                    'fitted parameters')
+    if bin_params is not None:
+        title += ' ({SUFFIX})'.format(**bin_params)
+        description += ('\n channel={CHANNEL} bin={BIN} '
+                        'wave={WAVE_BIN_LOW}-{WAVE_BIN_HIGH}um'
+                        ).format(**bin_params)
     # -------------------------------------------------------------------------
     # labels and list of fitted parameters
     juliet_params = []
@@ -97,14 +103,15 @@ def plot_corner(params: ParamDict, dataset: juliet.load, results: juliet.fit,
     # -------------------------------------------------------------------------
     # get tag
     tag = 'corner_plot'
-    if suffix is not None:
-        tag += f'_{suffix}'
+    if bin_params is not None:
+        tag += '_{SUFFIX}'.format(**bin_params)
     # save and show the plot
     save_show_plot(params, tag, method, title, description, func_name)
 
 
 def plot_transit(params: ParamDict, dataset: juliet.load, results: juliet.fit,
-                 method: Literal['WLCTA', 'SLCTA'], suffix: str = None):
+                 method: Literal['WLCTA', 'SLCTA'],
+                 bin_params: Dict[str, Any] = None):
     """
     Plot the transit photometry and best-fit transit model
 
@@ -121,6 +128,12 @@ def plot_transit(params: ParamDict, dataset: juliet.load, results: juliet.fit,
     title = 'Transit fit to the light curve'
     description = ('Plot showing the transit fit to the light curve, '
                    'including the data, best-fit model, and residuals')
+
+    if bin_params is not None:
+        title += ' ({SUFFIX})'.format(**bin_params)
+        description += ('\n channel={CHANNEL} bin={BIN} '
+                        'wave={WAVE_BIN_LOW}-{WAVE_BIN_HIGH}um'
+                        ).format(**bin_params)
     # -------------------------------------------------------------------------
     # select instrumental mode
     inst_mode = params['GLOBAL.INSTRUMENTMODE']
@@ -230,8 +243,8 @@ def plot_transit(params: ParamDict, dataset: juliet.load, results: juliet.fit,
     # -------------------------------------------------------------------------
     # get tag
     tag = 'transit_fit'
-    if suffix is not None:
-        tag += f'_{suffix}'
+    if bin_params is not None:
+        tag += '_{SUFFIX}'.format(**bin_params)
     # save and show the plot
     save_show_plot(params, tag, method, title, description, func_name)
 
@@ -239,7 +252,7 @@ def plot_transit(params: ParamDict, dataset: juliet.load, results: juliet.fit,
 def plot_outlier(params: ParamDict, data_table: Table,
                  medfilt_model: np.ndarray, outlier_mask: np.ndarray,
                  method: Literal['WLCTA', 'SLCTA'],
-                 suffix: str = None):
+                 bin_params: Dict[str, Any] = None):
     """
     Plot the outlier removal diagnostic plot
     :param params: ParamDict, the parameter dictionary of constants
@@ -249,8 +262,13 @@ def plot_outlier(params: ParamDict, data_table: Table,
     # set title
     title = 'Outlier removal diagnostic plot'
     description = ('Diagnostic plot showing the outlier removal '
-                   'from the light curve')
-    # get
+                   'from the light curve.')
+    if bin_params is not None:
+        title += ' ({SUFFIX})'.format(**bin_params)
+        description += ('\n channel={CHANNEL} bin={BIN} '
+                        'wave={WAVE_BIN_LOW}-{WAVE_BIN_HIGH}um'
+                        ).format(**bin_params)
+    # get bjd and flux
     bjd = np.array(data_table['Time'])
     flux = np.array(data_table['RelFlux'])
     # -------------------------------------------------------------------------
@@ -280,8 +298,8 @@ def plot_outlier(params: ParamDict, data_table: Table,
     # -------------------------------------------------------------------------
     # get tag
     tag = 'outlier_removal'
-    if suffix is not None:
-        tag += f'_{suffix}'
+    if bin_params is not None:
+        tag += '_{SUFFIX}'.format(**bin_params)
     # save and show the plot
     save_show_plot(params, tag, method, title, description, func_name)
 

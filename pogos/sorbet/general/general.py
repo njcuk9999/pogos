@@ -286,7 +286,9 @@ def run_sorbet_slcta(params: ParamDict):
             bin_params['WAVE_BIN_LOW'] = wave_tuple[1][0, wb]
             bin_params['WAVE_BIN_HIGH'] = wave_tuple[2][0, wb]
             # set the bin suffix
-            bin_params['suffix'] = f'ord{channel}bin{wb}'
+            bin_params['CHANNEL'] = channel
+            bin_params['BIN'] = wb
+            bin_params['SUFFIX'] = f'ord{channel}bin{wb}'
             # -----------------------------------------------------------------
             # prepare the dataset
             data_table = sorbet_science.create_dataset_table(bjd,
@@ -309,7 +311,7 @@ def run_sorbet_slcta(params: ParamDict):
             # diagnostic plot for outlier removal
             sorbet_plots.plot_outlier(params, data_table, medfilt_model,
                                       outlier_mask, method='SLCTA',
-                                      suffix=bin_params['suffix'])
+                                      bin_params=bin_params)
             # prepare the dataset for juliet
             dataset = sorbet_science.prepare_dataset(params, data_table,
                                                      method='SLCTA',
@@ -328,18 +330,18 @@ def run_sorbet_slcta(params: ParamDict):
             # -----------------------------------------------------------------
             # plot the results (corner plot)
             sorbet_plots.plot_corner(params, dataset, results, method='SLCTA',
-                                     suffix=bin_params['suffix'])
+                                     bin_params=bin_params)
             # -----------------------------------------------------------------
             # plot the best-fit model
             sorbet_plots.plot_transit(params, dataset, results, method='SLCTA',
-                                     suffix=bin_params['suffix'])
+                                     bin_params=bin_params)
             # -----------------------------------------------------------------
             # append to transmission spectrum table
             spec_tbl = sorbet_science.append_transmission_spec(params, results,
                                                                spec_tbl, wb)
-
+        # ---------------------------------------------------------------------
         # save the transmission spectrum table
-        sorbet_science.save_transmission_spectrum(params, spec_tbl)
+        sorbet_science.save_transmission_spectrum(params, spec_tbl, channel)
         # plot the transmission spectrum
         sorbet_plots.plot_transmission_spectrum(params, method='SLCTA')
     # -------------------------------------------------------------------------

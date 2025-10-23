@@ -609,7 +609,7 @@ def prepare_dataset(params: ParamDict, data_table: Table,
     out_folder = sparams['OUTPUT_PATH']
     # if spectral bins
     if method == 'SLCTA':
-        suffix = str(bin_params['suffix'])
+        suffix = str(bin_params['SUFFIX'])
         # check if the folder exists
         if os.path.isdir(out_folder):
             out_folder = os.path.join(out_folder, suffix)
@@ -724,7 +724,8 @@ def load_transit_model(params: ParamDict, method: Literal['WLCTA', 'SLCTA']):
     return components
 
 
-def save_transmission_spectrum(params: ParamDict, spec_tbl: Table):
+def save_transmission_spectrum(params: ParamDict, spec_tbl: Table,
+                               channel: int):
     """
     Save the transmission spectrum
 
@@ -735,8 +736,6 @@ def save_transmission_spectrum(params: ParamDict, spec_tbl: Table):
     """
     # select instrumental mode
     inst_mode = params['GLOBAL.INSTRUMENTMODE'].upper()
-    # select channel
-    channel = params['SORBET.SLCTA.CHANNEL']
     # output path
     bargs = [inst_mode, channel]
     basename = 'transmission_spectrum_{0}_ord{1}.csv'.format(*bargs)

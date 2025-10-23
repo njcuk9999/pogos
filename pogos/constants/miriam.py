@@ -135,6 +135,11 @@ MIRIAM_CDict.add('SKIP_INTEGRATIONS', value=None, dtype=list, dtypei=int,
                  group=cgroup,
                  description='List of integrations to skip (0-indexed)')
 # -----------------------------------------------------------------------------
+# The mean pedestal radius size (in pixels)
+MIRIAM_CDict.add('MEAN_PEDESTAL_RADIUS', value=16, dtype=int,
+                 source=__NAME__, user=True, active=True, group=cgroup,
+                 description='The mean pedestal radius size (in pixels)')
+# -----------------------------------------------------------------------------
 # Whether to use previously merged data if available
 MIRIAM_CDict.add('USE_PREVIOUS_MERGED_DATA', value=False, dtype=bool,
                  source=__NAME__, user=True, active=True, group=cgroup,
