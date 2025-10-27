@@ -74,7 +74,7 @@ MIRIAM:
   PLOTS:
     # Or you can use the following to always show plots regardless of the username
     #         Default value=False
-    SHOW: false
+    SHOW: true
     # output(s) type of figure
     #         Default value=['png', 'pdf']
     FIGURE_TYPES:
@@ -104,3 +104,8 @@ MIRIAM:
     # List of integrations to skip (0-indexed)
     #         Default value=None
     SKIP_INTEGRATIONS:
+      - 0
+      - 1
+
+    # don't use old data
+    USE_PREVIOUS_MERGED_DATA: false

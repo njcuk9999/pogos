@@ -111,6 +111,11 @@ MIRIAM_CDict.add('SHOW', value=False, dtype=bool,
 MIRIAM_CDict.add('FIGURE_TYPES', value=['png', 'pdf'], dtype=list, dtypei=str,
                  source=__NAME__, user=True, active=True, group=cgroup,
                  description='output(s) type of figure')
+# -----------------------------------------------------------------------------
+# Whether to plot the pedestal in the correction plots
+MIRIAM_CDict.add('CORR_PLOT_PEDESTAL', value=True, dtype=bool,
+                 source=__NAME__, user=True, active=True, group=cgroup,
+                 description='Whether to plot the pedestal in the correction ')
 
 # =============================================================================
 # Input settings
@@ -145,6 +150,13 @@ MIRIAM_CDict.add('USE_PREVIOUS_MERGED_DATA', value=False, dtype=bool,
                  source=__NAME__, user=True, active=True, group=cgroup,
                  description='Whether to use previously merged data if '
                              'available')
+# -----------------------------------------------------------------------------
+# Whether to use the original errors from the input cubes (or use calculated
+# errors)
+MIRIAM_CDict.add('USE_ORIGINAL_ERRORS', value=False, dtype=bool,
+                 source=__NAME__, user=True, active=True, group=cgroup,
+                 description='Whether to use the original errors from the '
+                             'input cubes (or use calculated errors)')
 # -----------------------------------------------------------------------------
 # The cut down size of the cubes (width around center) in pixels
 MIRIAM_CDict.add('CUT_DOWNSIZE', value=32, dtype=int,

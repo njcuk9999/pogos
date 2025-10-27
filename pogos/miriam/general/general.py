@@ -9,6 +9,8 @@ Created on 2025-10-16 at 14:10
 
 @author: cook
 """
+import time
+
 import numpy as np
 
 from aperocore.constants.param_functions import ParamDict
@@ -16,6 +18,7 @@ from aperocore.core import drs_log
 from aperocore.core import drs_misc
 from pogos.core import base
 from pogos.core import general as pogos_general
+from pogos.core import io as pogos_io
 from pogos.miriam.core import general as mc_general
 from pogos.miriam.general import plots as mc_plots
 from pogos.miriam.general import science as mc_science
@@ -44,9 +47,10 @@ WLOG = drs_log.wlog
 # =============================================================================
 def run_miriam(params: ParamDict):
     # set the function name
-    func_name = f'{__NAME__}.run_sorbet_wlcta'
+    func_name = f'{__NAME__}.run_miriam'
     # print the white light curve splash
     print(misc.art('MIRIAM', 'yellow', 'CYAN'))
+    time.sleep(0.1)
     # prepare the directories
     prepare_directories(params)
     # get miriam specific parameters
@@ -87,7 +91,12 @@ def run_miriam(params: ParamDict):
     # Step 6: save results
     # -------------------------------------------------------------------------
     mc_science.write_photometry_results(params, ptbl0, ptbl1)
-
+    # -------------------------------------------------------------------------
+    # produce summary html
+    stitle = params.get('MIRIAM.GENERAL.DESCRIPTION', '')
+    pogos_io.summary_html(params, 'MIRIAM', 'MIRIAM.PATHS.PLOT_PATH',
+                          'MIRIAM.GENERAL.SID', 'MIRIAM.PATHS.OUTPUT_PATH',
+                          stitle)
 
 def setup_miriam_module(params: ParamDict) -> ParamDict:
     """

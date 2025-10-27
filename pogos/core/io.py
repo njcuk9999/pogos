@@ -48,7 +48,7 @@ PACKAGE_PATH = os.path.dirname(os.path.dirname(__file__))
 HTML_TEMPLATE_FILE = os.path.join(PACKAGE_PATH, 'resources',
                                   'html_template.html')
 # all valid file extensions to include in html file list (not plots)
-FILE_EXTS = ['.csv', '.fits', '.h5', '.txt', '.tex', '.dat']
+FILE_EXTS = ['.csv', '.fits', '.h5', '.txt', '.tex', '.dat', '.rdb']
 
 # =============================================================================
 # Define variables

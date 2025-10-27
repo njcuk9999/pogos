@@ -14,7 +14,7 @@ from typing import List, Optional, Tuple
 
 import numpy as np
 from astropy.io import fits
-from astropy.table import Table
+from astropy.table import Table, vstack
 from scipy.optimize import curve_fit
 from scipy.special import erf
 from tqdm import tqdm
@@ -68,11 +68,14 @@ def merged_from_previous(params: ParamDict, input_basenames: List[str],
     # Make sure header contains all input files (if it doesn't we need
     # to re-merge)
     # -------------------------------------------------------------------------
-    infiles = list(hdr['INFILE*'])
+    # get the infile keys from header
+    infile_keys = list(hdr['INFILE*'])
+    # get the infile values
+    infiles = [hdr[key] for key in infile_keys]
     # loop around basenames
     for input_basename in input_basenames:
         if input_basename not in infiles:
-            msg = 'Merged cube file exists but does not contain'
+            msg = 'Merged cube file exists but does not contain '
             msg += f'all input files. Re-merging...'
             WLOG(params, 'warning', msg)
             return None
@@ -80,14 +83,13 @@ def merged_from_previous(params: ParamDict, input_basenames: List[str],
     # Make sure header contains all skipped exposures (if it doesn't we need
     # to re-merge)
     # -------------------------------------------------------------------------
-    skips = list(hdr['SKIP*'])
-    skipped_exposures = mparams['INPUTS.SKIPPED_EXPOSURES']
+    skip_keys = list(hdr['SKIP*'])
+    skips = [hdr[key] for key in skip_keys]
+    skipped_exposures = mparams['INPUTS.SKIP_INTEGRATIONS']
     # loop around all skips
     for skip in skipped_exposures:
-        # convert skip to a string
-        skip_str = f'SKIP{skip:04d}'
         # if we are missing this skip re-merge
-        if skip_str not in skips:
+        if skip not in skips:
             msg = 'Merged cube file exists but does not contain'
             msg += f'all skipped exposures. Re-merging...'
             WLOG(params, 'warning', msg)
@@ -110,6 +112,9 @@ def merged_from_previous(params: ParamDict, input_basenames: List[str],
             cube = np.array(hdul['CUBE'].data)
             cube_err = np.array(hdul['CUBE_ERR'].data)
             weights = np.array(hdul['WEIGHTS'].data)
+        # print progress
+        msg = f'Loaded merged cube from previous run: {merged_cube_file}'
+        WLOG(params, '', msg)
         # open the table as a astropy table
         mtbl = Table.read(merged_cube_file, hdu='MTBL')
         # return the merged data
@@ -182,7 +187,7 @@ def merge_inputs(params: ParamDict) -> MergedReturn:
         # loop around integrations
         for islice in range(cube.shape[0]):
             # get the integration
-            integration = cube[islice, :, :]
+            integration = np.array(cube[islice, :, :])
             # process the integration
             cleaned_integration = process_integration(integration, xpix,
                                                       njumps=4)
@@ -209,7 +214,7 @@ def merge_inputs(params: ParamDict) -> MergedReturn:
         if mtbls is None:
             mtbls = Table(mtbl_n)
         else:
-            mtbls = Table(np.vstack([mtbls, mtbl_n]))
+            mtbls = vstack([mtbls, mtbl_n])
     # -------------------------------------------------------------------------
     # sanity check that the length of mtls matches all_cubes/all_cube_errs
     n_integrations = len(mtbls)
@@ -222,7 +227,9 @@ def merge_inputs(params: ParamDict) -> MergedReturn:
         raise miriam_base.MiriamException(emsg.format(*eargs))
     # -------------------------------------------------------------------------
     # Deal with remove the exposures that are not used
-    skipped_exposures = mparams['INPUTS.SKIPPED_EXPOSURES']
+    skipped_exposures = mparams['INPUTS.SKIP_INTEGRATIONS']
+    if skipped_exposures is None:
+        skipped_exposures = []
 
     # create mask of exposures to keep
     keep_mask = np.ones(n_integrations, dtype=bool)
@@ -238,7 +245,7 @@ def merge_inputs(params: ParamDict) -> MergedReturn:
     # work out the mean pedestal of all frames
     pedestal_mean, weights = calc_mean_pedestal(params, all_cubes)
     # push the pedestal mean into the table
-    mtbls['PEDESTAL_MEAN'] = pedestal_mean[keep_mask]
+    mtbls['pedestal_mean'] = pedestal_mean
     # -------------------------------------------------------------------------
     # write merged data to temporary file
     # -------------------------------------------------------------------------
@@ -246,14 +253,16 @@ def merge_inputs(params: ParamDict) -> MergedReturn:
     header = fits.Header()
     # add input files to header
     for it, input_basename in enumerate(input_basenames):
-        header[f'INFILE{it:04d}'] = input_basename
+        header[f'INFILE{it:04d}'] = (input_basename, 'Input filename')
     # add skipped exposures to header
     for iskip, skip in enumerate(skipped_exposures):
-        header[f'SKIP{iskip:04d}'] = skip
+        header[f'SKIP{iskip:04d}'] = (skip, 'Skipped exposure (0-indexed)')
     # add mean pedestal radius to header
-    header['MPED_RAD'] = mparams['INPUTS.MEAN_PEDESTAL_RADIUS']
+    header['MPED_RAD'] = (mparams['INPUTS.MEAN_PEDESTAL_RADIUS'],
+                          'Mean pedestal radius (pixels)')
     # add the number of integrations
-    header['NINTS'] = all_cubes.shape[0]
+    header['NINTS'] = (all_cubes.shape[0], 'Number of integrations in '
+                                           'merged cube')
     # -------------------------------------------------------------------------
     # create HDU list
     hdulist = fits.HDUList()
@@ -349,7 +358,7 @@ def cube2phot(params: ParamDict, cube: np.ndarray,
     # -------------------------------------------------------------------------
     # Step 3: Fit the PSF module to the cube data
     # -------------------------------------------------------------------------
-    ptbl = fit_cube_psf(params, cube_normalize, cube_err, mtbl,
+    ptbl = fit_cube_psf(params, cube, cube_err, weights, mtbl,
                         psf, gradx, grady, psf2ortho, d2flag)
     # -------------------------------------------------------------------------
     # Step 4: Print stats about global RMS
@@ -372,7 +381,32 @@ def cube2phot(params: ParamDict, cube: np.ndarray,
 
 def write_photometry_results(params: ParamDict, ptbl0: Table,
                              ptbl1: Table):
-    pass
+    # get output directory
+    output_dir = params.get('MIRIAM.PATHS.OUTPUT_PATH')
+
+    # loop around the two tables
+    for d2flag, ptbl in zip([True, False], [ptbl0, ptbl1]):
+        # construct output filename
+        output_fits = os.path.join(output_dir, 'miriam_photometry{0}.fits')
+        output_rdb = os.path.join(output_dir, 'miriam_photometry{0}.rdb')
+
+        if d2flag:
+            output_fits = output_fits.format('_d2flag')
+            output_rdb = output_rdb.format('_d2flag')
+        else:
+            output_fits = output_fits.format('')
+            output_rdb = output_rdb.format('')
+
+        # print progress
+        msg = f'Writing photometry results to: {output_fits}'
+        WLOG(params, '', msg)
+        # write fits file
+        ptbl.write(output_fits, format='fits', overwrite=True)
+        # print progress
+        msg = f'Writing photometry results to: {output_rdb}'
+        WLOG(params, '', msg)
+        # write rdb file
+        ptbl.write(output_rdb, format='ascii.rdb', overwrite=True)
 
 
 # =============================================================================
@@ -384,25 +418,25 @@ def process_integration(integration: np.ndarray,
                         njumps: int = 4) -> np.ndarray:
     # do this iteratively
     for jt in range(2):
-        # subtract the median of every 4th column off the integration
-        for irow in range(njumps):
-            # median of the ith column
-            row_med = np.nanmedian(integration[:, irow::njumps])
+        # subtract the median of every njump x-value off the integration
+        for ix in range(njumps):
+            # median of the x values (every njump x)
+            xjump_med = np.nanmedian(integration[:, ix::njumps])
             # subtract of the integration itself
-            integration[:, irow::njumps] -= row_med
+            integration[:, ix::njumps] -= xjump_med
         # calculate the median of the whole integration (across y-axis)
-        col_med = np.nanmedian(integration, axis=0)
+        y_med = np.nanmedian(integration, axis=0)
         # fit this median
-        col_fit = np.polyfit(xpix, col_med, 1)
+        y_fit = np.polyfit(xpix, y_med, 1)
         # subtract this off each column
         for y_it in range(integration.shape[0]):
-            integration[y_it, :] -= col_fit[0] * xpix + col_fit[1]
-        # subtract the median of every 4th row off the integration
-        for icol in range(njumps):
+            integration[y_it, :] -= y_fit[0] * xpix + y_fit[1]
+        # subtract the median of every njump y-value off the integration
+        for iy in range(njumps):
             # median of the ith column
-            col_med = np.nanmedian(integration[icol::njumps, :])
+            yjump_med = np.nanmedian(integration[iy::njumps, :])
             # subtract of the integration itself
-            integration[icol::njumps, :] -= col_med
+            integration[iy::njumps, :] -= yjump_med
     # return the cleaned integration
     return integration
 
@@ -446,7 +480,7 @@ def calc_mean_pedestal(params: ParamDict, cube: np.ndarray
     radii = np.sqrt(x_offsets**2 + y_offsets**2) - mean_ped_rad
 
     # this is a soft-edged mask of ones and zeros
-    ww = 1 - (erf(radii * 2) / 2) + 0.5
+    ww = 1 - ((erf(radii * 2) / 2) + 0.5)
     ww_invert = 1 - ww
     # storage for return (one per integration)
     pedestal_mean = np.zeros(cube.shape[0])
@@ -547,7 +581,7 @@ def remove_background2d(image: np.ndarray):
     # pedestal = median
     # xmax and y max are best guess of psf center
     # 0.2 is the psf bandwidth guess
-    p0 = np.array([np.nanmax(image), 3.0, np.nanmedian(image), xmax, ymax,.2])
+    p0 = np.array([np.nanmax(image), 3.0, np.nanmedian(image), xmax, ymax, 0.2])
 
     try:
         popt, _ = curve_fit(sinc2d, xy, image[valid], p0=p0)
@@ -569,7 +603,8 @@ def neighbourbad(image):
         xpix = xbad[ibad] + xpixgrid
         ypix = ybad[ibad] + ypixgrid
         # remove xpix and ypix that would be off the edge of the image.shape
-        rem_pix = (xpix < 0) | (xpix >= image.shape[1]) | (ypix < 0) | (ypix >= image.shape[0])
+        rem_pix = (xpix < 0) | (xpix >= image.shape[1])
+        rem_pix |= (ypix < 0) | (ypix >= image.shape[0])
         xpix = xpix[~rem_pix]
         ypix = ypix[~rem_pix]
         # Fit a 2D polynomial to the surrounding pixels
@@ -594,7 +629,7 @@ def noise_cube(cube: np.ndarray):
     # Loop through each slice of the cube
     for i in range(cube.shape[0]):
         # Identify bad pixels that are outside the cut thresholds
-        bad = np.logical_or(cube[i] < cut_neg, cube[i] > cut_pos)
+        bad = (cube[i] < cut_neg) | (cube[i] > cut_pos)
         # Calculate the error for each pixel
         cube_err[i] = (p1 - n1) / 2
         # Set the error of bad pixels to NaN
@@ -633,7 +668,7 @@ def normalize_cube(cube: np.ndarray, weights: np.ndarray):
         valid = np.isfinite(cube[iframe])
         psf_guess0[~valid] = np.nan
         # get the amplitude
-        part1 = cube[iframe] * psf_guess0 * weights ** 2
+        part1 = cube[iframe] * psf_guess0 * (weights**2)
         part2 = (psf_guess0 * weights) ** 2
         amp = np.nansum(part1) / np.nansum(part2)
         # We normalize the data by the linear fit
@@ -669,7 +704,8 @@ def get_fit_params(cube_normalize: np.ndarray, weights: np.ndarray):
 
 
 def fit_cube_psf(params: ParamDict, cube: np.ndarray,
-                 cube_err: np.ndarray, mtbl: Table,
+                 cube_err: np.ndarray, weights: np.ndarray,
+                 mtbl: Table,
                  psf: np.ndarray, gradx: np.ndarray, grady: np.ndarray,
                  psf2ortho: np.ndarray, d2flag: bool = True) -> Table:
 
@@ -694,7 +730,6 @@ def fit_cube_psf(params: ParamDict, cube: np.ndarray,
     WLOG(params, '', 'Fitting PDF model to cube')
     # loop around each integration of the cube to fit the PSF model
     for iframe in tqdm(range(cube.shape[0])):
-
         # get integration and error
         integration = np.array(cube[iframe, :, :]).astype(np.float32)
         integration_err = np.array(cube_err[iframe, :, :]).astype(np.float32)
@@ -702,9 +737,7 @@ def fit_cube_psf(params: ParamDict, cube: np.ndarray,
         valid = np.isfinite(integration) & np.isfinite(integration_err)
         # set invalid pixels to zero
         integration = np.array(integration)
-        # We keep a mask here to avoid dividing by zero
-        weights = np.ones_like(integration, dtype=np.float32)
-        weights[~valid] = 0.0
+        integration[~valid] = 0.0
         # set bad pixels to errors of infinity
         integration_err[~valid] = np.inf
         # ---------------------------------------------------------------------
@@ -738,7 +771,7 @@ def fit_cube_psf(params: ParamDict, cube: np.ndarray,
         # store the fit results and errors
         # ---------------------------------------------------------------------
         # amplitude of the PSF
-        amps[iframe] = lfit[0]
+        amps[iframe] = corr[iframe]
         # error in the amplitude
         amps_err[iframe] = lsig[0]
         # offset in x
@@ -754,9 +787,11 @@ def fit_cube_psf(params: ParamDict, cube: np.ndarray,
             d2s[iframe] = lfit[3]
             # error in the 2nd order gradient
             d2s_err[iframe] = lsig[3]
+
+        print(iframe, 'model_psf: ', np.nansum(model_psf), 'amps: ', np.nansum(amps[iframe]))
     # -------------------------------------------------------------------------
     # normalize the amplitude by the median
-    median_amp = np.median(amps)
+    median_amp = np.nanmedian(amps)
     amps /= median_amp
     amps_err /= median_amp
     # -------------------------------------------------------------------------
@@ -768,16 +803,16 @@ def fit_cube_psf(params: ParamDict, cube: np.ndarray,
     else:
         ptbl = Table(mtbl)
     # push these results into the mtbl
-    mtbl['amps'] = amps
-    mtbl['amps_err'] = amps_err
-    mtbl['dxs'] = dxs
-    mtbl['dxs_err'] = dxs_err
-    mtbl['dys'] = dys
-    mtbl['dys_err'] = dys_err
-    mtbl['d2s'] = d2s
-    mtbl['d2s_err'] = d2s_err
+    ptbl['amps'] = amps
+    ptbl['amps_err'] = amps_err
+    ptbl['dxs'] = dxs
+    ptbl['dxs_err'] = dxs_err
+    ptbl['dys'] = dys
+    ptbl['dys_err'] = dys_err
+    ptbl['d2s'] = d2s
+    ptbl['d2s_err'] = d2s_err
     # return the photometry table
-    return mtbl
+    return ptbl
 
 
 def least_squares(data: np.ndarray, data_err: np.ndarray, psf: np.ndarray,
@@ -807,7 +842,7 @@ def least_squares(data: np.ndarray, data_err: np.ndarray, psf: np.ndarray,
     #           weight = diag(1/sigma^2)
     weight = 1.0 / sigma ** 2
     amp_weight = amp * weight[:, None]
-    covariance = np.linalg.inv(amp_weight.T @ ydata)
+    covariance = np.linalg.inv(amp_weight.T @ amp)
     least_square_fit = covariance @ (amp_weight.T @ ydata)
     least_square_sig = np.sqrt(np.diag(covariance))
     # return the fit and the sigma
