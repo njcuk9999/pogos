@@ -45,7 +45,7 @@ MIRIAM_CDict.title = MIRIAM_CDict.yaml_title('MIRIAM: MIRI Image Analysis '
 # =============================================================================
 # set the group for all WLCTA constants
 cgroup = 'GENERAL'
-MIRIAM_CDict.add_group(cgroup, description='General configs for SORBET',
+MIRIAM_CDict.add_group(cgroup, description='General configs for MIRIAM',
                        source=__NAME__, user=True, active=True)
 # add the sid (to be used when default path required)
 MIRIAM_CDict.add('SID', value=None, dtype=str, source=__NAME__,
@@ -53,7 +53,7 @@ MIRIAM_CDict.add('SID', value=None, dtype=str, source=__NAME__,
                  description='A string ID for the observation (used for '
                              'default paths etc)')
 
-# define what we are running through SORBET
+# define what we are running through MIRIAM
 MIRIAM_CDict.add('DESCRIPTION', value='', dtype=str, source=__NAME__,
                  user=True, active=True, group=cgroup,
                  description='Description of the MIRIAM run')

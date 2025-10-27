@@ -21,7 +21,7 @@ from pogos import miriam
 # =============================================================================
 # Define variables
 # =============================================================================
-__NAME__ = 'pogos.recipes.setup_sorbet'
+__NAME__ = 'pogos.miriam.recipes.setup_sorbet'
 __PACKAGE__ = base.__PACKAGE__
 __version__ = base.__version__
 __authors__ = base.__authors__

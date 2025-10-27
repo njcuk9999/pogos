@@ -33,11 +33,6 @@ __version__ = base.__version__
 __authors__ = base.__authors__
 __date__ = base.__date__
 __release__ = base.__release__
-# get the Drs Exceptions
-AperoCodedException = drs_log.AperoCodedException
-AperoCodedWarning = drs_log.AperoCodedWarning
-# get display func
-display_func = drs_misc.display_func
 # Get Logging function
 WLOG = drs_log.wlog
 
@@ -46,6 +41,13 @@ WLOG = drs_log.wlog
 # Define functions
 # =============================================================================
 def run_miriam(params: ParamDict):
+    """
+    Run the MIRIAM processing
+
+    :param params: ParamDict, the parameter dictionary of constants
+
+    :return:
+    """
     # set the function name
     func_name = f'{__NAME__}.run_miriam'
     # print the white light curve splash

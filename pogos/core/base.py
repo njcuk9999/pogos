@@ -36,7 +36,6 @@ __release__ = __YAML__['DRS.RELEASE']
 # Define core variables
 # =============================================================================
 # supported instruments modes
-# JWST NIRISS SOSS
 INSTRUMENTS = ['JWST.NIRISS.SOSS',
                'JWST.NIRISS.FGS',
                'JWST.NIRSPEC.PRISM',
