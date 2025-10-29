@@ -30,7 +30,7 @@ Cdict.add_sub_cdict('SORBET', SORBET_Cdict, source=__NAME__)
 # Define info (must contain "title")
 # =============================================================================
 INFO = dict()
-INFO['title'] = 'JWST.NIRISS.SOSS Trappist 1b transit'
+INFO['title'] = 'JWST.NIRISS.SOSS Trappist 1b transit [SOSSISSE + SORBET]'
 INFO['object'] = 'Trappist 1b'
 INFO['instrument'] = 'JWST.NIRISS.SOSS'
 INFO['description'] = 'Trappist 1b transit observed on 2022-07-18'

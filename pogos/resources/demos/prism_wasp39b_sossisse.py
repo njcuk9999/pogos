@@ -27,7 +27,7 @@ Cdict.add_sub_cdict('SOSSISSE', S_Cdict, source=__NAME__)
 # Define info (must contain "title")
 # =============================================================================
 INFO = dict()
-INFO['title'] = 'JWST.NIRSPEC.PRISM WASP 39b transit'
+INFO['title'] = 'JWST.NIRSPEC.PRISM WASP 39b transit [SOSSISSE]'
 INFO['object'] = 'WASP 39b'
 INFO['instrument'] = 'JWST.NIRSPEC.PRISM'
 INFO['description'] = 'WASP 39b transit observed XXX'

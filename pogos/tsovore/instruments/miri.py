@@ -30,9 +30,9 @@ WLOG = drs_log.wlog
 # =============================================================================
 # Define functions
 # =============================================================================
-class MiriImaging(default.Instrument):
+class MiriImaging(default.JWST):
     def __init__(self, params):
-        super().__init__(params, instrument='JWST.MIRI')
+        super().__init__(params, instrument='JWST.MIRI.IMAGING')
 
     def process(self):
         """
@@ -56,6 +56,9 @@ class MiriImaging(default.Instrument):
         self.apply_interpixel_capacitance()
 
         # Step 1.6: FirstFrameStep
+        # TODO: Replace this step with a copy and simply change that
+        #       so that more than 1 frame is set to DO NOT USE
+        #       (if that is what Etienne needs)
         self.remove_first_frame_signal()
 
         # Step 1.7: LastFrameStep
@@ -77,13 +80,16 @@ class MiriImaging(default.Instrument):
         self.apply_reference_pixel_correction()
 
         # Step 1.13: ChargeMigration Step
-        self.correct_charge_migration()
+        # The ChargeMigrationStep is by default skipped when
+        # executed on these data
+        # self.correct_charge_migration()
 
         # Step 1.14: JumpStep
         self.detect_and_flag_jumps()
 
         # Step 1.15: CleanFlickerStep
-        self.remove_flicker_noise()
+        # The CleanFlickerStep is by default skipped when executed on these data
+        # self.remove_flicker_noise()
 
         # Step 1.16: RampFitStep
         self.fit_signal_ramps()
@@ -95,7 +101,9 @@ class MiriImaging(default.Instrument):
         # Level 2 Processing Steps
         # ---------------------------------------------------------------------
         # Step 2.1: BackgroundStep
-        self.subtract_background()
+        # The background step in order to work needs a list of *** dithered ***
+        # exposures which we don't have with TSO. Skip that step.
+        # self.subtract_background()
 
         # Step 2.2: AssignWcsStep
         self.assign_wcs_solution()

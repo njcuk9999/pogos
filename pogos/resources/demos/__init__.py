@@ -15,7 +15,9 @@ from pogos.resources.demos import soss_t1b_sossisse_sorbet
 from pogos.resources.demos import soss_t1b_sorbet
 from pogos.resources.demos import prism_wasp39b_sossisse
 from pogos.resources.demos import g395_wasp39b_sossisse
+from pogos.resources.demos import miri_im_lhs1140_tsovore
 from pogos.resources.demos import miri_im_lhs1140_miriam
+from pogos.resources.demos import miri_im_lhs1140_tsovore_miriam
 
 
 # =============================================================================
@@ -48,6 +50,8 @@ DEMOS[g395]['wasp39b.sossisse'] = g395_wasp39b_sossisse
 
 # JWST.MIRI.IMAGING demo
 DEMOS[miri_im]['miri.im.lhs1140.miriam'] = miri_im_lhs1140_miriam
+DEMOS[miri_im]['miri.im.lhs1140.tsovore'] = miri_im_lhs1140_tsovore
+DEMOS[miri_im]['miri.im.lhs1140.tsovore+miriam'] = miri_im_lhs1140_tsovore_miriam
 
 
 # =============================================================================

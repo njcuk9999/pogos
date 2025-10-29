@@ -130,6 +130,14 @@ cgroup = 'INPUTS'
 TSOVORE_CDict.add_group(cgroup, source=__NAME__, user=True, active=True,
                        description='Definition of inputs related to the data')
 # -----------------------------------------------------------------------------
+# Instrument mode i.e. JWST.NIRISS.SOSS or JWST.NIRISS.PRISM
+TSOVORE_CDict.add('INSTRUMENTMODE', value=None, dtype=str, not_none=True,
+                  source=__NAME__, user=True, active=True,
+                  options=base.INSTRUMENTS,
+                  cmd_arg='instmode', group=cgroup,
+                  description='Instrument mode e.g. one of the following: {0}'
+                              ''.format('\n\t'.join(base.INSTRUMENTS)))
+# -----------------------------------------------------------------------------
 # Raw files
 fdesc = ('List of files to be processed in form: '
          '\nFILES:\n - file1\n - file2\n - file3'
@@ -139,8 +147,101 @@ fdesc = ('List of files to be processed in form: '
 TSOVORE_CDict.add('FILES', value=None, dtype=list, dtypei=str, not_none=False,
                  source=__NAME__, user=True, active=True, group=cgroup,
                  description=fdesc)
+# -----------------------------------------------------------------------------
+# Whether to remove intermediate files
+TSOVORE_CDict.add('REMOVE_INTERMEDIATES', value=True, dtype=bool,
+                 source=__NAME__, user=True, active=True, group=cgroup,
+                 description='Whether to remove intermediate files')
+
+# =============================================================================
+# Science step settings
+# =============================================================================
+cgroup = 'STEP'
+TSOVORE_CDict.add_group(cgroup, source=__NAME__, user=True, active=True,
+                       description='Settings for the science steps')
+# -----------------------------------------------------------------------------
+STEPS = ['INITIALIZE_DETECTOR_DATA',
+         'APPLY_INTERPIXEL_CAPACITANCE',
+         'REMOVE_FIRST_FRAME_SIGNAL',
+         'REMOVE_LAST_FRAME_SIGNAL',
+         'CORRECT_RESET_ANOMALY',
+         'APPLY_LINEARITY_CORRECTION',
+         'APPLY_RSCD_CORRECTION',
+         'SUBTRACT_DARK_CURRENT',
+         'APPLY_REFERENCE_PIXEL_CORRECTION',
+         'CORRECT_CHARGE_MIGRATION',
+         'DETECT_AND_FLAG_JUMPS',
+         'REMOVE_FLICKER_NOISE',
+         'FIT_SIGNAL_RAMPS',
+         'APPLY_GAIN_SCALING',
+         'SUBTRACT_BACKGROUND',
+         'ASSIGN_WCS_SOLUTION',
+         'APPLY_FLAT_FIELD',
+         'APPLY_PHOTOMETRIC_CALIBRATION']
+# default mode for each step
+DEFAULT_MODES = dict()
+DEFAULT_MODES['INITIALIZE_DETECTOR_DATA'] = 'jwst'
+DEFAULT_MODES['APPLY_INTERPIXEL_CAPACTIANCE'] = 'jwst'
+DEFAULT_MODES['REMOVE_FIRST_FRAME_SIGNAL'] = 'jwst'
+DEFAULT_MODES['REMOVE_LAST_FRAME_SIGNAL'] = 'jwst'
+DEFAULT_MODES['CORRECT_RESET_ANOMALY'] = 'jwst'
+DEFAULT_MODES['APPLY_LINEARITY_CORRECTION'] = 'jwst'
+DEFAULT_MODES['APPLY_RSCD_CORRECTION'] = 'jwst'
+DEFAULT_MODES['SUBTRACT_DARK_CURRENT'] = 'jwst'
+DEFAULT_MODES['APPLY_REFERENCE_PIXEL_CORRECTION'] = 'jwst'
+DEFAULT_MODES['CORRECT_CHARGE_MIGRATION'] = 'tsovore'
+DEFAULT_MODES['DETECT_AND_FLAG_JUMPS'] = 'jwst'
+DEFAULT_MODES['REMOVE_FLICKER_NOISE'] = 'tsovore'
+DEFAULT_MODES['FIT_SIGNAL_RAMPS'] = 'jwst'
+DEFAULT_MODES['APPLY_GAIN_SCALING'] = 'jwst'
+DEFAULT_MODES['SUBTRACT_BACKGROUND'] = 'tsovore'
+DEFAULT_MODES['ASSIGN_WCS_SOLUTION'] = 'jwst'
+DEFAULT_MODES['APPLY_FLAT_FIELD'] = 'jwst'
+DEFAULT_MODES['APPLY_PHOTOMETRIC_CALIBRATION'] = 'jwst'
+
+# -----------------------------------------------------------------------------
+# Step description
+STEP_DESCRIPTION = ('Whether to perform the step: {0}. '
+                    'Each step should contiain the following:'
+                    '\n - RUN: bool, whether to run the step'
+                    '\n - MODE: str, the mode to use for the step'
+                    '\n - KWARGS: dict, any additional keyword arguments')
+
+STEP_DESCRIPTIONS = dict()
+STEP_DESCRIPTIONS['INITIALIZE_DETECTOR_DATA'] = """
+No kwargs for initialization step
+"""
+
+STEP_DESCRIPTIONS['DETECT_AND_FLAG_JUMPS'] = """
+Kwargs for jump detection:
+- rejection_threshold: float, the sigma threshold for jump detection
+- max_shower_amplitude: float
+- three_group_rejection_threshold: float
+- four_group_rejection_threshold:  float
+- only_use_ints: bool 
+"""
 
 
+# -----------------------------------------------------------------------------
+# loop around all steps to create constant
+for step in STEPS:
+    # setup each step value
+    value = dict()
+    value['RUN'] = True
+    value['MODE'] = DEFAULT_MODES.get(step, 'None')
+    value['KWARGS'] = dict()
+    # deal with additional step descriptions
+    if step in STEP_DESCRIPTIONS:
+        desc = STEP_DESCRIPTION + '\n' + STEP_DESCRIPTIONS[step]
+    else:
+        desc = STEP_DESCRIPTION
+    # give the step name
+    step_name = step.replace('_', ' ').title()
+    # push into a normal POGOS constant
+    TSOVORE_CDict.add(step, value=value, dtype=dict,
+                      source=__NAME__, user=True, active=True,
+                      group=cgroup,
+                      description=desc.format(step_name))
 
 
 # =============================================================================

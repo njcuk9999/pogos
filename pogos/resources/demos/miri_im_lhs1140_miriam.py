@@ -27,7 +27,7 @@ Cdict.add_sub_cdict('MIRIAM', MIRIAM_CDict, source=__NAME__)
 # Define info (must contain "title")
 # =============================================================================
 INFO = dict()
-INFO['title'] = 'JWST.MIRI.IMAGE LHS-1140 eclipse'
+INFO['title'] = 'JWST.MIRI.IMAGE LHS-1140 eclipse [MIRIAM]'
 INFO['object'] = 'LHS-1140'
 INFO['instrument'] = 'JWST.MIRI.IMAGING'
 INFO['description'] = 'LHS-1140 eclipse observed on 2024-07-07'
