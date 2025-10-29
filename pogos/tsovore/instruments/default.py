@@ -349,7 +349,7 @@ class Instrument:
         self.variables.set_source('LAST', func_name)
         self.variables.lock()
 
-    def rename_last(self, it: int, suffix: str):
+    def save_output(self, it: int, suffix: str):
         """
         Rename the last file to have a given suffix
 
@@ -358,7 +358,7 @@ class Instrument:
         """
         # set function name
         func_name = f"{__NAME__}.Instrument.rename_results"
-        datadir = self.tparams['PATHS.TEMP_PATH']
+        datadir = self.tparams['PATHS.OUTPUT_PATH']
         # get variables from self
         infiles = self.variables['LAST']
         prefixes = self.variables['PREFIXES']
@@ -401,35 +401,95 @@ class Instrument:
         # get step name from function name
         step_name = func_name.split('.')[-1].upper()
         step_arg = f'STEP.{step_name}'
+        # ---------------------------------------------------------------------
         # see if we have the step in params
         if step_arg not in self.tparams:
             emsg = f'"{step_arg}" not found in parameters'
             eargs = [step_name]
             raise tsovore_base.TSOvoreException(emsg.format(*eargs))
+        # ---------------------------------------------------------------------
         # get run step
         run_step = self.tparams[f'{step_arg}'].get('RUN', True)
         # get mode
         mode = self.tparams[f'{step_arg}'].get('MODE', 'None')
         # get kwargs
         kwargs = self.tparams[f'{step_arg}'].get('KWARGS', dict())
+        # get the suffix
+        suffix = self.tparams[f'{step_arg}'].get('SUFFIX', None)
+        # ---------------------------------------------------------------------
+        # if we are running this step print message
+        if run_step:
+            msg = f'\n\nRunning {step_name} mode={mode}'
+            mlevel = 'info'
+        else:
+            # print message
+            msg = f'\n\nSkipping "{step_name}" [{step_arg}.RUN=False]'
+            mlevel = 'warning'
+        WLOG(self.params, mlevel, '*'*50)
+        WLOG(self.params, mlevel, msg)
+        WLOG(self.params, mlevel, '*' * 50)
+        # ---------------------------------------------------------------------
+        # deal with skipping step
+        run_step = self.skip_step(run_step, step_name, suffix)
+        # ---------------------------------------------------------------------
         # return values
         return run_step, mode, kwargs
 
-    def no_run(self, func_name):
+    def skip_step(self, run_step: bool, step_name: str, suffix: str):
         """
-        Handle not running a step
+        Decide whether to skip a step based on existing files and parameters
 
-        :param func_name: str, the function name calling this function
-
-        :return: None
+        :param run_step: bool, whether to run the step (from params)
+        :param step_name: str, the name of the step
+        :param suffix: str, the suffix expected for output files
+        :return:
         """
-        # get step name from function name
-        step_name = func_name.split('.')[-1].upper()
-        step_arg = f'STEP.{step_name}'
-        # print message
-        msg = f'Skipping "{step_name}" [{step_arg}.RUN=False]'
-        WLOG(self.params, 'info', msg)
+        # set function name
+        func_name = f"{__NAME__}.Instrument.skip_step"
+        # if we are already not running step then we don't need to check skips
+        if not run_step:
+            return False
+        # skip if we have no suffix
+        if suffix is None:
+            return run_step
+        # skip if we are not skipping processed files
+        if not self.tparams['INPUTS.SKIP_PROCESSED_FILES']:
+            return run_step
+        # get variables from self
+        infiles = self.variables['LAST']
+        prefixes = self.variables['PREFIXES']
+        # assume all files are found
+        all_found = True
+        expected_files = []
+        # loop around all infiles and check if the expected output
+        # file exists
+        for it in range(len(infiles)):
+            # construct expected output filename
+            expected_base_name = prefixes[it] + suffix
+            expected_filename = os.path.join(self.tparams['PATHS.TEMP_PATH'],
+                                             expected_base_name)
+            # store expected filename
+            expected_files.append(expected_filename)
+            # check if file exists
+            if not os.path.isfile(expected_filename):
+                all_found = False
+        # if all found then run_step is False and we update variables
+        if all_found:
+            # update run step
+            run_step = False
+            # print message to user
+            msg = (f'\tINPUTS.SKIP_PROCESSED_FILES=True\n\tAll expected '
+                   f'output files found with suffix '
+                   f'"{suffix}".\n\tSkipping step "{step_name}".')
+            WLOG(self.params, '', msg)
+            # update LAST variable to point to expected file
+            for it in range(len(expected_files)):
+                self.variables.unlock()
+                self.variables['LAST'][it] = expected_files[it]
+                self.variables.set_source('LAST', func_name)
+                self.variables.lock()
 
+        return run_step
 
 class JWST(Instrument):
     """
@@ -522,7 +582,7 @@ class JWST(Instrument):
         # get params from step constant
         run_step, mode, kwargs = self.from_step_args(func_name)
         # deal with not running this step
-        if not run_step: return self.no_run(func_name)
+        if not run_step: return
         # ---------------------------------------------------------------------
         # get parameters from params
         datadir = self.tparams['PATHS.TEMP_PATH']
@@ -558,7 +618,7 @@ class JWST(Instrument):
         # get params from step constant
         run_step, mode, kwargs = self.from_step_args(func_name)
         # deal with not running this step
-        if not run_step: return self.no_run(func_name)
+        if not run_step: return
         # ---------------------------------------------------------------------
         # get parameters from params
         datadir = self.tparams['PATHS.TEMP_PATH']
@@ -589,7 +649,7 @@ class JWST(Instrument):
         # get params from step constant
         run_step, mode, kwargs = self.from_step_args(func_name)
         # deal with not running this step
-        if not run_step: return self.no_run(func_name)
+        if not run_step: return
         # ---------------------------------------------------------------------
         # get parameters from params
         datadir = self.tparams['PATHS.TEMP_PATH']
@@ -616,7 +676,7 @@ class JWST(Instrument):
         # get params from step constant
         run_step, mode, kwargs = self.from_step_args(func_name)
         # deal with not running this step
-        if not run_step: return self.no_run(func_name)
+        if not run_step: return
         # ---------------------------------------------------------------------
         # get parameters from params
         datadir = self.tparams['PATHS.TEMP_PATH']
@@ -643,7 +703,7 @@ class JWST(Instrument):
         # get params from step constant
         run_step, mode, kwargs = self.from_step_args(func_name)
         # deal with not running this step
-        if not run_step: return self.no_run(func_name)
+        if not run_step: return
         # ---------------------------------------------------------------------
         # get parameters from params
         datadir = self.tparams['PATHS.TEMP_PATH']
@@ -670,7 +730,7 @@ class JWST(Instrument):
         # get params from step constant
         run_step, mode, kwargs = self.from_step_args(func_name)
         # deal with not running this step
-        if not run_step: return self.no_run(func_name)
+        if not run_step: return
         # ---------------------------------------------------------------------
         # get parameters from params
         datadir = self.tparams['PATHS.TEMP_PATH']
@@ -697,7 +757,7 @@ class JWST(Instrument):
         # get params from step constant
         run_step, mode, kwargs = self.from_step_args(func_name)
         # deal with not running this step
-        if not run_step: return self.no_run(func_name)
+        if not run_step: return
         # ---------------------------------------------------------------------
         # get parameters from params
         datadir = self.tparams['PATHS.TEMP_PATH']
@@ -724,7 +784,7 @@ class JWST(Instrument):
         # get params from step constant
         run_step, mode, kwargs = self.from_step_args(func_name)
         # deal with not running this step
-        if not run_step: return self.no_run(func_name)
+        if not run_step: return
         # ---------------------------------------------------------------------
         # get parameters from params
         datadir = self.tparams['PATHS.TEMP_PATH']
@@ -751,7 +811,7 @@ class JWST(Instrument):
         # get params from step constant
         run_step, mode, kwargs = self.from_step_args(func_name)
         # deal with not running this step
-        if not run_step: return self.no_run(func_name)
+        if not run_step: return
         # ---------------------------------------------------------------------
         # get parameters from params
         datadir = self.tparams['PATHS.TEMP_PATH']
@@ -778,7 +838,7 @@ class JWST(Instrument):
         # get params from step constant
         run_step, mode, kwargs = self.from_step_args(func_name)
         # deal with not running this step
-        if not run_step: return self.no_run(func_name)
+        if not run_step: return
         # ---------------------------------------------------------------------
         # get parameters from params
         datadir = self.tparams['PATHS.TEMP_PATH']
@@ -805,7 +865,7 @@ class JWST(Instrument):
         # get params from step constant
         run_step, mode, kwargs = self.from_step_args(func_name)
         # deal with not running this step
-        if not run_step: return self.no_run(func_name)
+        if not run_step: return
         # ---------------------------------------------------------------------
         # get parameters from params
         datadir = self.tparams['PATHS.TEMP_PATH']
@@ -835,7 +895,7 @@ class JWST(Instrument):
         # get params from step constant
         run_step, mode, kwargs = self.from_step_args(func_name)
         # deal with not running this step
-        if not run_step: return self.no_run(func_name)
+        if not run_step: return
         # ---------------------------------------------------------------------
         # get parameters from params
         datadir = self.tparams['PATHS.TEMP_PATH']
@@ -862,7 +922,7 @@ class JWST(Instrument):
         # get params from step constant
         run_step, mode, kwargs = self.from_step_args(func_name)
         # deal with not running this step
-        if not run_step: return self.no_run(func_name)
+        if not run_step: return
         # ---------------------------------------------------------------------
         # get parameters from params
         datadir = self.tparams['PATHS.TEMP_PATH']
@@ -872,7 +932,7 @@ class JWST(Instrument):
         for it, filename in enumerate(infiles):
             # Read input segments files from disk
             input_data = datamodels.open(filename)
-            result = RampFitStep.call(input_data, output_dir=datadir,
+            rate, result = RampFitStep.call(input_data, output_dir=datadir,
                                       save_results=True, **kwargs)
             # To limit disk usage, erase the file from the previously saved step
             self.remove_intermediate_files(it)
@@ -889,7 +949,7 @@ class JWST(Instrument):
         # get params from step constant
         run_step, mode, kwargs = self.from_step_args(func_name)
         # deal with not running this step
-        if not run_step: return self.no_run(func_name)
+        if not run_step: return
         # ---------------------------------------------------------------------
         # get parameters from params
         datadir = self.tparams['PATHS.TEMP_PATH']
@@ -916,7 +976,7 @@ class JWST(Instrument):
         # get params from step constant
         run_step, mode, kwargs = self.from_step_args(func_name)
         # deal with not running this step
-        if not run_step: return self.no_run(func_name)
+        if not run_step: return
         # ---------------------------------------------------------------------
         # get parameters from params
         datadir = self.tparams['PATHS.TEMP_PATH']
@@ -943,7 +1003,7 @@ class JWST(Instrument):
         # get params from step constant
         run_step, mode, kwargs = self.from_step_args(func_name)
         # deal with not running this step
-        if not run_step: return self.no_run(func_name)
+        if not run_step: return
         # ---------------------------------------------------------------------
         # get parameters from params
         datadir = self.tparams['PATHS.TEMP_PATH']
@@ -970,7 +1030,7 @@ class JWST(Instrument):
         # get params from step constant
         run_step, mode, kwargs = self.from_step_args(func_name)
         # deal with not running this step
-        if not run_step: return self.no_run(func_name)
+        if not run_step: return
         # ---------------------------------------------------------------------
         # get parameters from params
         datadir = self.tparams['PATHS.TEMP_PATH']
@@ -986,8 +1046,8 @@ class JWST(Instrument):
             self.remove_intermediate_files(it)
             # update the LAST and RESULT variables
             self.update_last(it, datadir, result.meta.filename, func_name)
-            # rename output files to have _rateints.fits
-            self.rename_last(it, '_rateints.fits')
+            # save output file to {PREFIX}_rateints.fits
+            self.save_output(it, '_rateints.fits')
         
     def apply_photometric_calibration(self):
         """
@@ -999,7 +1059,7 @@ class JWST(Instrument):
         # get params from step constant
         run_step, mode, kwargs = self.from_step_args(func_name)
         # deal with not running this step
-        if not run_step: return self.no_run(func_name)
+        if not run_step: return
         # ---------------------------------------------------------------------
         # get parameters from params
         datadir = self.tparams['PATHS.TEMP_PATH']
@@ -1015,8 +1075,8 @@ class JWST(Instrument):
             self.remove_intermediate_files(it)
             # update the LAST and RESULT variables
             self.update_last(it, datadir, result.meta.filename, func_name)
-            # rename output files to have _rateints.fits
-            self.rename_last(it, 'calints.fits')
+            # save output file to {PREFIX}_calints.fits
+            self.save_output(it, '_calints.fits')
 
 
 # =============================================================================

@@ -61,10 +61,10 @@ def main(**kwargs):
     # -------------------------------------------------------------------------
     # run tsovore
     if params['RUN.TSOVORE']:
-        tsovore.run_tsovore(params)
+        tsovore_inst = tsovore.run_tsovore(params)
     # run sossisse_wrap
     if params['RUN.SOSSISSE']:
-        sossisse_inst = sossisse_wrap.run_sossisse(params)
+        sossisse_inst = sossisse_wrap.run_sossisse(params, tsovore_inst)
     else:
         sossisse_inst = None
     # run miriam

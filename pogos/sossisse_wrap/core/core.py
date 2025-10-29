@@ -21,7 +21,7 @@ import sossisse
 from pogos.core import base
 from pogos.core import io as pogo_io
 from pogos.sorbet.general import general as sorbet_gen
-
+from pogos.tsovore.instruments import default
 
 # =============================================================================
 # Define variables
@@ -44,7 +44,8 @@ WLOG = drs_log.wlog
 # =============================================================================
 # Define functions
 # =============================================================================
-def run_sossisse_module(params: ParamDict):
+def run_sossisse_module(params: ParamDict,
+                        tsovore_inst: default.Instrument = None):
     """
     Run the sossisse run recipe
 
@@ -66,6 +67,11 @@ def run_sossisse_module(params: ParamDict):
     # make sure yaml file is set
     sparams['INPUTS.PARAM_FILE'] = str(params['GLOBAL.YAML_FILE'])
 
+    # ----------------------------------------------------------------------
+    # Deal with input from SOSSISSE if available
+    # ----------------------------------------------------------------------
+    if tsovore_inst is not None:
+        params = tsovore_input(params, tsovore_inst)
 
     # SOSSISSE requires raw data to be copied to a specific location
     # check here if that exists and if not prompt the user
@@ -140,6 +146,56 @@ def setup_sossisse_module(params: ParamDict, cdict):
     cdict.save_yaml(params, outpath=yaml_file, log=False)
     # -------------------------------------------------------------------------
     # return the parameters
+    return params
+
+
+# TODO: Fill out function
+def tsovore_input(params: ParamDict,
+                   sossisse_inst: Optional[default.Instrument] = None):
+    # set function name
+    func_name = f'{__NAME__}.sossisse_input'
+    # -------------------------------------------------------------------------
+    # after sossisse run we may need to copy files to SORBET input location
+    sossisse_output_dir = sossisse_inst.params['PATHS.OUT_PATH']
+    # get sorbet parameters
+    sb_params = params.get('SORBET')
+    # get sossisse
+    # get sossisse files to copy
+    sossisse_wlc_file = sossisse_inst.get_variable('OUT_WLC_FILE',
+                                                   func_name)
+    sossisse_spec_lc_file = sossisse_inst.get_variable('OUT_SPEC_LC_FILE',
+                                                       func_name)
+    # ---------------------------------------------------------------------
+    # deal with WLCTA files
+    if sb_params['WLCTA.RUN']:
+        # prepare input directory
+        prepare_directories(params, method='WLCTA', verbose=False)
+        # get the sorbet input directory for WLCTA
+        sorbet_wlcta_input_dir = sb_params['WLCTA.INPUT_PATH']
+        # get absolute path to
+        sorbet_file = str(os.path.join(sorbet_wlcta_input_dir,
+                                       os.path.basename(sossisse_wlc_file)))
+        # copy linear recon coeffs csv file
+        shutil.copy(sossisse_wlc_file, sorbet_file)
+        # update params
+        params['SORBET.WLCTA.INPUT_FILE'] = os.path.basename(sorbet_file)
+        params.set_source('SORBET.WLCTA.INPUT_FILE', func_name)
+    # ---------------------------------------------------------------------
+    # deal with SLCTA files
+    if sb_params['SLCTA.RUN']:
+        # prepare input directory
+        prepare_directories(params, method='SLCTA', verbose=False)
+        # get the sorbet input directory for SLCTA
+        sorbet_slcta_input_dir = sb_params['SLCTA.INPUT_PATH']
+        # get absolute path to
+        sorbet_file = str(os.path.join(sorbet_slcta_input_dir,
+                                       os.path.basename(sossisse_spec_lc_file)))
+        # copy linear recon coeffs csv file
+        shutil.copy(sossisse_spec_lc_file, sorbet_file)
+        # update params
+        params['SORBET.SLCTA.INPUT_FILES'] = [os.path.basename(sorbet_file)]
+        params.set_source('SORBET.SLCTA.INPUT_FILES', func_name)
+    # return params
     return params
 
 

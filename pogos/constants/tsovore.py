@@ -152,6 +152,12 @@ TSOVORE_CDict.add('FILES', value=None, dtype=list, dtypei=str, not_none=False,
 TSOVORE_CDict.add('REMOVE_INTERMEDIATES', value=True, dtype=bool,
                  source=__NAME__, user=True, active=True, group=cgroup,
                  description='Whether to remove intermediate files')
+# -----------------------------------------------------------------------------
+# Whether to skip files that have already been processed
+TSOVORE_CDict.add('SKIP_PROCESSED_FILES', value=True, dtype=bool,
+                 source=__NAME__, user=True, active=True, group=cgroup,
+                 description='Whether to skip files that have already been '
+                             'processed')
 
 # =============================================================================
 # Science step settings
@@ -207,12 +213,14 @@ STEP_DESCRIPTION = ('Whether to perform the step: {0}. '
                     '\n - MODE: str, the mode to use for the step'
                     '\n - KWARGS: dict, any additional keyword arguments')
 
-STEP_DESCRIPTIONS = dict()
-STEP_DESCRIPTIONS['INITIALIZE_DETECTOR_DATA'] = """
+STEP_DESCS = dict()
+STEP_DESCS['INITIALIZE_DETECTOR_DATA'] = dict()
+STEP_DESCS['INITIALIZE_DETECTOR_DATA']['jwst'] = """
 No kwargs for initialization step
 """
 
-STEP_DESCRIPTIONS['DETECT_AND_FLAG_JUMPS'] = """
+STEP_DESCS['DETECT_AND_FLAG_JUMPS'] = dict()
+STEP_DESCS['DETECT_AND_FLAG_JUMPS']['jwst'] = """
 Kwargs for jump detection:
 - rejection_threshold: float, the sigma threshold for jump detection
 - max_shower_amplitude: float
@@ -220,7 +228,27 @@ Kwargs for jump detection:
 - four_group_rejection_threshold:  float
 - only_use_ints: bool 
 """
-
+# -----------------------------------------------------------------------------
+# Step output filenames (for skipping)
+STEP_SUFFIX = dict()
+STEP_SUFFIX['INITIALIZE_DETECTOR_DATA'] = '_saturationstep.fits'
+STEP_SUFFIX['APPLY_INTERPIXEL_CAPACITANCE'] = '_ipcstep.fits'
+STEP_SUFFIX['REMOVE_FIRST_FRAME_SIGNAL'] = '_firstframestep.fits'
+STEP_SUFFIX['REMOVE_LAST_FRAME_SIGNAL'] = '_lastframestep.fits'
+STEP_SUFFIX['CORRECT_RESET_ANOMALY'] = '_resetstep.fits'
+STEP_SUFFIX['APPLY_LINEARITY_CORRECTION'] = '_linearitystep.fits'
+STEP_SUFFIX['APPLY_RSCD_CORRECTION'] = '_rscdstep.fits'
+STEP_SUFFIX['SUBTRACT_DARK_CURRENT'] = '_darkcurrentstep.fits'
+STEP_SUFFIX['APPLY_REFERENCE_PIXEL_CORRECTION'] = '_refpixstep.fits'
+STEP_SUFFIX['CORRECT_CHARGE_MIGRATION'] = '_chargemigrationstep.fits' # TODO: Check
+STEP_SUFFIX['DETECT_AND_FLAG_JUMPS'] = '_jump.fits'
+STEP_SUFFIX['REMOVE_FLICKER_NOISE'] = '_flickernoisestep.fits' # TODO: Check
+STEP_SUFFIX['FIT_SIGNAL_RAMPS'] = '_rampsfitstep.fits' # TODO: Check
+STEP_SUFFIX['APPLY_GAIN_SCALING'] = '_gainscalestep.fits' # TODO: Check
+STEP_SUFFIX['SUBTRACT_BACKGROUND'] = '_backgroundstep.fits' # TODO: Check
+STEP_SUFFIX['ASSIGN_WCS_SOLUTION'] = '_wcsstep.fits' # TODO: Check
+STEP_SUFFIX['APPLY_FLAT_FIELD'] = '_rateints.fits'
+STEP_SUFFIX['APPLY_PHOTOMETRIC_CALIBRATION'] = '_calints.fits'
 
 # -----------------------------------------------------------------------------
 # loop around all steps to create constant
@@ -230,11 +258,12 @@ for step in STEPS:
     value['RUN'] = True
     value['MODE'] = DEFAULT_MODES.get(step, 'None')
     value['KWARGS'] = dict()
+    value['SUFFIX'] = STEP_SUFFIX.get(step, None)
     # deal with additional step descriptions
-    if step in STEP_DESCRIPTIONS:
-        desc = STEP_DESCRIPTION + '\n' + STEP_DESCRIPTIONS[step]
-    else:
-        desc = STEP_DESCRIPTION
+    desc = STEP_DESCRIPTION
+    if value['MODE'] in STEP_DESCS:
+        if step in STEP_DESCS[value['MODE']]:
+            desc = STEP_DESCRIPTION + '\n' + STEP_DESCS[value['MODE']]
     # give the step name
     step_name = step.replace('_', ' ').title()
     # push into a normal POGOS constant
