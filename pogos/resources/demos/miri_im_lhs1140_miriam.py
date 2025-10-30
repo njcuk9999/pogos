@@ -103,6 +103,9 @@ Cdict.set('FILES', group=cgroup, source=__NAME__,
                  'jw03730009001_03101_00001-seg005_mirimage_rateints.fits'])
 
 
+Cdict.set('SKIP_INTEGRATIONS', group=cgroup, source=__NAME__,
+          value=[0, 1])
+
 # =============================================================================
 # Start of code
 # =============================================================================

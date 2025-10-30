@@ -86,6 +86,8 @@ def merged_from_previous(params: ParamDict, input_basenames: List[str],
     skip_keys = list(hdr['SKIP*'])
     skips = [hdr[key] for key in skip_keys]
     skipped_exposures = mparams['INPUTS.SKIP_INTEGRATIONS']
+    if skipped_exposures is None:
+        skipped_exposures = []
     # loop around all skips
     for skip in skipped_exposures:
         # if we are missing this skip re-merge
@@ -389,7 +391,7 @@ def write_photometry_results(params: ParamDict, ptbl0: Table,
     # loop around the two tables
     for d2flag, ptbl in zip([True, False], [ptbl0, ptbl1]):
         # construct output filename
-        MIRIAM = os.path.join(output_dir, 'miriam_photometry{0}.fits')
+        output_fits = os.path.join(output_dir, 'miriam_photometry{0}.fits')
         output_rdb = os.path.join(output_dir, 'miriam_photometry{0}.rdb')
 
         if d2flag:

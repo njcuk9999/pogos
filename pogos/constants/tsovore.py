@@ -247,8 +247,8 @@ STEP_SUFFIX['FIT_SIGNAL_RAMPS'] = '_1_rampfitstep.fits' # TODO: 0 or 1?
 STEP_SUFFIX['APPLY_GAIN_SCALING'] = '_1_gainscalestep.fits' # TODO: 0 or 1?
 STEP_SUFFIX['SUBTRACT_BACKGROUND'] = '_1_backgroundstep.fits' # TODO: Check
 STEP_SUFFIX['ASSIGN_WCS_SOLUTION'] = '_1_assignwcsstep.fits' # TODO: 0 or 1?
-STEP_SUFFIX['APPLY_FLAT_FIELD'] = '_rateints.fits'
-STEP_SUFFIX['APPLY_PHOTOMETRIC_CALIBRATION'] = '_calints.fits'
+STEP_SUFFIX['APPLY_FLAT_FIELD'] = '_1_flatfieldstep.fits' # TODO: 0 or 1?
+STEP_SUFFIX['APPLY_PHOTOMETRIC_CALIBRATION'] = '_1_photomstep.fits' # TODO: 0 or 1?
 
 # -----------------------------------------------------------------------------
 # loop around all steps to create constant

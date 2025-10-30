@@ -181,7 +181,7 @@ def tsovore_input(params: ParamDict,
     miriam_params = miriam_params.as_param_dict()
     # -------------------------------------------------------------------------
     # get tsovore files to copy
-    tsovore_outputs = tsovore_inst.variables['LAST']
+    tsovore_outputs = tsovore_inst.variables['OUT']
     # ---------------------------------------------------------------------
     # Get the MIRIAM input directory
     miriam_input_dir = miriam_params['PATHS.INPUT_PATH']

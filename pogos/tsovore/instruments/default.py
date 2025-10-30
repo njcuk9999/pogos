@@ -76,6 +76,7 @@ class Instrument:
         self.variables.set('PREFIXES', [], source=func_name)
         self.variables.set('NSEGMENTS', 0, source=func_name)
         self.variables.set('LAST', [], source=func_name)
+        self.variables.set('OUT', [], source=func_name)
         # lock variables to avoid misuse
         self.variables.lock()
 
@@ -365,13 +366,13 @@ class Instrument:
         prefixes = self.variables['PREFIXES']
         # construct new filename
         new_base_name = prefixes[it] + suffix
-        new_filename = os.path.join(datadir, new_base_name)
+        new_filename = str(os.path.join(datadir, new_base_name))
         # rename the file
         shutil.copy(infiles[it], new_filename)
         # update the LAST variable
         self.variables.unlock()
-        self.variables['LAST'][it] = new_filename
-        self.variables.set_source('LAST', func_name)
+        self.variables['OUT'][it] = new_filename
+        self.variables.set_source('OUT', func_name)
         self.variables.lock()
 
     def remove_intermediate_files(self, it: int):
