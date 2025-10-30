@@ -237,33 +237,30 @@ def core_setup(params: ParamDict, demo_mod: Any):
     # now ask user to select which steps to use
     demo_modes = []
     # set up options
-    if len(supported_steps) > 1:
-        options = ['0']
-        options += [str(opt) for opt in range(1, len(supported_steps) + 1)]
-        options += ['']
-        optiondescs = ['All'] + supported_steps + ['Exit selection']
-    else:
-        options = ['1', '']
-        optiondescs = supported_steps + ['Exit selection']
+    optiondescs = ['All'] + supported_steps
     # set up question
-    question = ('Select a reduction step '
-                '(select 0 for all, leave blank to continue):')
+    question = ('Select all reductions steps')
+    for oit, option in enumerate(optiondescs):
+        question += '\n\t{0}: {1}'.format(oit, option)
     # loop around until all choices made
+    drs_text.cprint(question, colour='magenta')
+    # add input
     while True:
-        step_choice = drs_text.user_input(question, options=options,
-                                          optiondescs=optiondescs)
-        if step_choice == '0':
-            demo_modes = supported_steps
+        uinput = input('Enter all numbers (comma separated):\t\t')
+
+        if '0' in uinput:
+            demo_modes = list(supported_steps)
             break
-        elif step_choice == '':
+        # see it valid number were given as input
+        for it in range(len(supported_steps)):
+            if str(it + 1) in uinput:
+                demo_modes.append(supported_steps[it])
+        # if we have some modes we break
+        if len(demo_modes) > 0:
             break
-        else:
-            demo_modes.append(supported_steps[int(step_choice) - 1])
-        # don't continue if we have all supported steps
-        if len(demo_modes) == len(supported_steps):
-            break
-    # make sure demo_modes is unique
-    demo_modes = list(set(demo_modes))
+        # otherwise we ask again
+        drs_text.cprint('No valid selection made, please try again.',
+                        colour='yellow')
     # -------------------------------------------------------------------------
     # now we want to cut down demo_mod.DEMOS to only those selected
     demo_dict = dict()
