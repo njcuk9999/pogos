@@ -243,10 +243,10 @@ STEP_SUFFIX['APPLY_REFERENCE_PIXEL_CORRECTION'] = '_refpixstep.fits'
 STEP_SUFFIX['CORRECT_CHARGE_MIGRATION'] = '_chargemigrationstep.fits' # TODO: Check
 STEP_SUFFIX['DETECT_AND_FLAG_JUMPS'] = '_jump.fits'
 STEP_SUFFIX['REMOVE_FLICKER_NOISE'] = '_flickernoisestep.fits' # TODO: Check
-STEP_SUFFIX['FIT_SIGNAL_RAMPS'] = '_rampsfitstep.fits' # TODO: Check
-STEP_SUFFIX['APPLY_GAIN_SCALING'] = '_gainscalestep.fits' # TODO: Check
-STEP_SUFFIX['SUBTRACT_BACKGROUND'] = '_backgroundstep.fits' # TODO: Check
-STEP_SUFFIX['ASSIGN_WCS_SOLUTION'] = '_wcsstep.fits' # TODO: Check
+STEP_SUFFIX['FIT_SIGNAL_RAMPS'] = '_1_rampfitstep.fits' # TODO: 0 or 1?
+STEP_SUFFIX['APPLY_GAIN_SCALING'] = '_1_gainscalestep.fits' # TODO: 0 or 1?
+STEP_SUFFIX['SUBTRACT_BACKGROUND'] = '_1_backgroundstep.fits' # TODO: Check
+STEP_SUFFIX['ASSIGN_WCS_SOLUTION'] = '_1_assignwcsstep.fits' # TODO: 0 or 1?
 STEP_SUFFIX['APPLY_FLAT_FIELD'] = '_rateints.fits'
 STEP_SUFFIX['APPLY_PHOTOMETRIC_CALIBRATION'] = '_calints.fits'
 

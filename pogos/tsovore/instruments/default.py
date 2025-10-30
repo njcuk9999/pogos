@@ -8,6 +8,7 @@ Created on 2025-10-27 at 11:39
 @author: cook
 """
 import os
+import shutil
 from typing import Any, Dict, Tuple
 
 from jwst import datamodels
@@ -366,7 +367,7 @@ class Instrument:
         new_base_name = prefixes[it] + suffix
         new_filename = os.path.join(datadir, new_base_name)
         # rename the file
-        os.rename(infiles[it], new_filename)
+        shutil.copy(infiles[it], new_filename)
         # update the LAST variable
         self.variables.unlock()
         self.variables['LAST'][it] = new_filename
@@ -933,7 +934,7 @@ class JWST(Instrument):
             # Read input segments files from disk
             input_data = datamodels.open(filename)
             rate, result = RampFitStep.call(input_data, output_dir=datadir,
-                                      save_results=True, **kwargs)
+                                            save_results=True, **kwargs)
             # To limit disk usage, erase the file from the previously saved step
             self.remove_intermediate_files(it)
             # update the LAST and RESULT variables

@@ -62,17 +62,22 @@ def main(**kwargs):
     # run tsovore
     if params['RUN.TSOVORE']:
         tsovore_inst = tsovore.run_tsovore(params)
+    else:
+        tsovore_inst = None
+    # -------------------------------------------------------------------------
     # run sossisse_wrap
     if params['RUN.SOSSISSE']:
         sossisse_inst = sossisse_wrap.run_sossisse(params, tsovore_inst)
     else:
         sossisse_inst = None
+    # -------------------------------------------------------------------------
     # run miriam
     if params['RUN.MIRIAM']:
-        miriam.run_miriam(params)
+        mout_params = miriam.run_miriam(params, tsovore_inst)
+    # -------------------------------------------------------------------------
     # run sorbet
     if params['RUN.SORBET']:
-        sorbet.run_sorbet(params, sossisse_inst)
+        sorbet.run_sorbet(params, sossisse_inst, mout_params)
     # -------------------------------------------------------------------------
     # print splash
     general.end_splash()

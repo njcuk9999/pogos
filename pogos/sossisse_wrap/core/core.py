@@ -68,11 +68,11 @@ def run_sossisse_module(params: ParamDict,
     sparams['INPUTS.PARAM_FILE'] = str(params['GLOBAL.YAML_FILE'])
 
     # ----------------------------------------------------------------------
-    # Deal with input from SOSSISSE if available
+    # Deal with input from TSOVORE if available
     # ----------------------------------------------------------------------
     if tsovore_inst is not None:
         params = tsovore_input(params, tsovore_inst)
-
+    # ----------------------------------------------------------------------
     # SOSSISSE requires raw data to be copied to a specific location
     # check here if that exists and if not prompt the user
     spath = os.path.join(sparams['INPUTS.SOSSIOPATH'],

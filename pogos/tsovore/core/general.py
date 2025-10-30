@@ -16,7 +16,7 @@ from aperocore.core import drs_log
 from aperocore.core import drs_misc
 from pogos.core import base
 from pogos.core import general as pogos_general
-from pogos.tsovore.instruments import select
+from pogos.tsovore.instruments import select, default
 from sossisse.core import misc
 
 
@@ -58,7 +58,7 @@ def tsovore_unique_id() -> str:
     return sid
 
 
-def run_tsovore(params: ParamDict):
+def run_tsovore(params: ParamDict) -> default.Instrument:
     """
     Run the TSOVORE processing
 
@@ -78,7 +78,7 @@ def run_tsovore(params: ParamDict):
     # run the tsovore processing
     inst.process()
     # return parameters
-    return params
+    return inst
 
 
 def setup_tsovore_module(params: ParamDict):

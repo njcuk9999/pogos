@@ -380,14 +380,16 @@ def cube2phot(params: ParamDict, cube: np.ndarray,
 
 
 def write_photometry_results(params: ParamDict, ptbl0: Table,
-                             ptbl1: Table):
+                             ptbl1: Table) -> ParamDict:
     # get output directory
     output_dir = params.get('MIRIAM.PATHS.OUTPUT_PATH')
+
+    output_fits = None
 
     # loop around the two tables
     for d2flag, ptbl in zip([True, False], [ptbl0, ptbl1]):
         # construct output filename
-        output_fits = os.path.join(output_dir, 'miriam_photometry{0}.fits')
+        MIRIAM = os.path.join(output_dir, 'miriam_photometry{0}.fits')
         output_rdb = os.path.join(output_dir, 'miriam_photometry{0}.rdb')
 
         if d2flag:
@@ -407,6 +409,13 @@ def write_photometry_results(params: ParamDict, ptbl0: Table,
         WLOG(params, '', msg)
         # write rdb file
         ptbl.write(output_rdb, format='ascii.rdb', overwrite=True)
+
+    # TODO: Save output in a similar format to SOSSISSE (for SORBET)
+    # output ParamDict
+    outputs = ParamDict()
+    outputs['output_fits'] = output_fits
+
+    return outputs
 
 
 # =============================================================================

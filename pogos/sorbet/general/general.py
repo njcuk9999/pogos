@@ -22,12 +22,12 @@ from aperocore.core import drs_misc
 from pogos.core import base
 from pogos.core import general as pogos_general
 from pogos.core import io as pogos_io
-from pogos.sorbet.core import base as sorbet_base
 from pogos.sorbet.core import core as sorbet_core
 from pogos.sorbet.general import science as sorbet_science
 from pogos.sorbet.general import plots as sorbet_plots
 from sossisse.core import misc
-from sossisse.instruments import default
+from sossisse.instruments import default as sdefault
+
 
 # =============================================================================
 # Define variables
@@ -80,7 +80,8 @@ def setup_sorbet_module(params: ParamDict):
 
 
 def run_sorbet_module(params: ParamDict,
-                      sossisse_inst: Optional[default.Instrument] = None):
+                      sossisse_inst: Optional[sdefault.Instrument] = None,
+                      miriam_params: ParamDict = None):
     """
     Run the sorbet recipes
 
@@ -100,10 +101,12 @@ def run_sorbet_module(params: ParamDict,
         return params
 
     # ----------------------------------------------------------------------
-    # Deal with input from SOSSISSE if available
+    # Deal with input from SOSSISSE and MIRIAM if available
     # ----------------------------------------------------------------------
     if sossisse_inst is not None:
         params = sossisse_input(params, sossisse_inst)
+    if miriam_params is not None:
+        params = miriam_input(params, miriam_params)
 
     # ----------------------------------------------------------------------
     # White Light Curve Transit Analysis
@@ -133,7 +136,7 @@ def run_sorbet_module(params: ParamDict,
 
 
 def sossisse_input(params: ParamDict,
-                   sossisse_inst: Optional[default.Instrument] = None):
+                   sossisse_inst: Optional[sdefault.Instrument] = None):
     # set function name
     func_name = f'{__NAME__}.sossisse_input'
     # -------------------------------------------------------------------------
@@ -179,6 +182,33 @@ def sossisse_input(params: ParamDict,
         params.set_source('SORBET.SLCTA.INPUT_FILES', func_name)
     # return params
     return params
+
+
+def miriam_input(params: ParamDict, miriam_params: Optional[ParamDict] = None):
+    func_name = f'{__NAME__}.miriam_input'
+    # -------------------------------------------------------------------------
+    # get sorbet parameters
+    sb_params = params.get('SORBET')
+    # get MIRIAM file to copy
+    miriam_wlc_file = miriam_params.get('WLC_FILE', None)
+    # deal with no MIRIAM WLC file
+    if miriam_wlc_file is None:
+        return
+    # ---------------------------------------------------------------------
+    # deal with WLCTA files
+    if sb_params['WLCTA.RUN']:
+        # prepare input directory
+        prepare_directories(params, method='WLCTA', verbose=False)
+        # get the sorbet input directory for WLCTA
+        sorbet_wlcta_input_dir = sb_params['WLCTA.INPUT_PATH']
+        # get absolute path to
+        sorbet_file = str(os.path.join(sorbet_wlcta_input_dir,
+                                       os.path.basename(miriam_wlc_file)))
+        # copy linear recon coeffs csv file
+        shutil.copy(miriam_wlc_file, sorbet_file)
+        # update params
+        params['SORBET.WLCTA.INPUT_FILE'] = os.path.basename(sorbet_file)
+        params.set_source('SORBET.WLCTA.INPUT_FILE', func_name)
 
 
 def run_sorbet_wlcta(params: ParamDict):
