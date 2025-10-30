@@ -351,27 +351,39 @@ class Instrument:
         self.variables.set_source('LAST', func_name)
         self.variables.lock()
 
-    def save_output(self, it: int, suffix: str):
+    def save_outputs(self, suffix: str):
         """
         Rename the last file to have a given suffix
 
-        :param it: int, the iteration number
         :param suffix: str, the suffix to add to the filename
         """
         # set function name
         func_name = f"{__NAME__}.Instrument.rename_results"
-        datadir = self.tparams['PATHS.OUTPUT_PATH']
         # get variables from self
         infiles = self.variables['LAST']
         prefixes = self.variables['PREFIXES']
-        # construct new filename
-        new_base_name = prefixes[it] + suffix
-        new_filename = str(os.path.join(datadir, new_base_name))
-        # rename the file
-        shutil.copy(infiles[it], new_filename)
+        # get parameters from params
+        datadir = self.tparams['PATHS.TEMP_PATH']
+        # storage for OUT variable
+        out_files = []
+        # loop around infiles
+        for it, filename in enumerate(infiles):
+            # construct new filename
+            new_base_name = prefixes[it] + suffix
+            new_filename = str(os.path.join(datadir, new_base_name))
+            # deal with files not existing (not allowed)
+            if not os.path.exists(infiles[it]):
+                wmsg = (f'File {infiles[it]} does not exist on disk. '
+                        f'Cannot add to out. This may crash future steps.')
+                WLOG(self.params, 'warning', wmsg)
+                return
+            # copy the file
+            shutil.copy(infiles[it], new_filename)
+            # save files to list
+            out_files.append(new_filename)
         # update the LAST variable
         self.variables.unlock()
-        self.variables['OUT'][it] = new_filename
+        self.variables['OUT'] = out_files
         self.variables.set_source('OUT', func_name)
         self.variables.lock()
 
@@ -1032,7 +1044,10 @@ class JWST(Instrument):
         # get params from step constant
         run_step, mode, kwargs = self.from_step_args(func_name)
         # deal with not running this step
-        if not run_step: return
+        if not run_step:
+            # save output files to {PREFIX}_rateints.fits
+            self.save_outputs('_rateints.fits')
+            return
         # ---------------------------------------------------------------------
         # get parameters from params
         datadir = self.tparams['PATHS.TEMP_PATH']
@@ -1048,8 +1063,8 @@ class JWST(Instrument):
             self.remove_intermediate_files(it)
             # update the LAST and RESULT variables
             self.update_last(it, datadir, result.meta.filename, func_name)
-            # save output file to {PREFIX}_rateints.fits
-            self.save_output(it, '_rateints.fits')
+        # save output files to {PREFIX}_rateints.fits
+        self.save_outputs('_rateints.fits')
         
     def apply_photometric_calibration(self):
         """
@@ -1061,7 +1076,10 @@ class JWST(Instrument):
         # get params from step constant
         run_step, mode, kwargs = self.from_step_args(func_name)
         # deal with not running this step
-        if not run_step: return
+        if not run_step:
+            # save output files to {PREFIX}_rateints.fits
+            self.save_outputs('_calints.fits')
+            return
         # ---------------------------------------------------------------------
         # get parameters from params
         datadir = self.tparams['PATHS.TEMP_PATH']
@@ -1077,8 +1095,8 @@ class JWST(Instrument):
             self.remove_intermediate_files(it)
             # update the LAST and RESULT variables
             self.update_last(it, datadir, result.meta.filename, func_name)
-            # save output file to {PREFIX}_calints.fits
-            self.save_output(it, '_calints.fits')
+        # save output file to {PREFIX}_calints.fits
+        self.save_outputs('_calints.fits')
 
 
 # =============================================================================
