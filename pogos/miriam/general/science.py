@@ -49,7 +49,7 @@ WLOG = drs_log.wlog
 # =============================================================================
 # Define functions
 # =============================================================================
-MergedReturn = Tuple[np.ndarray, np.ndarray, Table, np.ndarray]
+MergedReturn = Tuple[np.ndarray, np.ndarray, Table, np.ndarray, float, float]
 
 
 def merged_from_previous(params: ParamDict, input_basenames: List[str],
@@ -111,6 +111,7 @@ def merged_from_previous(params: ParamDict, input_basenames: List[str],
     # -------------------------------------------------------------------------
     try:
         with fits.open(merged_cube_file) as hdul:
+            hdr = hdul[0].header
             cube = np.array(hdul['CUBE'].data)
             cube_err = np.array(hdul['CUBE_ERR'].data)
             weights = np.array(hdul['WEIGHTS'].data)
@@ -119,8 +120,11 @@ def merged_from_previous(params: ParamDict, input_basenames: List[str],
         WLOG(params, '', msg)
         # open the table as a astropy table
         mtbl = Table.read(merged_cube_file, hdu='MTBL')
+        # get the xcent and ycent from header
+        xstart = hdr['XSTART']
+        ystart = hdr['YSTART']
         # return the merged data
-        return cube, cube_err, mtbl, weights
+        return cube, cube_err, mtbl, weights, xstart, ystart
     except Exception as e:
         msg = 'Failed to read merged cube from previous run: '
         msg += f'{merged_cube_file}\nError: {e}'
@@ -172,13 +176,14 @@ def merge_inputs(params: ParamDict) -> MergedReturn:
     # -------------------------------------------------------------------------
     # if we have merged data use it
     if merged_data is not None:
-        cube, cube_err, mtbl, weights = merged_data
-        return cube, cube_err, mtbl, weights
+        cube, cube_err, mtbl, weights, xstart, ystart = merged_data
+        return cube, cube_err, mtbl, weights, xstart, ystart
     # -------------------------------------------------------------------------
     # storage for tables
     mtbls = None
     all_cubes = None
     all_cube_errs = None
+    xstart, ystart = -1.0, -1.0
     # loop around all files
     for ncube in tqdm(range(len(input_paths))):
         # load this iterations cube
@@ -197,7 +202,8 @@ def merge_inputs(params: ParamDict) -> MergedReturn:
             cube[islice, :, :] = cleaned_integration
         # ---------------------------------------------------------------------
         # cut down the cube and error cube
-        cut_cube, cut_cube_error = cut_down_cubes(params, cube, cube_err)
+        cd_out = cut_down_cubes(params, cube, cube_err)
+        cut_cube, cut_cube_error, xstart, ystart = cd_out
         # append
         if all_cubes is None:
             all_cubes = np.array(cut_cube)
@@ -265,6 +271,9 @@ def merge_inputs(params: ParamDict) -> MergedReturn:
     # add the number of integrations
     header['NINTS'] = (all_cubes.shape[0], 'Number of integrations in '
                                            'merged cube')
+    # add the center (related to the full image size)
+    header['XSTART'] = (xstart, 'x start of cut-out in full frame image')
+    header['YSTART'] = (ystart, 'y start of cut-out in full frame image')
     # -------------------------------------------------------------------------
     # create HDU list
     hdulist = fits.HDUList()
@@ -288,7 +297,7 @@ def merge_inputs(params: ParamDict) -> MergedReturn:
     # write to temporary file
     hdulist.writeto(merged_cube_file, overwrite=True)
     # -------------------------------------------------------------------------
-    return all_cubes, all_cube_errs, mtbls, weights
+    return all_cubes, all_cube_errs, mtbls, weights, xstart, ystart
 
 
 def remove_background_cube(params: ParamDict, cube: np.ndarray,
@@ -334,7 +343,7 @@ def calculate_cube_errors(params: ParamDict, cube: np.ndarray
 
 def cube2phot(params: ParamDict, cube: np.ndarray,
               cube_err: np.ndarray, mtbl: Table, weights: np.ndarray,
-              d2flag: bool = True) -> Table:
+              xstart: float, ystart: float, d2flag: bool = True) -> Table:
     # This function takes as an input a cube and returns the photometry
     # derived from the cube.
     # -------------------------------------------------------------------------
@@ -381,9 +390,11 @@ def cube2phot(params: ParamDict, cube: np.ndarray,
     # -------------------------------------------------------------------------
     # fit a sinc to the psf
     popt = fit_sinc_func(psf)
+    # get the cut down size
+    cut_size = params['MIRIAM.INPUTS.CUT_DOWNSIZE']
     # push the centers into the table
-    ptbl['cent_x'] = popt[3] + gradx
-    ptbl['cent_y'] = popt[4] + grady
+    ptbl['cent_x'] = xstart + popt[3] + ptbl['dxs']
+    ptbl['cent_y'] = ystart + popt[4] + ptbl['dys']
     # -------------------------------------------------------------------------
     # return the photometry table
     return ptbl
@@ -422,7 +433,8 @@ def process_integration(integration: np.ndarray,
 
 
 def cut_down_cubes(params: ParamDict, cube: np.ndarray,
-                   cube_err: np.ndarray) -> Tuple[np.ndarray, np.ndarray]:
+                   cube_err: np.ndarray
+                   ) -> Tuple[np.ndarray, np.ndarray, float, float]:
     # get MIRIAM params
     mparams = params.get('MIRIAM')
     # get the y-pixel range
@@ -440,7 +452,7 @@ def cut_down_cubes(params: ParamDict, cube: np.ndarray,
     cut_cube = cube[:, ystart:yend, xstart:xend]
     cut_cube_err = cube_err[:, ystart:yend, xstart:xend]
     # return the cut cubes
-    return cut_cube, cut_cube_err
+    return cut_cube, cut_cube_err, xstart, ystart
 
 
 def calc_mean_pedestal(params: ParamDict, cube: np.ndarray

@@ -72,7 +72,8 @@ def run_miriam(params: ParamDict, tsovore_inst: Optional = None) -> ParamDict:
     # -------------------------------------------------------------------------
     # Step 1: merge all input files into a single (cropped) data structure
     # -------------------------------------------------------------------------
-    cube, cube_err, mtbl, weights = mc_science.merge_inputs(params)
+    mi_out = mc_science.merge_inputs(params)
+    cube, cube_err, mtbl, weights, xstart, ystart = mi_out
 
     # -------------------------------------------------------------------------
     # Step 2: perform systematics correction on the data
@@ -91,9 +92,9 @@ def run_miriam(params: ParamDict, tsovore_inst: Optional = None) -> ParamDict:
     # Step 4: Change the cube to photometry
     # -------------------------------------------------------------------------
     ptbl0 = mc_science.cube2phot(params, cube2, cube2_err, mtbl, weights,
-                                d2flag=True)
+                                 xstart, ystart, d2flag=True)
     ptbl1 = mc_science.cube2phot(params, cube2, cube2_err, mtbl, weights,
-                                d2flag=False)
+                                 xstart, ystart, d2flag=False)
     # -------------------------------------------------------------------------
     # Step 5: plot results
     # -------------------------------------------------------------------------

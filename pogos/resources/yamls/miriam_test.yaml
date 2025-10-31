@@ -96,11 +96,11 @@ MIRIAM:
     #  or whatever is set in {MIRIAM.PATHS.INTPUT_PATH} (if absolute)
     #         Default value=None
     FILES:
-    - jw03730009001_03101_00001-seg001_mirimage_rateints.fits
-    - jw03730009001_03101_00001-seg002_mirimage_rateints.fits
-    - jw03730009001_03101_00001-seg003_mirimage_rateints.fits
-    - jw03730009001_03101_00001-seg004_mirimage_rateints.fits
-    - jw03730009001_03101_00001-seg005_mirimage_rateints.fits
+    - jw03730009001_03101_00001-seg001_mirimage_calints.fits
+    - jw03730009001_03101_00001-seg002_mirimage_calints.fits
+    - jw03730009001_03101_00001-seg003_mirimage_calints.fits
+    - jw03730009001_03101_00001-seg004_mirimage_calints.fits
+    - jw03730009001_03101_00001-seg005_mirimage_calints.fits
     # List of integrations to skip (0-indexed)
     #         Default value=None
     SKIP_INTEGRATIONS:

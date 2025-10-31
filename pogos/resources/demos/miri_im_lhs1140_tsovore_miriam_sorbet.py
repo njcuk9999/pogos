@@ -12,6 +12,7 @@ Created on 2025-03-25 at 09:57
 from pogos.constants import constants as pconst
 from pogos.constants import miriam as mconst
 from pogos.constants import tsovore as tconst
+from pogos.constants import sorbet as sbconst
 
 # =============================================================================
 # Define variables
@@ -22,9 +23,11 @@ __NAME__ = 'miri_lhs_1140_imaging.py'
 Cdict = pconst.CDict.copy(source=__NAME__)
 TSOvore_CDict = tconst.TSOVORE_CDict.copy(source=__NAME__)
 MIRIAM_CDict = mconst.MIRIAM_CDict.copy(source=__NAME__)
+SORBET_CDict = sbconst.SORBET_CDict.copy(source=__NAME__)
 # copy sorbet constants into Cdict
 Cdict.add_sub_cdict('MIRIAM', MIRIAM_CDict, source=__NAME__)
 Cdict.add_sub_cdict('TSOVORE', TSOvore_CDict, source=__NAME__)
+Cdict.add_sub_cdict('SORBET', SORBET_CDict, source=__NAME__)
 
 # =============================================================================
 # Define info (must contain "title")
