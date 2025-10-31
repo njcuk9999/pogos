@@ -14,9 +14,11 @@ import glob
 import os
 import shutil
 from string import Template
+from typing import Any, Dict, List
 
 import numpy as np
 from astropy.time import Time
+from astropy.io import fits
 
 from aperocore.base import base as aperobase
 from aperocore.constants.constant_functions import ConstantsDict
@@ -307,6 +309,49 @@ def copy_file_directory(params: ParamDict, inpath: str, outpath: str):
         WLOG(params, '', msg.format(infilepath, outfilepath))
         # copy the file
         shutil.copy(infilepath, outfilepath)
+
+
+def save_fits(params: ParamDict, filename: str, datalist: List[Any],
+              datatypes: List[str], datanames: List[str],
+              meta: Dict[str, Any] = None):
+    """
+    Save the data to a file
+    :param filename:
+    :param datalist:
+    :param datatypes:
+    :param datanames:
+    :param meta:
+    :return:
+    """
+    # print progres
+    msg = 'Saving data to file: {0}'
+    WLOG(params, 'info', msg.format(filename))
+
+    try:
+        # open a fits hdu list
+        with fits.HDUList() as hdul:
+            # first hdu is primary and is blank
+            hdul.append(fits.PrimaryHDU())
+            # loop around all data
+            for it in range(len(datalist)):
+                # deal with differing datatypes
+                if datatypes[it] == 'table':
+                    hdu = fits.BinTableHDU(datalist[it], name=datanames[it])
+                else:
+                    # create a hdu
+                    hdu = fits.ImageHDU(datalist[it], name=datanames[it])
+                # add the hdu to the hdul
+                hdul.append(hdu)
+            # add the meta data
+            if meta is not None:
+                for key in meta:
+                    hdul[0].header[key] = meta[key]
+            # write the hdul to a file
+            hdul.writeto(filename, overwrite=True)
+    except Exception as e:
+        emsg = 'Error saving data to file: {0}\n\t{1}: {2}'
+        eargs = [filename, type(e), str(e)]
+        raise base.PogosException(emsg.format(*eargs))
 
 
 # =============================================================================

@@ -146,6 +146,14 @@ pip install -U -e './pogos[dev]'
 
 And then proceed with [Setup](#2-setting-up-pogos) and [Running](#3-running-pogos) POGOS.
 
+
+**IMPORTANT NOTE:**
+
+When running in dev mode you must ensure that you are NOT in a directory
+that contains directories called "aperocore", "sossisse" or "pogos" as this will
+cause python to try and import from the local directories instead of the
+installed packages (this includes the ones you cloned above).
+
 [Back to top](#table-of-contents)
 
 ---

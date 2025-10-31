@@ -36,7 +36,7 @@ from jwst.saturation import SaturationStep
 from aperocore.constants import param_functions
 from aperocore.core import drs_log
 from pogos.core import base as pogos_base
-from pogos.tsovore.core import base as tsovore_base
+from pogos.tsovore.core import base as ts_base
 
 # =============================================================================
 # Define variables
@@ -119,7 +119,7 @@ class Instrument:
                 # check that file is on disk
                 if not os.path.isfile(absfile):
                     emsg = f'Input file {absfile} does not exist on disk'
-                    raise tsovore_base.TSOvoreException(emsg)
+                    raise ts_base.TSOvoreException(emsg)
             # append to list
             input_absfiles.append(absfile)
             # add basename to list
@@ -343,7 +343,7 @@ class Instrument:
             emsg = ('Iteration number {} is out of bounds for LAST variable of '
                     'length {}')
             eargs = [it, len(self.variables['LAST'])]
-            raise tsovore_base.TSOvoreException(emsg.format(*eargs))
+            raise ts_base.TSOvoreException(emsg.format(*eargs))
         # update the LAST variable
         self.variables.unlock()
         self.variables['LAST'][it] = absfile
@@ -420,7 +420,7 @@ class Instrument:
         if step_arg not in self.tparams:
             emsg = f'"{step_arg}" not found in parameters'
             eargs = [step_name]
-            raise tsovore_base.TSOvoreException(emsg.format(*eargs))
+            raise ts_base.TSOvoreException(emsg.format(*eargs))
         # ---------------------------------------------------------------------
         # get run step
         run_step = self.tparams[f'{step_arg}'].get('RUN', True)

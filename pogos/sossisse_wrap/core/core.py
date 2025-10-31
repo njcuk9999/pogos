@@ -18,7 +18,7 @@ from aperocore.constants.param_functions import ParamDict
 from aperocore.core import drs_log
 from aperocore.core import drs_misc
 from pogos.core import base
-from pogos.tsovore.instruments import default
+from pogos.tsovore.instruments import default as ts_default
 from sossisse.core import const_funcs
 from sossisse.core.exceptions import SossisseFileException
 from sossisse.recipes import run_sossisse as sossisse_run
@@ -45,7 +45,7 @@ WLOG = drs_log.wlog
 # Define functions
 # =============================================================================
 def run_sossisse_module(params: ParamDict,
-                        tsovore_inst: default.Instrument = None):
+                        tsovore_inst: ts_default.Instrument = None):
     """
     Run the sossisse run recipe
 
@@ -150,7 +150,7 @@ def setup_sossisse_module(params: ParamDict, cdict):
 
 
 def tsovore_input(params: ParamDict,
-                  tsovore_inst: Optional[default.Instrument] = None):
+                  tsovore_inst: Optional[ts_default.Instrument] = None):
     # set function name
     func_name = f'{__NAME__}.tsovore_input'
     # -------------------------------------------------------------------------

@@ -14,10 +14,10 @@ from typing import Any, Dict
 from aperocore.constants import param_functions
 
 from pogos.core import base as pogos_base
-from pogos.tsovore.core import base as tsovore_base
-from pogos.tsovore.instruments import default
+from pogos.tsovore.core import base as ts_base
+from pogos.tsovore.instruments import default as ts_default
 
-from pogos.tsovore.instruments import miri
+from pogos.tsovore.instruments import miri as ts_miri
 
 # =============================================================================
 # Define variables
@@ -37,7 +37,7 @@ INSTRUMENTS = dict()
 # add instrument classes here
 # -----------------------------------------------------------------------------
 # JWST MIRI IMAGING
-INSTRUMENTS['JWST.MIRI.IMAGING'] = miri.MiriImaging
+INSTRUMENTS['JWST.MIRI.IMAGING'] = ts_miri.MiriImaging
 
 
 # check that instrument/mode is in base instruments list
@@ -45,13 +45,13 @@ for instrument in INSTRUMENTS.keys():
     if instrument not in pogos_base.INSTRUMENTS:
         emsg = 'Instrument "{}" must be in base.INSTRUMENTS'
         eargs = ['instruments']
-        raise tsovore_base.TSOvoreException(emsg.format(*eargs))
+        raise ts_base.TSOvoreException(emsg.format(*eargs))
 
 
 # =============================================================================
 # Define functions
 # =============================================================================
-def load_instrument(params: ParamDict) -> default.Instrument:
+def load_instrument(params: ParamDict) -> ts_default.Instrument:
     """
     Load the instrument class
 
@@ -65,7 +65,7 @@ def load_instrument(params: ParamDict) -> default.Instrument:
     else:
         emsg = 'Instrument mode "{0}" not recognised'
         eargs = [instrument_mode]
-        raise tsovore_base.TSOvoreException(emsg.format(*eargs))
+        raise ts_base.TSOvoreException(emsg.format(*eargs))
 
 
 # =============================================================================

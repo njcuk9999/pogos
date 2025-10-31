@@ -12,7 +12,7 @@ Created on 2025-10-27 at 11:53
 from aperocore.constants import param_functions
 from aperocore.core import drs_log
 from pogos.core import base as pogos_base
-from pogos.tsovore.instruments import default
+from pogos.tsovore.instruments import default as ts_default
 
 # =============================================================================
 # Define variables
@@ -30,7 +30,7 @@ WLOG = drs_log.wlog
 # =============================================================================
 # Define functions
 # =============================================================================
-class MiriImaging(default.JWST):
+class MiriImaging(ts_default.JWST):
     def __init__(self, params):
         super().__init__(params, instrument='JWST.MIRI.IMAGING')
 

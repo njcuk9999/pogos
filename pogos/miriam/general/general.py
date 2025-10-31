@@ -24,7 +24,8 @@ from pogos.core import io as pogos_io
 from pogos.miriam.core import general as mc_general
 from pogos.miriam.general import plots as mc_plots
 from pogos.miriam.general import science as mc_science
-from pogos.tsovore.instruments import default
+from pogos.miriam.general import io as mc_io
+from pogos.tsovore.instruments import default as ts_default
 from sossisse.core import misc
 
 # =============================================================================
@@ -43,7 +44,7 @@ WLOG = drs_log.wlog
 # =============================================================================
 # Define functions
 # =============================================================================
-def run_miriam(params: ParamDict, tsovore_inst: Optional = None):
+def run_miriam(params: ParamDict, tsovore_inst: Optional = None) -> ParamDict:
     """
     Run the MIRIAM processing
 
@@ -103,7 +104,7 @@ def run_miriam(params: ParamDict, tsovore_inst: Optional = None):
     # -------------------------------------------------------------------------
     # Step 6: save results
     # -------------------------------------------------------------------------
-    oparams = mc_science.write_photometry_results(params, ptbl0, ptbl1)
+    oparams = mc_io.write_photometry_results(params, ptbl0, ptbl1)
     # -------------------------------------------------------------------------
     # produce summary html
     stitle = params.get('MIRIAM.GENERAL.DESCRIPTION', '')
@@ -167,7 +168,7 @@ def prepare_directories(params: ParamDict):
 
 
 def tsovore_input(params: ParamDict,
-                  tsovore_inst: Optional[default.Instrument] = None):
+                  tsovore_inst: Optional[ts_default.Instrument] = None):
     # set function name
     func_name = f'{__NAME__}.tsovore_input'
     # -------------------------------------------------------------------------

@@ -74,6 +74,8 @@ def main(**kwargs):
     # run miriam
     if params['RUN.MIRIAM']:
         mout_params = miriam.run_miriam(params, tsovore_inst)
+    else:
+        mout_params = None
     # -------------------------------------------------------------------------
     # run sorbet
     if params['RUN.SORBET']:

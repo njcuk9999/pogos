@@ -24,8 +24,8 @@ from aperocore.constants.param_functions import ParamDict
 from aperocore.core import drs_log
 from aperocore.core import drs_misc
 from pogos.core import base
-from pogos.miriam.core import base as miriam_base
-from pogos.miriam.general import plots
+from pogos.miriam.core import base as mc_base
+from pogos.miriam.general import plots as mc_plots
 
 # =============================================================================
 # Define variables
@@ -156,7 +156,7 @@ def merge_inputs(params: ParamDict) -> MergedReturn:
             emsg = 'MIRIAM.PATHS.INPUT_PATH.FILES[{0}]'
             emsg += ' file does not exist: {1}'
             eargs = [it, input_path]
-            raise miriam_base.MiriamException(emsg.format(*eargs))
+            raise mc_base.MiriamException(emsg.format(*eargs))
         else:
             input_paths.append(input_path)
             input_basenames.append(os.path.basename(input_path))
@@ -226,7 +226,7 @@ def merge_inputs(params: ParamDict) -> MergedReturn:
         emsg = 'Length of merged table ({0}) does not match number of '
         emsg += 'integrations in cubes ({1}, {2})'
         eargs = [n_integrations, all_cubes.shape[0], all_cube_errs.shape[0]]
-        raise miriam_base.MiriamException(emsg.format(*eargs))
+        raise mc_base.MiriamException(emsg.format(*eargs))
     # -------------------------------------------------------------------------
     # Deal with remove the exposures that are not used
     skipped_exposures = mparams['INPUTS.SKIP_INTEGRATIONS']
@@ -356,7 +356,7 @@ def cube2phot(params: ParamDict, cube: np.ndarray,
     # -------------------------------------------------------------------------
     psf, gradx, grady, psf2ortho = get_fit_params(cube_normalize, weights)
     # plot these four
-    plots.plot_fit_params(params, psf, gradx, grady, psf2ortho)
+    mc_plots.plot_fit_params(params, psf, gradx, grady, psf2ortho)
     # -------------------------------------------------------------------------
     # Step 3: Fit the PSF module to the cube data
     # -------------------------------------------------------------------------
@@ -377,47 +377,16 @@ def cube2phot(params: ParamDict, cube: np.ndarray,
     margs = (rms * 1e6, p2p_rms * 1e6, d2flag)
     WLOG(params, '', msg.format(*margs))
     # -------------------------------------------------------------------------
+    # Step 5: get the centroid positions and add to table
+    # -------------------------------------------------------------------------
+    # fit a sinc to the psf
+    popt = fit_sinc_func(psf)
+    # push the centers into the table
+    ptbl['cent_x'] = popt[3] + gradx
+    ptbl['cent_y'] = popt[4] + grady
+    # -------------------------------------------------------------------------
     # return the photometry table
     return ptbl
-
-
-def write_photometry_results(params: ParamDict, ptbl0: Table,
-                             ptbl1: Table) -> ParamDict:
-    # get output directory
-    output_dir = params.get('MIRIAM.PATHS.OUTPUT_PATH')
-
-    output_fits = None
-
-    # loop around the two tables
-    for d2flag, ptbl in zip([True, False], [ptbl0, ptbl1]):
-        # construct output filename
-        output_fits = os.path.join(output_dir, 'miriam_photometry{0}.fits')
-        output_rdb = os.path.join(output_dir, 'miriam_photometry{0}.rdb')
-
-        if d2flag:
-            output_fits = output_fits.format('_d2flag')
-            output_rdb = output_rdb.format('_d2flag')
-        else:
-            output_fits = output_fits.format('')
-            output_rdb = output_rdb.format('')
-
-        # print progress
-        msg = f'Writing photometry results to: {output_fits}'
-        WLOG(params, '', msg)
-        # write fits file
-        ptbl.write(output_fits, format='fits', overwrite=True)
-        # print progress
-        msg = f'Writing photometry results to: {output_rdb}'
-        WLOG(params, '', msg)
-        # write rdb file
-        ptbl.write(output_rdb, format='ascii.rdb', overwrite=True)
-
-    # TODO: Save output in a similar format to SOSSISSE (for SORBET)
-    # output ParamDict
-    outputs = ParamDict()
-    outputs['output_fits'] = output_fits
-
-    return outputs
 
 
 # =============================================================================
@@ -528,7 +497,10 @@ def remove_from_3d(cube3d: np.ndarray) -> Tuple[np.ndarray, np.ndarray]:
         # add back on the overall median
         integration2 = np.array(integration + med0)
         # set the cube slice and pedestal using remove_background2d
-        integration3, int_ped = remove_background2d(integration2)
+        popt = fit_sinc_func(integration2)
+        # get the integration and pedestal
+        integration3, int_ped = integration2-popt[2], popt[2]
+
         cube3d[iframe, :, :], pedestal[iframe] = integration3, int_ped
     # return the full corrected cube and pedestal per integration
     return cube3d, pedestal
@@ -567,7 +539,7 @@ def sinc2d(xy: np.ndarray, amp: float, per: float, pedestal_psf: float,
     return outprofile + pedestal_psf
 
 
-def remove_background2d(image: np.ndarray):
+def fit_sinc_func(image: np.ndarray):
     """
 
     Remove the background from a 2D image.
@@ -600,8 +572,7 @@ def remove_background2d(image: np.ndarray):
         popt = [np.nan, np.nan, np.nan, np.nan, np.nan, np.nan]
 
     # item [2] is the pedestal that we subtract
-    return image-popt[2], popt[2]
-
+    return popt
 
 def neighbourbad(image):
     # for each NaN pixel, find the 3x3 box (less if at the edge) and fit a

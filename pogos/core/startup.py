@@ -47,7 +47,7 @@ DESCRIPTIONS['pogos.recipes.test_run'] = 'Run POGOS'
 
 INPUTARGS = dict()
 INPUTARGS['pogos.recipes.test_setup'] = ['GLOBAL.YAML_FILE', 'DATA_PATH',
-                                             'PLOT_PATH']
+                                         'PLOT_PATH']
 INPUTARGS['pogos.recipes.test_run'] = ['GLOBAL.YAML_FILE']
 
 # deal with switching off sections (for yaml file)
@@ -162,6 +162,36 @@ def setup(params: ParamDict):
     return cdict
 
 
+def test_yamlfile(params: ParamDict):
+    """
+    Make sure yaml file is a file (and path exists)
+
+    :param params: ParamDict, the parameters dictionary of constants
+    :return:
+    """
+    # Make sure yaml file is a file (and path exists)
+    yaml_file = params['GLOBAL.YAML_FILE']
+    yaml_path = os.path.dirname(yaml_file)
+    yaml_source = params.sources['GLOBAL.YAML_FILE']
+    # deal with source (from command line or not)
+    const_name = 'GLOBAL.YAML_FILE'
+    if 'command' in yaml_source:
+        const_name = f'--{params.instances["GLOBAL.YAML_FILE"].cmd_arg}'
+    # -------------------------------------------------------------------------
+    # Make sure yaml file is not a directory
+    if os.path.isdir(yaml_file):
+        emsg = '{0} cannot be a directory: {1}'
+        eargs = [const_name, yaml_file]
+        raise base.PogosException(emsg.format(*eargs))
+    # -------------------------------------------------------------------------
+    try:
+        if not os.path.exists(yaml_path):
+            os.makedirs(yaml_path)
+    except Exception as e:
+        emsg = 'Cannot create path for GLOBAL.YAML_FILE: {0}\n{1}'
+        eargs = [yaml_path, str(e)]
+        raise base.PogosException(emsg.format(*eargs))
+
 
 def core_setup(params: ParamDict, demo_mod: Any):
     """
@@ -173,6 +203,9 @@ def core_setup(params: ParamDict, demo_mod: Any):
     # -------------------------------------------------------------------------
     # define function name
     func_name = f'{__NAME__}.core_setup()'
+    # -------------------------------------------------------------------------
+    # Make sure yaml file is a file (and path exists)
+    test_yamlfile(params)
     # -------------------------------------------------------------------------
     # get instrument modes
     instrument_modes = base.INSTRUMENT_MODES
@@ -232,7 +265,7 @@ def core_setup(params: ParamDict, demo_mod: Any):
     if len(supported_steps) == 0:
         emsg = 'No supported steps for instrument mode: {0}'
         eargs = [imode]
-        raise base.pogosException(emsg.format(*eargs))
+        raise base.PogosException(emsg.format(*eargs))
     # -------------------------------------------------------------------------
     # now ask user to select which steps to use
     demo_modes = []

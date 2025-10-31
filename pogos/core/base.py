@@ -139,7 +139,7 @@ EXTERNAL_CONST['SOSSISSE'] = sossisse.CDict
 # =============================================================================
 # Base functionality
 # =============================================================================
-class pogosException(Exception):
+class PogosException(Exception):
     def __init__(self, message):
         super().__init__(message)
 

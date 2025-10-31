@@ -44,7 +44,7 @@ URL = 'http://206.12.93.77/ari/data/pogos/demos/'
 # download: key = file, value = local path
 DOWNLOAD = dict()
 DOWNLOAD['TSOVORE.INPUTS.FILES'] = 'TSOVORE.PATHS.INPUT_PATH'
-DOWNLOAD['MIRIAM.INPUTS.FILES'] = 'MIRIAM.PATHS.INPUT_PATH'
+
 
 
 # =============================================================================
