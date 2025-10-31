@@ -390,8 +390,6 @@ def cube2phot(params: ParamDict, cube: np.ndarray,
     # -------------------------------------------------------------------------
     # fit a sinc to the psf
     popt = fit_sinc_func(psf)
-    # get the cut down size
-    cut_size = params['MIRIAM.INPUTS.CUT_DOWNSIZE']
     # push the centers into the table
     ptbl['cent_x'] = xstart + popt[3] + ptbl['dxs']
     ptbl['cent_y'] = ystart + popt[4] + ptbl['dys']
