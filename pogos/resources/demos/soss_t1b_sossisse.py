@@ -37,7 +37,7 @@ INFO['author'] = 'Etienne Artigau'
 INFO['red_steps'] = ['Extraction:SOSSISSE']
 INFO['sid'] = 'DEMO-Trappist1b-SOSS-20250828'
 # url for data download
-URL = 'https://www.astro.umontreal.ca/~cook/pogo-data/'
+URL = 'http://206.12.93.77/ari/data/pogos/demos/soss/'
 # download: key = file, value = local path
 DOWNLOAD = dict()
 DOWNLOAD['SOSSISSE.GENERAL.FILES'] = 'SOSSISSE.PATHS.RAWPATH'

@@ -35,7 +35,7 @@ INFO['date'] = '2025-03-25'
 INFO['author'] = 'Loic Albert'
 INFO['red_steps'] = ['Extraction:SOSSISSE']
 # url for data download
-URL = 'https://www.astro.umontreal.ca/~cook/pogo-data/'
+URL = 'http://206.12.93.77/ari/data/pogos/demos/nirspec/'
 # download: key = file, value = local path
 DOWNLOAD = dict()
 DOWNLOAD['SOSSISSE.GENERAL.FILES'] = 'SOSSISSE.PATHS.RAWPATH'

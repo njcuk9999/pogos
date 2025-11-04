@@ -37,7 +37,7 @@ INFO['sbid'] = 'DEMO-Trappist1b-SOSS-20250828'
 INFO['red_steps'] = ['Post-extraction:SORBET.WLCA',
                      'Post-extraction:SORBET.SLCTA']
 # url for data download
-URL = 'https://www.astro.umontreal.ca/~cook/pogo-data/'
+URL = 'http://206.12.93.77/ari/data/pogos/demos/soss/'
 # download: key = file, value = local path
 DOWNLOAD = dict()
 DOWNLOAD['SORBET.WLCTA.INPUT_FILE'] = 'SORBET.WLCTA.INPUT_PATH'

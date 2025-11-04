@@ -36,7 +36,7 @@ INFO['author'] = 'Loic Albert'
 INFO['tsid'] = 'DEMO-LHS-1140-TSOVORE-20240707'
 INFO['red_steps'] = ['Pre-extraction:TSOVORE']
 # url for data download
-URL = 'http://206.12.93.77/ari/data/pogos/demos/'
+URL = 'http://206.12.93.77/ari/data/pogos/demos/miri/'
 # download: key = file, value = local path
 DOWNLOAD = dict()
 DOWNLOAD['TSOVORE.INPUTS.FILES'] = 'TSOVORE.PATHS.INPUT_PATH'

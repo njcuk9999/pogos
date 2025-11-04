@@ -45,7 +45,7 @@ INFO['sbid'] = 'DEMO-LHS-1140-SORBET-20240707'
 INFO['red_steps'] = ['Pre-extraction:TSOVORE', 'Extraction:MIRIAM',
                      'Post-extraction:SORBET']
 # url for data download
-URL = 'http://206.12.93.77/ari/data/pogos/demos/'
+URL = 'http://206.12.93.77/ari/data/pogos/demos/miri/'
 # download: key = file, value = local path
 DOWNLOAD = dict()
 DOWNLOAD['TSOVORE.INPUTS.FILES'] = 'TSOVORE.PATHS.INPUT_PATH'

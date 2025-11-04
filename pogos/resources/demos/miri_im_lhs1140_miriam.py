@@ -36,7 +36,7 @@ INFO['author'] = 'Etienne Artigau'
 INFO['mbid'] = 'DEMO-LHS-1140-MIRIAM-20240707'
 INFO['red_steps'] = ['Extraction:MIRIAM']
 # url for data download
-URL = 'http://206.12.93.77/ari/data/pogos/demos/'
+URL = 'http://206.12.93.77/ari/data/pogos/demos/miri/'
 # download: key = file, value = local path
 DOWNLOAD = dict()
 DOWNLOAD['MIRIAM.INPUTS.FILES'] = 'MIRIAM.PATHS.INPUT_PATH'
@@ -96,11 +96,11 @@ cgroup = 'MIRIAM.INPUTS'
 #  - file2
 #  - file3
 Cdict.set('FILES', group=cgroup, source=__NAME__,
-          value=['jw03730009001_03101_00001-seg001_mirimage_rateints.fits',
-                 'jw03730009001_03101_00001-seg002_mirimage_rateints.fits',
-                 'jw03730009001_03101_00001-seg003_mirimage_rateints.fits',
-                 'jw03730009001_03101_00001-seg004_mirimage_rateints.fits',
-                 'jw03730009001_03101_00001-seg005_mirimage_rateints.fits'])
+          value=['jw03730009001_03101_00001-seg001_mirimage_calints.fits',
+                 'jw03730009001_03101_00001-seg002_mirimage_calints.fits',
+                 'jw03730009001_03101_00001-seg003_mirimage_calints.fits',
+                 'jw03730009001_03101_00001-seg004_mirimage_calints.fits',
+                 'jw03730009001_03101_00001-seg005_mirimage_calints.fits'])
 
 
 Cdict.set('SKIP_INTEGRATIONS', group=cgroup, source=__NAME__,
