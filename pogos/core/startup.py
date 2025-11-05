@@ -171,6 +171,11 @@ def test_yamlfile(params: ParamDict):
     """
     # Make sure yaml file is a file (and path exists)
     yaml_file = params['GLOBAL.YAML_FILE']
+    # -------------------------------------------------------------------------
+    # don't test if yaml file is None (will be asked for later)
+    if yaml_file is None:
+        return
+    # -------------------------------------------------------------------------
     yaml_path = os.path.dirname(yaml_file)
     yaml_source = params.sources['GLOBAL.YAML_FILE']
     # deal with source (from command line or not)
@@ -178,9 +183,6 @@ def test_yamlfile(params: ParamDict):
     if 'command' in yaml_source:
         const_name = f'--{params.instances["GLOBAL.YAML_FILE"].cmd_arg}'
     # -------------------------------------------------------------------------
-    # don't test if yaml file is None (will be asked for later)
-    if yaml_File is None:
-        return
     # Make sure yaml file is not a directory
     if os.path.isdir(yaml_file):
         emsg = '{0} cannot be a directory: {1}'
