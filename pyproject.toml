@@ -16,6 +16,7 @@ requires-python = "==3.11.*"
 dependencies = [
         "juliet==2.2.7",
         "jwst==1.17.1",
+        "crds==12.1.1",
         "numpy==1.26.4",
         "astropy==7.0.1",
         "corner==2.2.3",

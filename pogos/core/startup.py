@@ -12,15 +12,15 @@ Created on 2024-10-29 at 10:16
 import os
 from typing import Any
 
-from aperocore.constants import param_functions
+from astropy.time import Time
+
 from aperocore.constants import load_functions
+from aperocore.constants import param_functions
 from aperocore.core import drs_log
 from aperocore.core import drs_text
-
-
-from pogos.core import base
 from pogos import constants
 from pogos.constants import constants as pogo_constants
+from pogos.core import base
 from pogos.resources import demos as demo_mod
 
 # =============================================================================
@@ -76,14 +76,13 @@ def setup(params: ParamDict):
     # ------------------------------------------------------------------------
     # deal with user selecting instrument, mode and reduction steps
     params, demo_list = core_setup(params, demo_mod)
-
     # deal with start point (setup only) - ask user to start from demo or blank
     params = load_functions.starting_point(params, 'GLOBAL.INSTRUMENTMODE',
                                            demo_list)
     # -------------------------------------------------------------------------
     # print progress
     WLOG(params, 'info', params['LOG.HEADER'])
-    WLOG(params, 'info', 'Checking arguments')
+    WLOG(params, 'info', 'Checking other arguments')
     WLOG(params, 'info', params['LOG.HEADER'])
     # -------------------------------------------------------------------------
     # ask user for run arguments
@@ -98,10 +97,6 @@ def setup(params: ParamDict):
                 if key.startswith(RUN_KEYS[run_key]):
                     params.instances[key].user = False
                     params.instances[key].not_none = False
-    # -------------------------------------------------------------------------
-    # ask user for any missing arguments
-    params = load_functions.ask_for_missing_args(params,
-                                                 include_keys=['GLOBAL.DATA_PATH'])
     # -------------------------------------------------------------------------
     # create paths to sub modules
     for run_key in RUN_KEYS:
@@ -156,9 +151,12 @@ def setup(params: ParamDict):
     # print progress
     msg = 'Saving constants to yaml file: {0}'
     WLOG(params, '', msg.format(os.path.realpath(yaml_file)))
+    # add to the title
+    time_now = Time.now().iso
+    cdict.title += '\n Yaml created on {0}'.format(time_now)
     # save the constants dictionary to yaml file
     cdict.save_yaml(params, outpath=yaml_file, log=False)
-
+    # return the constants dictionary class
     return cdict
 
 
@@ -174,6 +172,9 @@ def test_yamlfile(params: ParamDict):
     # -------------------------------------------------------------------------
     # don't test if yaml file is None (will be asked for later)
     if yaml_file is None:
+        return
+    # don't test if the yaml file is just a file
+    if os.sep not in yaml_file:
         return
     # -------------------------------------------------------------------------
     yaml_path = os.path.dirname(yaml_file)
@@ -208,13 +209,96 @@ def core_setup(params: ParamDict, demo_mod: Any):
     # -------------------------------------------------------------------------
     # define function name
     func_name = f'{__NAME__}.core_setup()'
+
     # -------------------------------------------------------------------------
+    # Ask for the global data path
+    # -------------------------------------------------------------------------
+    WLOG(params, 'info', params['LOG.HEADER'])
+    WLOG(params, 'info', 'Checking GLOBAL.DATA_PATH')
+    WLOG(params, 'info', params['LOG.HEADER'])
+    # keep asking until this variable is set
+    while params['GLOBAL.DATA_PATH'] is None:
+        # get the desription of the data path from the constant instance
+        description = params.instances['GLOBAL.DATA_PATH'].description
+        # ask user for data path
+        question = '\nPlease enter {0}\n'.format(description)
+        data_path = drs_text.user_input(question, dtype=str, required=True)
+        params['GLOBAL.DATA_PATH'] = data_path
+        params.set_source('GLOBAL.DATA_PATH', func_name)
+        # If directory does not exist ask the user if they want to create it
+        if not os.path.exists(data_path):
+            question = '\nPath does not exist: {0}\nWould you like to create it?'
+            question = question.format(data_path)
+            # ask user
+            if drs_text.user_input(question, dtype='YN', required=True):
+                os.makedirs(data_path)
+            # otherwise we start again with the question
+            else:
+                params['GLOBAL.DATA_PATH'] = None
+
+    # -------------------------------------------------------------------------
+    # we want to make sure the yaml file is set
+    # -------------------------------------------------------------------------
+    WLOG(params, 'info', params['LOG.HEADER'])
+    WLOG(params, 'info', 'Checking GLOBAL.YAML_FILE')
+    WLOG(params, 'info', params['LOG.HEADER'])
     # Make sure yaml file is a file (and path exists)
     test_yamlfile(params)
+    # keep asking until this variable is set
+    while params['GLOBAL.YAML_FILE'] is None:
+        # get the desription of the yaml file from the constant instance
+        description = params.instances['GLOBAL.YAML_FILE'].description
+        yamldir = os.path.join(params['GLOBAL.DATA_PATH'], 'yamls')
+        # ask user for yaml file
+        question = '\nPlease enter {0}'
+        question += ('\n\nNote if no path is given the yaml file will '
+                     'be put in the {1} directory.')
+        question = question.format(description, yamldir)
+        yaml_file = drs_text.user_input(question, dtype=str, required=True)
+        params['GLOBAL.YAML_FILE'] = yaml_file
+        params.set_source('GLOBAL.YAML_FILE', func_name)
+        # test yaml file
+        test_yamlfile(params)
+        if params['GLOBAL.YAML_FILE'] is None:
+            continue
+        # test if we have no path
+        if os.sep not in yaml_file:
+            yaml_file = os.path.join(params['GLOBAL.DATA_PATH'], 'yamls',
+                                     yaml_file)
+            params['GLOBAL.YAML_FILE'] = yaml_file
+            params.set_source('GLOBAL.YAML_FILE', func_name)
+        # If directory does not exist ask the user if they want to create it
+        yaml_path = os.path.dirname(yaml_file)
+        if not os.path.exists(yaml_path):
+            question = '\nPath does not exist: {0}\nWould you like to create it?'
+            question = question.format(yaml_path)
+            # ask user
+            if drs_text.user_input(question, dtype='YN', required=True):
+                os.makedirs(yaml_path)
+            # otherwise we start again with the question
+            else:
+                params['GLOBAL.YAML_FILE'] = None
+    # -------------------------------------------------------------------------
+    # finally make sure the yaml file has .yaml on the end
+    if not params['GLOBAL.YAML_FILE'].endswith('.yaml'):
+        params['GLOBAL.YAML_FILE'] += '.yaml'
+    # and finally make sure the data path has /data on the end
+    if not os.path.basename(params['GLOBAL.DATA_PATH']) == 'data':
+        # add data path
+        params['GLOBAL.DATA_PATH'] = os.path.join(params['GLOBAL.DATA_PATH'],
+                                                  'data')
+        # make sure this data path exists
+        if not os.path.exists(params['GLOBAL.DATA_PATH']):
+            os.makedirs(params['GLOBAL.DATA_PATH'])
     # -------------------------------------------------------------------------
     # get instrument modes
+    # -------------------------------------------------------------------------
     instrument_modes = base.INSTRUMENT_MODES
     imode = None
+    # -------------------------------------------------------------------------
+    WLOG(params, 'info', params['LOG.HEADER'])
+    WLOG(params, 'info', 'Checking GLOBAL.INSTRUMENTMODE')
+    WLOG(params, 'info', params['LOG.HEADER'])
     # -------------------------------------------------------------------------
     while imode is None:
         insts = list(instrument_modes.keys())

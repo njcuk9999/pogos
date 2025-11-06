@@ -33,7 +33,7 @@ Cdict.add_sub_cdict('SORBET', SORBET_CDict, source=__NAME__)
 # Define info (must contain "title")
 # =============================================================================
 INFO = dict()
-INFO['title'] = 'JWST.MIRI.IMAGE LHS-1140 eclipse [TSOVORE + MIRIAM]'
+INFO['title'] = 'JWST.MIRI.IMAGE LHS-1140 eclipse [TSOVORE + MIRIAM + SORBET]'
 INFO['object'] = 'LHS-1140'
 INFO['instrument'] = 'JWST.MIRI.IMAGING'
 INFO['description'] = 'LHS-1140 eclipse observed on 2024-07-07'
@@ -117,7 +117,7 @@ Cdict.set('FILES', group=cgroup, source=__NAME__,
 
 # Whether to remove intermediate files
 Cdict.set('REMOVE_INTERMEDIATES', group=cgroup, source=__NAME__,
-          value=False)
+          value=True)
 
 # =============================================================================
 # General settings

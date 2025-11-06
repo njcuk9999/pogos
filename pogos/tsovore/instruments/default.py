@@ -569,6 +569,10 @@ class JWST(Instrument):
         # Step 1.17: GainScaleStep
         self.apply_gain_scaling()
 
+        # This is where the _rateints files are created
+        # save LAST to output file with {PREFIX}_rateints.fits
+        self.save_outputs('_rateints.fits')
+
         # ---------------------------------------------------------------------
         # Level 2 Processing Steps
         # ---------------------------------------------------------------------
@@ -583,6 +587,10 @@ class JWST(Instrument):
 
         # Step 2.4: PhotomStep
         self.apply_photometric_calibration()
+
+        # This is where the calints files are created
+        # save LAST to output file with {PREFIX}_calints.fits
+        self.save_outputs('_calints.fits')
 
     def initialize_detector_data(self):
         """
@@ -1033,7 +1041,7 @@ class JWST(Instrument):
             self.remove_intermediate_files(it)
             # update the LAST and RESULT variables
             self.update_last(it, datadir, result.meta.filename, func_name)
-            
+
     def apply_flat_field(self):
         """
         Corrects pixel-to-pixel sensitivity variations.
@@ -1063,8 +1071,6 @@ class JWST(Instrument):
             self.remove_intermediate_files(it)
             # update the LAST and RESULT variables
             self.update_last(it, datadir, result.meta.filename, func_name)
-        # save output files to {PREFIX}_rateints.fits
-        self.save_outputs('_rateints.fits')
         
     def apply_photometric_calibration(self):
         """
@@ -1095,8 +1101,7 @@ class JWST(Instrument):
             self.remove_intermediate_files(it)
             # update the LAST and RESULT variables
             self.update_last(it, datadir, result.meta.filename, func_name)
-        # save output file to {PREFIX}_calints.fits
-        self.save_outputs('_calints.fits')
+
 
 
 # =============================================================================

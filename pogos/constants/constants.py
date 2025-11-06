@@ -48,27 +48,30 @@ CDict.add('YAML_FILE', value=None, dtype=str, source=__NAME__,
                  cmd_arg='yamlfile',
                  cmd_kwargs=dict(nargs='?', type=str, default=None,
                                  action='store'),
-                 description='Yaml file used')
-
-# Define the yaml name (for creating new param files only)
-CDict.add('YAML_NAME', value=None, dtype=str,
-          source=__NAME__, user=False, active=False,
-          cmd_arg='yaml_name', group=cgroup,
-          description='The name of the yaml file to create '
-                      '(if not using a previous yaml file)')
+          description='the absolute path and filename of the configuration file '
+                      '(yaml file) to create which '
+                      '(if not using a previous yaml file). '
+                      'This file will contain all parameters required to '
+                      'run POGOS. '
+                      '\n\nE.g. /users/albert/yamls/pogos_test.yaml'
+                      '\nE.g. /home/albert/yamls/pogos_test.yaml'
+                      '\nE.g. C:\\users\\albert\\yamls\\pogos_test.yaml')
 
 # Define data path
 CDict.add('DATA_PATH', value=None, dtype=str,
           source=__NAME__, user=True,
           active=True, group=cgroup, not_none=True, cmd_arg='data_path',
-          description='The data directory (required)')
+          description='the absolute path to where all input and output data '
+                      'for POGOS will be stored. '
+                      '\n\nPlease note a /data/ subdirectory will be created '
+                      'for data with the modes in.')
 
 # Instrument mode i.e. JWST.NIRISS.SOSS or JWST.NIRISS.PRISM
 CDict.add('INSTRUMENTMODE', value=None, dtype=str, not_none=True,
           source=__NAME__, user=True, active=True,
           options=base.INSTRUMENTS,
           cmd_arg='instmode', group=cgroup,
-          description='Instrument mode e.g. one of the following: {0}'
+          description='instrument mode e.g. one of the following: {0}'
                       ''.format('\n\t'.join(base.INSTRUMENTS)))
 
 # =============================================================================

@@ -109,7 +109,7 @@ Cdict.set('FILES', group=cgroup, source=__NAME__,
 
 # Whether to remove intermediate files
 Cdict.set('REMOVE_INTERMEDIATES', group=cgroup, source=__NAME__,
-          value=False)
+          value=True)
 
 # =============================================================================
 # Start of code
