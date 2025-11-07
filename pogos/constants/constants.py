@@ -53,9 +53,9 @@ CDict.add('YAML_FILE', value=None, dtype=str, source=__NAME__,
                       '(if not using a previous yaml file). '
                       'This file will contain all parameters required to '
                       'run POGOS. '
-                      '\n\nE.g. /users/albert/yamls/pogos_test.yaml'
-                      '\nE.g. /home/albert/yamls/pogos_test.yaml'
-                      '\nE.g. C:\\users\\albert\\yamls\\pogos_test.yaml')
+                      '\n\nE.g. /users/albert/pogo-data/yaml/pogos_test.yaml'
+                      '\nE.g. /home/cook/pogo-data/yaml/pogos_test.yaml'
+                      '\nE.g. C:\\users\\bob\\pogo-data\\yamls\\pogos_test.yaml')
 
 # Define data path
 CDict.add('DATA_PATH', value=None, dtype=str,
@@ -64,7 +64,10 @@ CDict.add('DATA_PATH', value=None, dtype=str,
           description='the absolute path to where all input and output data '
                       'for POGOS will be stored. '
                       '\n\nPlease note a /data/ subdirectory will be created '
-                      'for data with the modes in.')
+                      'for data with the modes in. '
+                      '\n\nE.g. /users/albert/pogo-data/'
+                      '\nE.g. /home/albert/pogo-data/'
+                      '\nE.g. C:\\users\\bob\\pogo-data')
 
 # Instrument mode i.e. JWST.NIRISS.SOSS or JWST.NIRISS.PRISM
 CDict.add('INSTRUMENTMODE', value=None, dtype=str, not_none=True,
