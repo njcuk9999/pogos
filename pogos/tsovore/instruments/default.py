@@ -377,6 +377,9 @@ class Instrument:
                         f'Cannot add to out. This may crash future steps.')
                 WLOG(self.params, 'warning', wmsg)
                 return
+            else:
+                wmsg = (f'Copying file {infiles[it]} to {new_filename}')
+                WLOG(self.params, 'info', wmsg)
             # copy the file
             shutil.copy(infiles[it], new_filename)
             # save files to list

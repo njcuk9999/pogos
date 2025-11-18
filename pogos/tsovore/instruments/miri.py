@@ -97,6 +97,10 @@ class MiriImaging(ts_default.JWST):
         # Step 1.17: GainScaleStep
         self.apply_gain_scaling()
 
+        # This is where the _rateints files are created
+        # save LAST to output file with {PREFIX}_rateints.fits
+        self.save_outputs('_rateints.fits')
+
         # ---------------------------------------------------------------------
         # Level 2 Processing Steps
         # ---------------------------------------------------------------------
@@ -114,6 +118,9 @@ class MiriImaging(ts_default.JWST):
         # Step 2.4: PhotomStep
         self.apply_photometric_calibration()
 
+        # This is where the calints files are created
+        # save LAST to output file with {PREFIX}_calints.fits
+        self.save_outputs('_calints.fits')
 
 
 # =============================================================================

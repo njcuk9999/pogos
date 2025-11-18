@@ -136,7 +136,8 @@ def run_sorbet_module(params: ParamDict,
 
 
 def sossisse_input(params: ParamDict,
-                   sossisse_inst: Optional[sdefault.Instrument] = None):
+                   sossisse_inst: Optional[sdefault.Instrument] = None
+                   ) -> ParamDict:
     # set function name
     func_name = f'{__NAME__}.sossisse_input'
     # -------------------------------------------------------------------------
@@ -184,7 +185,9 @@ def sossisse_input(params: ParamDict,
     return params
 
 
-def miriam_input(params: ParamDict, miriam_params: Optional[ParamDict] = None):
+def miriam_input(params: ParamDict,
+                 miriam_params: Optional[ParamDict] = None
+                 ) -> ParamDict:
     func_name = f'{__NAME__}.miriam_input'
     # -------------------------------------------------------------------------
     # get sorbet parameters
@@ -193,7 +196,7 @@ def miriam_input(params: ParamDict, miriam_params: Optional[ParamDict] = None):
     miriam_wlc_file = miriam_params.get('WLC_FILE', None)
     # deal with no MIRIAM WLC file
     if miriam_wlc_file is None:
-        return
+        return params
     # ---------------------------------------------------------------------
     # deal with WLCTA files
     if sb_params['WLCTA.RUN']:
@@ -209,6 +212,8 @@ def miriam_input(params: ParamDict, miriam_params: Optional[ParamDict] = None):
         # update params
         params['SORBET.WLCTA.INPUT_FILE'] = os.path.basename(sorbet_file)
         params.set_source('SORBET.WLCTA.INPUT_FILE', func_name)
+    # return params
+    return params
 
 
 def run_sorbet_wlcta(params: ParamDict):

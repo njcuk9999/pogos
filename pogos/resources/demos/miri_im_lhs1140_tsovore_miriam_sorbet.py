@@ -80,7 +80,7 @@ Cdict.set('MIRIAM', group=cgroup, source=__NAME__,
 
 # Run SORBET
 Cdict.set('SORBET', group=cgroup, source=__NAME__,
-          value=False)
+          value=True)
 
 # =============================================================================
 # General settings
@@ -148,7 +148,13 @@ Cdict.set('FILES', group=cgroup, source=__NAME__,
                  'jw03730009001_03101_00001-seg004_mirimage_rateints.fits',
                  'jw03730009001_03101_00001-seg005_mirimage_rateints.fits'])
 
+# =============================================================================
+# Constants for SORBET: Suite Of Reduction tools for Both Eclipse and Transit
+# =============================================================================
+cgroup = 'SORBET.GENERAL'
 
+# The SID to use
+Cdict.set('SID', group=cgroup, source=__NAME__, value=INFO['sbid'])
 
 # =============================================================================
 # Switches to turn large parts of the code on/off
@@ -195,13 +201,12 @@ jpd_values['sigma_w_{INST_MODE}'] = 'loguniform'
 Cdict.set('JULIET_PRIOR_DISTS', group=cgroup, source=__NAME__,
           value=jpd_values)
 # Priors for the default juliet parameterization
-# Following Lim et al. 2023
 jpv_values = dict()
-jpv_values['P_p1'] = 1.51087081
-jpv_values['t0_p1'] = [2459779.1, 2459779.3]
-jpv_values['p_p1'] = [0.01, 0.22]
-jpv_values['b_p1'] = [0.095, 0.65, 0.0, 1.0]
-jpv_values['a_p1'] = [10, 30]
+jpv_values['P_p1'] = 3.777940
+jpv_values['t0_p1'] = [2460498.5, 2460498.8]
+jpv_values['p_p1'] = [0., 1.]
+jpv_values['b_p1'] = [0.090, 0.65, 0.0, 1.0]
+jpv_values['a_p1'] = [10, 30] # 26.57
 jpv_values['ecc_p1'] = 0.0
 jpv_values['omega_p1'] = 90.0
 jpv_values['q1_{INST_MODE}'] = [0.0, 1.0]
@@ -211,11 +216,6 @@ jpv_values['mflux_{INST_MODE}'] = 0.0
 jpv_values['sigma_w_{INST_MODE}'] = [1, 1000]
 Cdict.set('JULIET_PRIOR_VALS', group=cgroup, source=__NAME__,
           value=jpv_values)
-
-# Fit temporal slope by default
-Cdict.set('LINEAR_DETRENDING', group=cgroup, source=__NAME__,
-          value='time')
-
 
 
 # =============================================================================
