@@ -110,7 +110,8 @@ def run_miriam(params: ParamDict, tsovore_inst: Optional = None) -> ParamDict:
     # produce summary html
     stitle = params.get('MIRIAM.GENERAL.DESCRIPTION', '')
     pogos_io.summary_html(params, 'MIRIAM', 'MIRIAM.PATHS.PLOT_PATH',
-                          'MIRIAM.GENERAL.SID', 'MIRIAM.PATHS.OUTPUT_PATH',
+                          'MIRIAM.GENERAL.SUBDIRECTORY',
+                          'MIRIAM.PATHS.OUTPUT_PATH',
                           stitle)
     # return output params
     return oparams
@@ -137,7 +138,7 @@ def setup_miriam_module(params: ParamDict) -> ParamDict:
 
 def prepare_directories(params: ParamDict):
 
-    sid_path = 'MIRIAM.GENERAL.SID'
+    sid_path = 'MIRIAM.GENERAL.SUBDIRECTORY'
     sid_null = mc_general.miriam_unique_id()
     mode = 'miriam'
     # -------------------------------------------------------------------------

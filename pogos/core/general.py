@@ -107,7 +107,7 @@ def prepare_directory(params: ParamDict, pkind: str, sid_path: str,
     :return:
     """
     func_name = f'{__NAME__}.prepare_directory()'
-    # generate SID if not given
+    # generate SUBDIRECTORY if not given
     if params[sid_path] is None:
         params[sid_path] = sid_null
     # get the output path from the params

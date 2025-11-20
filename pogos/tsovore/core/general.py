@@ -103,7 +103,7 @@ def setup_tsovore_module(params: ParamDict):
 
 def prepare_directories(params: ParamDict):
 
-    sid_path = 'TSOVORE.GENERAL.SID'
+    sid_path = 'TSOVORE.GENERAL.SUBDIRECTORY'
     sid_null = tsovore_unique_id()
     mode = 'tsovore'
     # -------------------------------------------------------------------------

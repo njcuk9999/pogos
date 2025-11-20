@@ -35,7 +35,7 @@ INFO['description'] = 'Trappist 1b transit observed on 2022-07-18'
 INFO['date'] = '2025-03-25'
 INFO['author'] = 'Etienne Artigau'
 INFO['red_steps'] = ['Extraction:SOSSISSE']
-INFO['sid'] = 'DEMO-Trappist1b-SOSS-20250828'
+INFO['sid'] = 'DEMO-Trappist1b-SOSS-20250718'
 # url for data download
 URL = 'http://206.12.93.77/ari/data/pogos/demos/soss/'
 # download: key = file, value = local path
@@ -93,6 +93,18 @@ Cdict.set('SPECTRAL_EXTRACTION', group=cgroup, source=__NAME__,
 # =============================================================================
 cgroup = 'SOSSISSE.INPUTS'
 
+# The sub-directory to use for this SOSSISSE run.
+# This should be descriptive and unique.
+# It should contain no whitespaces or special
+# characters other than underscoes
+# All sossisse data will be stored in {GLOBAL.DATA_PATH}/sossisse/{SUBDIRECTORY}/
+Cdict.set('SUBDIRECTORY', group=cgroup, source=__NAME__, value=INFO['sid'])
+
+# Description of the SOSSISSE run e.g. object name, date of observation,
+# is it a transit or an eclipse etc.
+Cdict.set('DESCRIPTION', group=cgroup, source=__NAME__,
+          value=INFO['description'])
+
 # Instrument mode
 Cdict.set('INSTRUMENTMODE', group=cgroup, source=__NAME__,
           value=INFO['instrument'])
@@ -100,10 +112,6 @@ Cdict.set('INSTRUMENTMODE', group=cgroup, source=__NAME__,
 # Name of the object (must match the object directory name)
 Cdict.set('OBJECTNAME', group=cgroup, source=__NAME__,
           value='Trappist1b')
-
-# A unique identifier for this data set
-Cdict.set('SID', group=cgroup, source=__NAME__,
-          value=INFO['sid'])
 
 # =============================================================================
 # Definition of general inputs

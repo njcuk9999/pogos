@@ -38,8 +38,8 @@ INFO['date'] = '2025-03-25'
 INFO['author'] = 'Etienne Artigau + Charles Cadieux'
 INFO['red_steps'] = ['Extraction:SOSSISSE', 'Post-extraction:SORBET.WLCA',
                      'Post-extraction:SORBET.SLCTA']
-INFO['sid'] = 'DEMO-Trappist1b-SOSS-20250828'
-INFO['sbid'] = 'DEMO-Trappist1b-SOSS-20250828'
+INFO['sid'] = 'DEMO-Trappist1b-SOSS-20250718'
+INFO['sbid'] = 'DEMO-Trappist1b-SOSS-20250718'
 # url for data download
 URL = 'http://206.12.93.77/ari/data/pogos/demos/soss/'
 # download: key = file, value = local path
@@ -97,6 +97,18 @@ Cdict.set('SPECTRAL_EXTRACTION', group=cgroup, source=__NAME__,
 # =============================================================================
 cgroup = 'SOSSISSE.INPUTS'
 
+# The sub-directory to use for this SOSSISSE run.
+# This should be descriptive and unique.
+# It should contain no whitespaces or special
+# characters other than underscoes
+# All sossisse data will be stored in {GLOBAL.DATA_PATH}/sossisse/{SUBDIRECTORY}/
+Cdict.set('SUBDIRECTORY', group=cgroup, source=__NAME__, value=INFO['sid'])
+
+# Description of the SOSSISSE run e.g. object name, date of observation,
+# is it a transit or an eclipse etc.
+Cdict.set('DESCRIPTION', group=cgroup, source=__NAME__,
+          value=INFO['description'])
+
 # Instrument mode
 Cdict.set('INSTRUMENTMODE', group=cgroup, source=__NAME__,
           value=INFO['instrument'])
@@ -105,9 +117,6 @@ Cdict.set('INSTRUMENTMODE', group=cgroup, source=__NAME__,
 Cdict.set('OBJECTNAME', group=cgroup, source=__NAME__,
           value='Trappist1b')
 
-# A unique identifier for this data set
-Cdict.set('SID', group=cgroup, source=__NAME__,
-          value=INFO['sid'])
 
 # =============================================================================
 # Definition of general inputs
@@ -219,10 +228,14 @@ cgroup = 'SOSSISSE.SPEC_EXT'
 # General SORBET settings
 # =============================================================================
 cgroup = 'SORBET.GENERAL'
-# The SID to use
-Cdict.set('SID', group=cgroup, source=__NAME__, value=INFO['sbid'])
-
-# Description of the SORBET run
+# The sub-directory to use for this SORBET run.
+# This should be descriptive and unique.
+# It should contain no whitespaces or special
+# characters other than underscoes
+# All sorbet data will be stored in {GLOBAL.DATA_PATH}/sorbet/{SUBDIRECTORY}/
+Cdict.set('SUBDIRECTORY', group=cgroup, source=__NAME__, value=INFO['sbid'])
+# Description of the SORBET run e.g. object name, date of observation,
+# is it a transit or an eclipse etc.
 Cdict.set('DESCRIPTION', group=cgroup, source=__NAME__,
           value=INFO['description'])
 

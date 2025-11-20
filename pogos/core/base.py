@@ -43,6 +43,8 @@ INSTRUMENTS = ['JWST.NIRISS.SOSS',
                'JWST.NIRSPEC.G253',
                'JWST.NIRSPEC.G140',
                'JWST.MIRI.IMAGING']
+# define the submodules in POGOS
+SUBMODULES = ['TSOVORE', 'SOSSISSE', 'MIRIAM', 'SORBET']
 
 # =============================================================================
 # Define all instruments and their sub-modes (related to our instrument names)

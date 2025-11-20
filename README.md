@@ -7,7 +7,8 @@ PrOcessing General ObServations: A wrapper for TSOVORE, SOSSISSE, MIRIAM and SOR
 2. [Installation](#1-installation)
 3. [Setup POGOS](#2-setting-up-pogos)
 4. [Running POGOS](#3-running-pogos)
-5. [Dev mode](#4-dev-mode)
+5. [Running POGOS with your own data](#5-running-pogos-with-your-own-data)
+6. [Dev mode](#4-dev-mode)
 
 ---
 
@@ -102,7 +103,11 @@ From inside the `pogos-env` conda environment (or equivalanet), in any directory
 pogos_setup
 ````
 
-This should ask you for several options, and create a file structure and a yaml file.
+This should ask you for several options, and create a file structure and a yaml file, based on a demo we supply.
+You can and should run this demo (it downloads the data) just to make sure your installation ran correctly.
+
+Once you have run a demo you can either manually edit the demo yaml and copy the file structure we provide, or run `pogos_copy` ([This section](#5-running-pogos-with-your-own-data))
+to walk you through creating a new yaml file and file structure based on your own data.
 
 [Back to top](#table-of-contents)
 
@@ -111,21 +116,45 @@ This should ask you for several options, and create a file structure and a yaml 
 ## 4. Running POGOS
 
 Once you have run `pogos_setup` and read and understood the yaml file you can run the main POGOS code.
+We strongly suggest the first time you run POGOS you do so on the demo data to ensure everything is working correctly.
 
-You can do this as follows:
+Running POGOS is as simple as running one command as follows:
 
 ```bash
-pogos_run {path_to_yaml_file}
+pogos_run --yamlfile={path_to_yaml_file}
 ```
 
 where `{path_to_yaml_file}` is the path to the yaml file you created in the setup step.
 
 
+Note once you have run the demo you can run `pogos_run` on your own data ([This section](#5-running-pogos-with-your-own-data)).
+
 [Back to top](#table-of-contents)
 
----
+--
 
-## 5. Dev mode
+## 5. Running POGOS with your own data
+
+There are two options to set up POGOS with your own data:
+1. Manually edit the demo yaml file and copy the demo file structure to your own data.
+2. Use the `pogos_copy` command to walk you through creating a new yaml file and file structure.
+
+To run `pogos_copy` run the following command from inside the `pogos-env` conda environment (or equivalent):
+
+```bash
+pogos_copy --demo_file {demo_yaml_file}
+```
+
+You will then be asked a set of questions about your data and a new yaml file and file structure will be created for you.
+Note for a new instrument/mode combined you will need to run `pogos_setup` first to create a demo for that mode 
+(we recommend again that you test the demo first to ensure your installation is working correctly).
+
+
+[Back to top](#table-of-contents)
+
+--
+
+## 6. Dev mode
 
 For dev mode (editable install of both apero-core and sossisse) please run the following:
 

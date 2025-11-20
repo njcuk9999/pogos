@@ -131,10 +131,11 @@ def setup_sossisse_module(params: ParamDict, cdict):
         # if the key exists update it
         if pkey in params:
             params.set(pkey, spaths[path], source=func_name)
-    # update the SID if changed
-    if sparams['INPUTS.SID'] is not None:
-        params.set('SOSSISSE.INPUTS.SID', sparams['INPUTS.SID'],
-                   source=sparams.sources['INPUTS.SID'])
+    # update the SUBDIRECTORY if changed
+    if sparams['INPUTS.SUBDIRECTORY'] is not None:
+        params.set('SOSSISSE.INPUTS.SUBDIRECTORY',
+        sparams['INPUTS.SUBDIRECTORY'],
+                   source=sparams.sources['INPUTS.SUBDIRECTORY'])
     # -------------------------------------------------------------------------
     # re-save the yaml file after sossisse updates
     # get the yaml file

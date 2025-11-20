@@ -62,7 +62,7 @@ MIRIAM:
   GENERAL:
     # A string ID for the observation (used for default paths etc)
     #         Default value=None
-    SID: DEMO-LHS-1140-MIRIAM-20240707
+    SUBDIRECTORY: DEMO-LHS-1140-MIRIAM-20240707
     # Description of the MIRIAM run
     #         Default value=
     DESCRIPTION: LHS-1140 eclipse observed on 2024-07-07

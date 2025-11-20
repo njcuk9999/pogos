@@ -77,6 +77,14 @@ CDict.add('INSTRUMENTMODE', value=None, dtype=str, not_none=True,
           description='instrument mode e.g. one of the following: {0}'
                       ''.format('\n\t'.join(base.INSTRUMENTS)))
 
+
+# Only used for copying
+CDict.add('DEMO_FILE', value=None, dtype=str, source=__NAME__, user=False,
+          active=False, cmd_arg='demo_file', group=cgroup,
+          description='the absolute path and filename of a demo yaml file to '
+                      'use as a template for creating a new yaml file/file '
+                      'strcuture. ')
+
 # =============================================================================
 # Switches to turn of major features
 # =============================================================================

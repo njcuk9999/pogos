@@ -87,10 +87,15 @@ Cdict.set('SORBET', group=cgroup, source=__NAME__,
 # =============================================================================
 cgroup = 'TSOVORE.GENERAL'
 
-# The SID to use
-Cdict.set('SID', group=cgroup, source=__NAME__, value=INFO['tsid'])
+# The sub-directory to use for this TSOVORE run. 
+# This should be descriptive and unique.
+# It should contain no whitespaces or special
+# characters other than underscoes
+# All tsovore data will be stored in {GLOBAL.DATA_PATH}/tsovore/{SUBDIRECTORY}/
+Cdict.set('SUBDIRECTORY', group=cgroup, source=__NAME__, value=INFO['tsid'])
 
-# Set the description for the MIRIAM run
+# Description of the TSOVORE run e.g. object name, date of observation, 
+# is it a transit or an eclipse etc.
 Cdict.set('DESCRIPTION', group=cgroup, source=__NAME__,
           value=INFO['description'])
 
@@ -124,10 +129,15 @@ Cdict.set('REMOVE_INTERMEDIATES', group=cgroup, source=__NAME__,
 # =============================================================================
 cgroup = 'MIRIAM.GENERAL'
 
-# The SID to use
-Cdict.set('SID', group=cgroup, source=__NAME__, value=INFO['mbid'])
+# The sub-directory to use for this MIRIAM run. 
+# This should be descriptive and unique.
+# It should contain no whitespaces or special
+# characters other than underscoes
+# All miriam data will be stored in {GLOBAL.DATA_PATH}/miriam/{SUBDIRECTORY}/
+Cdict.set('SUBDIRECTORY', group=cgroup, source=__NAME__, value=INFO['mbid'])
 
-# Set the description for the MIRIAM run
+# Description of the MIRIAM run e.g. object name, date of observation, 
+# is it a transit or an eclipse etc.
 Cdict.set('DESCRIPTION', group=cgroup, source=__NAME__,
           value=INFO['description'])
 
@@ -153,8 +163,16 @@ Cdict.set('FILES', group=cgroup, source=__NAME__,
 # =============================================================================
 cgroup = 'SORBET.GENERAL'
 
-# The SID to use
-Cdict.set('SID', group=cgroup, source=__NAME__, value=INFO['sbid'])
+# The sub-directory to use for this SORBET run.
+# This should be descriptive and unique.
+# It should contain no whitespaces or special
+# characters other than underscoes
+# All sorbet data will be stored in {GLOBAL.DATA_PATH}/sorbet/{SUBDIRECTORY}/
+Cdict.set('SUBDIRECTORY', group=cgroup, source=__NAME__, value=INFO['sbid'])
+# Description of the SORBET run e.g. object name, date of observation, 
+# is it a transit or an eclipse etc.
+Cdict.set('DESCRIPTION', group=cgroup, source=__NAME__,
+          value=INFO['description'])
 
 # =============================================================================
 # Switches to turn large parts of the code on/off

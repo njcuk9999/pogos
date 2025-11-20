@@ -33,6 +33,7 @@ INFO['instrument'] = 'JWST.NIRSPEC.PRISM'
 INFO['description'] = 'WASP 39b transit observed XXX'
 INFO['date'] = '2025-03-25'
 INFO['author'] = 'Loic Albert'
+INFO['sid'] = 'DEMO-WASP39b-PRISM-SOSSISSE-20250325'
 INFO['red_steps'] = ['Extraction:SOSSISSE']
 # url for data download
 URL = 'http://206.12.93.77/ari/data/pogos/demos/nirspec/'
@@ -89,6 +90,18 @@ Cdict.set('SPECTRAL_EXTRACTION', group=cgroup, source=__NAME__,
 # Definition of inputs related to the data
 # =============================================================================
 cgroup = 'SOSSISSE.INPUTS'
+
+# The sub-directory to use for this SOSSISSE run.
+# This should be descriptive and unique.
+# It should contain no whitespaces or special
+# characters other than underscoes
+# All sossisse data will be stored in {GLOBAL.DATA_PATH}/sossisse/{SUBDIRECTORY}/
+Cdict.set('SUBDIRECTORY', group=cgroup, source=__NAME__, value=INFO['sid'])
+
+# Description of the SOSSISSE run e.g. object name, date of observation,
+# is it a transit or an eclipse etc.
+Cdict.set('DESCRIPTION', group=cgroup, source=__NAME__,
+          value=INFO['description'])
 
 # Instrument mode
 Cdict.set('INSTRUMENTMODE', group=cgroup, source=__NAME__,

@@ -32,7 +32,10 @@ __authors__ = base.__authors__
 __date__ = base.__date__
 __release__ = base.__release__
 # set description
-__description__ = 'Run the POGOS recipe'
+__description__ = ('Run the POGOS recipe using a configuration (yaml) file.'
+                   ' All input data needs to be placed according to the yaml '
+                   'file given and all data and plots will be saved in the '
+                   'outpaths given in the input yaml file.')
 __inputs__ = ['GLOBAL.YAML_FILE']
 # get the logger
 WLOG = drs_log.wlog

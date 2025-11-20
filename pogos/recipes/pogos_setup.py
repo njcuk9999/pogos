@@ -31,8 +31,9 @@ __authors__ = base.__authors__
 __date__ = base.__date__
 __release__ = base.__release__
 # set description
-__description__ = 'Setup the POGOS recipes'
-__inputs__ = ['GLOBAL.YAML_FILE', 'GLOBAL.DATA_PATH', 'GLOBAL.PLOT_PATH']
+__description__ = ('Setup the POGOS recipes starting from a demo.'
+                   'Creates a configuration (yaml) file and a file structure')
+__inputs__ = ['GLOBAL.YAML_FILE', 'GLOBAL.DATA_PATH']
 
 # =============================================================================
 # Define functions

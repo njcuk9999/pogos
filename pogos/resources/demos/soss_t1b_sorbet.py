@@ -33,7 +33,7 @@ INFO['instrument'] = 'JWST.NIRISS.SOSS'
 INFO['description'] = 'Transit spectrum of Trappist 1b observed on 2022-07-18'
 INFO['date'] = '2025-08-28'
 INFO['author'] = 'Charles Cadieux'
-INFO['sbid'] = 'DEMO-Trappist1b-SOSS-20250828'
+INFO['sbid'] = 'DEMO-Trappist1b-SOSS-20250718'
 INFO['red_steps'] = ['Post-extraction:SORBET.WLCA',
                      'Post-extraction:SORBET.SLCTA']
 # url for data download
@@ -78,10 +78,14 @@ Cdict.set('SORBET', group=cgroup, source=__NAME__,
 # General SORBET settings
 # =============================================================================
 cgroup = 'SORBET.GENERAL'
-# The SID to use
-Cdict.set('SID', group=cgroup, source=__NAME__, value=INFO['sbid'])
-
-# Description of the SORBET run
+# The sub-directory to use for this SORBET run.
+# This should be descriptive and unique.
+# It should contain no whitespaces or special
+# characters other than underscoes
+# All sorbet data will be stored in {GLOBAL.DATA_PATH}/sorbet/{SUBDIRECTORY}/
+Cdict.set('SUBDIRECTORY', group=cgroup, source=__NAME__, value=INFO['sbid'])
+# Description of the SORBET run e.g. object name, date of observation,
+# is it a transit or an eclipse etc.
 Cdict.set('DESCRIPTION', group=cgroup, source=__NAME__,
           value=INFO['description'])
 

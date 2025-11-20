@@ -10,6 +10,8 @@ Created on 2024-10-29 at 10:16
 @author: cook
 """
 import os
+import string
+import time
 from typing import Any
 
 from astropy.time import Time
@@ -20,18 +22,18 @@ from aperocore.core import drs_log
 from aperocore.core import drs_text
 from pogos import constants
 from pogos.constants import constants as pogo_constants
-from pogos.core import base
+from pogos.core import base as pogos_base
 from pogos.resources import demos as demo_mod
 
 # =============================================================================
 # Define variables
 # =============================================================================
-__NAME__ = 'pogos.recipes.run.py'
-__PACKAGE__ = base.__PACKAGE__
-__version__ = base.__version__
-__authors__ = base.__authors__
-__date__ = base.__date__
-__release__ = base.__release__
+__NAME__ = 'pogos.core.startup.py'
+__PACKAGE__ = pogos_base.__PACKAGE__
+__version__ = pogos_base.__version__
+__authors__ = pogos_base.__authors__
+__date__ = pogos_base.__date__
+__release__ = pogos_base.__release__
 # get parameter dictionary
 ParamDict = param_functions.ParamDict
 # get constant dictionary
@@ -62,6 +64,18 @@ RUN_DIRS['RUN.TSOVORE'] = 'TSOVORE.INPUTS.PATH'
 RUN_DIRS['RUN.SOSSISSE'] = 'SOSSISSE.INPUTS.SOSSIOPATH'
 RUN_DIRS['RUN.MIRIAM'] = 'MIRIAM.INPUTS.PATH'
 RUN_DIRS['RUN.SORBET'] = 'SORBET.INPUTS.PATH'
+
+
+# list all file paths that may need clearing on copying a yaml
+# should be in format: FILE_PATHS[<constant name>] = <path to directory constant>
+FILE_PATHS = dict()
+FILE_PATHS['MIRIAM.INPUTS.FILES'] = 'MIRIAM.PATHS.INPUT_PATH'
+FILE_PATHS['SOSSISSE.GENERAL.FILES'] = 'SOSSISSE.PATHS.RAWPATH'
+FILE_PATHS['SOSSISSE.GENERAL.WAVE_FILE'] = 'SOSSISSE.PATHS.CALIBPATH'
+FILE_PATHS['TSOVORE.INPUTS.FILES'] = 'TSOVORE.PATHS.INPUT_PATH'
+FILE_PATHS['SORBET.WLCTA.INPUT_FILE'] = 'SORBET.WLCTA.INPUT_PATH'
+FILE_PATHS['SORBET.SLCTA.INPUT_FILE'] = 'SORBET.SLCTA.INPUT_PATH'
+
 
 
 # =============================================================================
@@ -188,7 +202,7 @@ def test_yamlfile(params: ParamDict):
     if os.path.isdir(yaml_file):
         emsg = '{0} cannot be a directory: {1}'
         eargs = [const_name, yaml_file]
-        raise base.PogosException(emsg.format(*eargs))
+        raise pogos_base.PogosException(emsg.format(*eargs))
     # -------------------------------------------------------------------------
     try:
         if not os.path.exists(yaml_path):
@@ -196,7 +210,7 @@ def test_yamlfile(params: ParamDict):
     except Exception as e:
         emsg = 'Cannot create path for GLOBAL.YAML_FILE: {0}\n{1}'
         eargs = [yaml_path, str(e)]
-        raise base.PogosException(emsg.format(*eargs))
+        raise pogos_base.PogosException(emsg.format(*eargs))
 
 
 def core_setup(params: ParamDict, demo_mod: Any):
@@ -293,7 +307,7 @@ def core_setup(params: ParamDict, demo_mod: Any):
     # -------------------------------------------------------------------------
     # get instrument modes
     # -------------------------------------------------------------------------
-    instrument_modes = base.INSTRUMENT_MODES
+    instrument_modes = pogos_base.INSTRUMENT_MODES
     imode = None
     # -------------------------------------------------------------------------
     WLOG(params, 'info', params['LOG.HEADER'])
@@ -335,7 +349,7 @@ def core_setup(params: ParamDict, demo_mod: Any):
     # now ask about reduction steps
     # -------------------------------------------------------------------------
     # get the list of reduction steps
-    red_steps = base.RED_STEPS
+    red_steps = pogos_base.RED_STEPS
     # loop around red steps until we have all that are supported by this imode
     supported_steps = []
     # loop around reduction dictionary
@@ -354,7 +368,7 @@ def core_setup(params: ParamDict, demo_mod: Any):
     if len(supported_steps) == 0:
         emsg = 'No supported steps for instrument mode: {0}'
         eargs = [imode]
-        raise base.PogosException(emsg.format(*eargs))
+        raise pogos_base.PogosException(emsg.format(*eargs))
     # -------------------------------------------------------------------------
     # now ask user to select which steps to use
     demo_modes = []
@@ -427,10 +441,158 @@ def initial_setup():
     const_list['SORBET'] = constants.SORBET_CDict
 
     # add those external ones
-    const_list.update(base.EXTERNAL_CONST)
+    const_list.update(pogos_base.EXTERNAL_CONST)
 
     # return the updated extenral constants list
     return const_list
+
+
+
+def copy_ask_description(params: ParamDict):
+    # print process
+    WLOG(params, 'info', '*'*50)
+    WLOG(params, 'info',  'Setting up new description')
+    WLOG(params, 'info', '*'*50)
+    # ---------------------------------------------------------------------
+    descriptions = dict()
+    # find a previous description if it exists
+    for submodule in pogos_base.SUBMODULES:
+        # skip if we don't have this sub-module
+        if 'RUN.{0}'.format(submodule) not in params:
+            continue
+        # skip if not running
+        if not params['RUN.{0}'.format(submodule)]:
+            continue
+        # get sub-params
+        subparams = params.get(submodule)
+        # define sub-directory path
+        desc_key = None
+        if 'GENERAL.DESCRIPTION' in subparams:
+            desc_key = 'GENERAL.DESCRIPTION'
+        elif 'INPUTS.DESCRIPTION' in subparams:
+            desc_key = 'INPUTS.DESCRIPTION'
+        # skip if no description
+        if desc_key is None:
+            continue
+        # skip if no value set
+        if subparams[desc_key] is None:
+            continue
+        # add a sub-dictionary
+        descriptions[submodule] = dict()
+        # save the key for params
+        descriptions[submodule]['key'] = f'{submodule}.{desc_key}'
+        # save the value from params
+        descriptions[submodule]['value'] = subparams[desc_key]
+        # save the description from the params instance
+        desc_inst = params.instances[f'{submodule}.{desc_key}']
+        descriptions[submodule]['desc'] = desc_inst.description
+    # ---------------------------------------------------------------------
+    # ask question
+    question = ('Please enter a description for this POGOS yaml file.')
+    question += '\n\nThis description will be applied to all sub-modules.'
+    # just add the first one of these descriptions
+    if len(descriptions) > 0:
+        # get the submodules that have descriptions
+        submodules = list(descriptions.keys())
+        # get the first description and desc (assume they are all the same)
+        #   this is not exactly true but via POGOS we will make them all
+        #   the same
+        value = descriptions[submodules[0]]['value']
+        desc =  descriptions[submodules[0]]['desc']
+        # if we have a description use it
+        if desc is not None:
+            question += '\n\n' + desc
+        # if we have a previous value use it
+        if value is not None:
+            question += '\n\nPrevious description:\n"""\n{0}\n"""'.format(value)
+    # -------------------------------------------------------------------------
+    # get the new description
+    new_description = drs_text.user_input(question, dtype=str, required=True)
+    # -------------------------------------------------------------------------
+    # update all descriptions
+    for submodule in descriptions:
+        params.set(key=descriptions[submodule]['key'],
+                   value=new_description, source='user input')
+    # -------------------------------------------------------------------------
+    # return the updated params
+    return params
+
+
+def copy_ask_subdirectories(params: ParamDict):
+    for submodule in pogos_base.SUBMODULES:
+        # skip if we don't have this sub-module
+        if 'RUN.{0}'.format(submodule) not in params:
+            continue
+        # skip if not running
+        if not params['RUN.{0}'.format(submodule)]:
+            continue
+        # get sub-params
+        subparams = params.get(submodule)
+        # define sub-directory path
+        subdir, subdir_key, desc_key = None, None, None
+        if 'GENERAL.SUBDIRECTORY' in subparams:
+            subdir_key = 'GENERAL.SUBDIRECTORY'
+            desc_key = 'GENERAL.DESCRIPTION'
+        elif 'INPUTS.SUBDIRECTORY' in subparams:
+            subdir_key = 'INPUTS.SUBDIRECTORY'
+            desc_key = 'INPUTS.DESCRIPTION'
+        # skip if no sub-directory
+        if subdir_key is None:
+            continue
+        # set the sub-directory value
+        subdir = subparams[subdir_key]
+        # get the description from the params instance
+        subdir_inst = params.instances[f'{submodule}.{subdir_key}']
+        if subdir_inst is not None:
+            subdir_desc = subdir_inst.description
+        else:
+            subdir_desc = None
+        # ---------------------------------------------------------------------
+        # print process
+        WLOG(params, 'info', '*'*50)
+        subtitle = ('Setting up new sub-directory for '
+                    '{0} module').format(submodule)
+        WLOG(params, 'info', subtitle)
+        WLOG(params, 'info', '*'*50)
+        time.sleep(1)
+        # ---------------------------------------------------------------------
+        # ask question
+        question = ('For the {0} module, Please enter a new value for {1}  '
+                    '\n\nPrevious value = {2}'
+                    ).format(submodule, subdir_key, subdir)
+        if subdir_desc is not None:
+            question += '\n\n' + subdir_desc
+        # ---------------------------------------------------------------------
+        # loop and ask the question
+        while True:
+            value = drs_text.user_input(question, dtype=str, required=True)
+
+            # make sure there are no white spaces
+            if any([c.isspace() for c in value]):
+                WLOG(params, '',
+                     'The value cannot contain any white spaces. Please '
+                     'try again.', no_timestamp=True)
+                continue
+            # make sure there are no special characters other than underscores
+            for char in string.punctuation:
+                if char != '_' and char in value:
+                    WLOG(params, '',
+                         'The value cannot contain special characters '
+                         'other than underscores. Please try again.',
+                         no_timestamp=True)
+                    continue
+            # break the loop
+            break
+        # set the new value
+        params.set(key=f'{submodule}.{subdir_key}', value=value,
+                   source='user input')
+
+    return params
+
+
+def copy_clear_files(params: ParamDict):
+
+    # list of files
 
 
 
