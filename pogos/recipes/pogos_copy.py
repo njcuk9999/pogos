@@ -20,6 +20,11 @@ from pogos.constants.constants import CDict
 from pogos.core import base as pogos_base
 from pogos.core import general
 from pogos.core import startup
+from pogos import tsovore
+from pogos import sossisse_wrap
+from pogos import miriam
+from pogos import sorbet
+
 
 # =============================================================================
 # Define variables
@@ -71,6 +76,19 @@ def main(**kwargs):
     for variable in variables:
         WLOG(params, '', '    - {0} = {1}'.format(variable, params[variable]),
              colour='magenta', no_timestamp=True)
+
+    # Ask user if this setup is okay
+    prompt = ('\nPlease check the above values. '
+              '\n\nIs this the correct demo file you wish to copy and modify? '
+              '\n\nIf you answer "no" we will exit now.')
+    # get the new description
+    valid_start = drs_text.user_input(prompt, dtype='YN', required=True)
+    # deal with exiting here
+    if not valid_start:
+        # print splash
+        general.end_splash()
+        return
+
     # -------------------------------------------------------------------------
     # question: new description
     # -------------------------------------------------------------------------
@@ -83,18 +101,44 @@ def main(**kwargs):
     # -------------------------------------------------------------------------
     params = startup.copy_ask_subdirectories(params)
 
-
-    # TODO: need to generate paths (somehow) so we can tell user where to
-    #       copy files
+    # -------------------------------------------------------------------------
+    # clear out files
+    # -------------------------------------------------------------------------
+    filesets = startup.copy_clear_files(params)
 
     # -------------------------------------------------------------------------
-    # clear out files (and tell user they need to copy files)
+    # Ask for required parameters in modules
     # -------------------------------------------------------------------------
-    params = startup.copy_clear_files(params)
+    params = startup.copy_ask_req_module_params(params)
 
-    # TODO: Save yaml - or re-save?
-    print('stop')
+    # -------------------------------------------------------------------------
+    # setup using parameters (same as pogos_setup)
+    cdict = startup.setup(params, start_from_demo=False)
+    # -------------------------------------------------------------------------
+    # setup individual modules (same as pogos_setup)
+    params = tsovore.setup_tsovore_module(params)
+    sossisse_wrap.setup_sossisse_module(params, cdict)
+    params = miriam.setup_miriam_module(params)
+    params = sorbet.setup_sorbet_module(params)
 
+    # -------------------------------------------------------------------------
+    # Tell user where they may need to copy files
+    if len(filesets) > 0:
+        msg = ('You will need to copy your inputs files to one or more of '
+               'the following directories. '
+               '\n\nPlease note if using multiple '
+               'steps, you may only need to copy files to the first step.')
+        WLOG(params, 'info', msg, colour='magenta', no_timestamp=True)
+        WLOG(params, 'info', '', colour='magenta', no_timestamp=True)
+        for fileset in filesets:
+            # get the param value
+            pvalue = params[filesets[fileset]]
+            msg = '    - {0}: {1}'.format(fileset, pvalue)
+            WLOG(params, '', msg, colour='magenta', no_timestamp=True)
+
+    # -------------------------------------------------------------------------
+    # Also tell the user they will need to change values in each of the
+    # sub-module sections (like Object name etc
     # -------------------------------------------------------------------------
     # print splash
     general.end_splash()

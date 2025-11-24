@@ -76,12 +76,18 @@ FILE_PATHS['TSOVORE.INPUTS.FILES'] = 'TSOVORE.PATHS.INPUT_PATH'
 FILE_PATHS['SORBET.WLCTA.INPUT_FILE'] = 'SORBET.WLCTA.INPUT_PATH'
 FILE_PATHS['SORBET.SLCTA.INPUT_FILE'] = 'SORBET.SLCTA.INPUT_PATH'
 
+# list all the required parameters for each module when copying a yaml
+REQ_MODULE_PARAMS = dict()
+REQ_MODULE_PARAMS['TSOVORE'] = []
+REQ_MODULE_PARAMS['SOSSISSE'] = ['SOSSISSE.INPUTS.OBJECTNAME']
+REQ_MODULE_PARAMS['MIRIAM'] = []
+REQ_MODULE_PARAMS['SORBET'] = []
 
 
 # =============================================================================
 # Define functions
 # =============================================================================
-def setup(params: ParamDict):
+def setup(params: ParamDict, start_from_demo: bool = True):
     """
     Setup the general module
 
@@ -89,10 +95,13 @@ def setup(params: ParamDict):
     """
     # ------------------------------------------------------------------------
     # deal with user selecting instrument, mode and reduction steps
-    params, demo_list = core_setup(params, demo_mod)
-    # deal with start point (setup only) - ask user to start from demo or blank
-    params = load_functions.starting_point(params, 'GLOBAL.INSTRUMENTMODE',
-                                           demo_list)
+    params, demo_list = core_setup(params, demo_mod, start_from_demo)
+    # if we are starting from a demo (i.e. no previous yaml)
+    if start_from_demo:
+        # deal with start point (setup only) - ask user to start from demo
+        # or blank
+        params = load_functions.starting_point(params, 'GLOBAL.INSTRUMENTMODE',
+                                               demo_list)
     # -------------------------------------------------------------------------
     # print progress
     WLOG(params, 'info', params['LOG.HEADER'])
@@ -213,7 +222,7 @@ def test_yamlfile(params: ParamDict):
         raise pogos_base.PogosException(emsg.format(*eargs))
 
 
-def core_setup(params: ParamDict, demo_mod: Any):
+def core_setup(params: ParamDict, demo_mod: Any, start_from_demo: bool = True):
     """
     Deal with user selecting instrument, mode and reduction steps
 
@@ -227,9 +236,10 @@ def core_setup(params: ParamDict, demo_mod: Any):
     # -------------------------------------------------------------------------
     # Ask for the global data path
     # -------------------------------------------------------------------------
-    WLOG(params, 'info', params['LOG.HEADER'])
-    WLOG(params, 'info', 'Checking GLOBAL.DATA_PATH')
-    WLOG(params, 'info', params['LOG.HEADER'])
+    if params['GLOBAL.DATA_PATH'] is None:
+        WLOG(params, 'info', params['LOG.HEADER'])
+        WLOG(params, 'info', 'Checking GLOBAL.DATA_PATH')
+        WLOG(params, 'info', params['LOG.HEADER'])
     # keep asking until this variable is set
     while params['GLOBAL.DATA_PATH'] is None:
         # get the desription of the data path from the constant instance
@@ -239,6 +249,7 @@ def core_setup(params: ParamDict, demo_mod: Any):
         data_path = drs_text.user_input(question, dtype=str, required=True)
         params['GLOBAL.DATA_PATH'] = data_path
         params.set_source('GLOBAL.DATA_PATH', func_name)
+
         # If directory does not exist ask the user if they want to create it
         if not os.path.exists(data_path):
             question = '\nPath does not exist: {0}\nWould you like to create it?'
@@ -249,13 +260,18 @@ def core_setup(params: ParamDict, demo_mod: Any):
             # otherwise we start again with the question
             else:
                 params['GLOBAL.DATA_PATH'] = None
-
+    # Deal with data path ending in /data/ (we will add this afterwards)
+    #  so for now we remote it
+    if os.path.basename(params['GLOBAL.DATA_PATH']) == 'data':
+        data_path = os.path.dirname(params['GLOBAL.DATA_PATH'])
+        params['GLOBAL.DATA_PATH'] = data_path
     # -------------------------------------------------------------------------
     # we want to make sure the yaml file is set
     # -------------------------------------------------------------------------
-    WLOG(params, 'info', params['LOG.HEADER'])
-    WLOG(params, 'info', 'Checking GLOBAL.YAML_FILE')
-    WLOG(params, 'info', params['LOG.HEADER'])
+    if params['GLOBAL.YAML_FILE'] is None:
+        WLOG(params, 'info', params['LOG.HEADER'])
+        WLOG(params, 'info', 'Checking GLOBAL.YAML_FILE')
+        WLOG(params, 'info', params['LOG.HEADER'])
     # Make sure yaml file is a file (and path exists)
     test_yamlfile(params)
     # keep asking until this variable is set
@@ -308,11 +324,14 @@ def core_setup(params: ParamDict, demo_mod: Any):
     # get instrument modes
     # -------------------------------------------------------------------------
     instrument_modes = pogos_base.INSTRUMENT_MODES
-    imode = None
     # -------------------------------------------------------------------------
-    WLOG(params, 'info', params['LOG.HEADER'])
-    WLOG(params, 'info', 'Checking GLOBAL.INSTRUMENTMODE')
-    WLOG(params, 'info', params['LOG.HEADER'])
+    if params['GLOBAL.INSTRUMENTMODE'] is None:
+        WLOG(params, 'info', params['LOG.HEADER'])
+        WLOG(params, 'info', 'Checking GLOBAL.INSTRUMENTMODE')
+        WLOG(params, 'info', params['LOG.HEADER'])
+        imode = None
+    else:
+        imode = params['GLOBAL.INSTRUMENTMODE']
     # -------------------------------------------------------------------------
     while imode is None:
         insts = list(instrument_modes.keys())
@@ -345,6 +364,10 @@ def core_setup(params: ParamDict, demo_mod: Any):
         # set instrument and mode in params
         params['GLOBAL.INSTRUMENTMODE'] = imode
         params.set_source('GLOBAL.INSTRUMENTMODE', func_name)
+    # -------------------------------------------------------------------------
+    # if we are not in start_from_demo return here
+    if not start_from_demo:
+        return params, dict()
     # --------------------------------------------------------------------------
     # now ask about reduction steps
     # -------------------------------------------------------------------------
@@ -554,7 +577,7 @@ def copy_ask_subdirectories(params: ParamDict):
                     '{0} module').format(submodule)
         WLOG(params, 'info', subtitle)
         WLOG(params, 'info', '*'*50)
-        time.sleep(1)
+        time.sleep(0.1)
         # ---------------------------------------------------------------------
         # ask question
         question = ('For the {0} module, Please enter a new value for {1}  '
@@ -591,9 +614,78 @@ def copy_ask_subdirectories(params: ParamDict):
 
 
 def copy_clear_files(params: ParamDict):
-
+    # set function name
+    func_name = f'{__NAME__}.copy_clear_files()'
+    # storage for found sets (used later to inform user)
+    found_sets = dict()
     # list of files
+    for fileset in list(FILE_PATHS.keys()):
+        # skip if we don't have this fileset
+        if fileset not in params:
+            continue
+        # get the value from params
+        file_value = params[fileset]
+        # skip if None or empty
+        if file_value is None:
+            continue
+        if drs_text.null_text(file_value, ['None', '', 'Null']):
+            continue
+        # deal with empty string
+        if isinstance(file_value, str):
+            # skip if empty string
+            if len(file_value) == 0:
+                continue
+        # deal with empty list (skip if empty)
+        elif isinstance(file_value, list):
+            if len(file_value) == 0:
+                continue
 
+        # save path for later
+        found_sets[fileset] = FILE_PATHS[fileset]
+        # update params
+        params.set(key=fileset, value=[], source=func_name)
+    # return the found sets (used to inform user later on where to
+    # copy input files)
+    return found_sets
+
+
+def copy_ask_req_module_params(params: ParamDict):
+
+    # set function name
+    func_name = f'{__NAME__}.copy_ask_req_module_params()'
+    # -------------------------------------------------------------------------
+    # loop around sub-modules
+    for submodule in REQ_MODULE_PARAMS:
+        # skip question if we don't have this sub-module
+        if 'RUN.{0}'.format(submodule) not in params:
+            continue
+        # skip if not running
+        if not params['RUN.{0}'.format(submodule)]:
+            continue
+        # loop around required parameters
+        for req_param in REQ_MODULE_PARAMS[submodule]:
+            # skip if we don't have this required parameter
+            if req_param not in params:
+                continue
+            # -----------------------------------------------------------------
+            # print process
+            WLOG(params, 'info', '*'*50)
+            subtitle = ('Setting up required parameter '
+                        '{0} for {1} module').format(req_param, submodule)
+            WLOG(params, 'info', subtitle)
+            WLOG(params, 'info', '*'*50)
+            time.sleep(0.1)
+            # -----------------------------------------------------------------
+            ikeys = [req_param]
+            # set value to None (so we ask for it)
+            params.set(key=req_param, value=None, source=func_name,
+                       instance=params.instances[req_param])
+            # ask for missing args for this required parameter
+            params = load_functions.ask_for_missing_args(params,
+                                                         include_keys=ikeys)
+    # -------------------------------------------------------------------------
+    # return the updated parameters
+    return params
 
 
 # =============================================================================
