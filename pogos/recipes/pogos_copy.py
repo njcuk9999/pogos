@@ -137,6 +137,17 @@ def main(**kwargs):
             WLOG(params, '', msg, colour='magenta', no_timestamp=True)
 
     # -------------------------------------------------------------------------
+    # final remarks on reading the yaml file
+    msg = ('\n\nIt is important to note that pogos_copy only copies the '
+           'demo yaml file and sets up the basic directory structure. '
+           '\n\nPlease open the new yaml file and check all parameters '
+           'before running on your own data.'
+           '\n\nThe yaml file is located here: {0}\n\n')
+    margs = [params['GLOBAL.YAML_FILE']]
+    WLOG(params, 'info', msg.format(*margs), colour='magenta',
+         no_timestamp=True)
+
+    # -------------------------------------------------------------------------
     # Also tell the user they will need to change values in each of the
     # sub-module sections (like Object name etc
     # -------------------------------------------------------------------------

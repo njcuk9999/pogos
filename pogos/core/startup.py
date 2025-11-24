@@ -589,21 +589,34 @@ def copy_ask_subdirectories(params: ParamDict):
         # loop and ask the question
         while True:
             value = drs_text.user_input(question, dtype=str, required=True)
-
+            # -----------------------------------------------------------------
             # make sure there are no white spaces
             if any([c.isspace() for c in value]):
                 WLOG(params, '',
                      'The value cannot contain any white spaces. Please '
                      'try again.', no_timestamp=True)
                 continue
+
+            if len(value) == 0:
+                WLOG(params, '',
+                     'The value cannot be empty. Please try again.',
+                     no_timestamp=True)
+                continue
+            # -----------------------------------------------------------------
             # make sure there are no special characters other than underscores
+            char_passed = True
             for char in string.punctuation:
                 if char != '_' and char in value:
                     WLOG(params, '',
                          'The value cannot contain special characters '
                          'other than underscores. Please try again.',
                          no_timestamp=True)
-                    continue
+                    char_passed = False
+                    break
+            # re-check and ask the question again
+            if not char_passed:
+                continue
+            # -----------------------------------------------------------------
             # break the loop
             break
         # set the new value
