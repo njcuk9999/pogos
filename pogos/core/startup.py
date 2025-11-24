@@ -207,6 +207,10 @@ def test_yamlfile(params: ParamDict):
     if 'command' in yaml_source:
         const_name = f'--{params.instances["GLOBAL.YAML_FILE"].cmd_arg}'
     # -------------------------------------------------------------------------
+    # make sure the yaml file is not blank
+    if len(yaml_file) == 0:
+        emsg = '{0} cannot be blank.'.format(const_name)
+        raise pogos_base.PogosException(emsg)
     # Make sure yaml file is not a directory
     if os.path.isdir(yaml_file):
         emsg = '{0} cannot be a directory: {1}'
