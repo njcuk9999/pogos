@@ -118,6 +118,13 @@ def setup(params: ParamDict, start_from_demo: bool = True):
         if not params[run_key]:
             for key in params.keys():
                 if key.startswith(RUN_KEYS[run_key]):
+                    # TODO: remove this if statement
+                    # skip keys that are None (shouldn't be here so this is
+                    # just for debugging)
+                    if params.instances[key] is None:
+                        print('Skipping key {0} (no instance)'.format(key))
+                        continue
+                    # otherwise set user and not_none to False
                     params.instances[key].user = False
                     params.instances[key].not_none = False
     # -------------------------------------------------------------------------
