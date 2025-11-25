@@ -598,13 +598,13 @@ def copy_ask_subdirectories(params: ParamDict):
             if any([c.isspace() for c in value]):
                 WLOG(params, '',
                      'The value cannot contain any white spaces. Please '
-                     'try again.', no_timestamp=True)
+                     'try again.', no_timestamp=True, colour='yellow')
                 continue
 
             if len(value) == 0:
                 WLOG(params, '',
                      'The value cannot be empty. Please try again.',
-                     no_timestamp=True)
+                     no_timestamp=True, colour='yellow')
                 continue
             # -----------------------------------------------------------------
             # make sure there are no special characters other than underscores
@@ -614,7 +614,7 @@ def copy_ask_subdirectories(params: ParamDict):
                     WLOG(params, '',
                          'The value cannot contain special characters '
                          'other than underscores. Please try again.',
-                         no_timestamp=True)
+                         no_timestamp=True, colour='yellow')
                     char_passed = False
                     break
             # re-check and ask the question again
