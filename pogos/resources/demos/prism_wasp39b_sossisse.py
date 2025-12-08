@@ -129,22 +129,17 @@ Cdict.set('FILES', group=cgroup, source=__NAME__,
                  'jw01366004001_04101_00001-seg003_nrs1_rateints.fits',
                  'jw01366004001_04101_00001-seg004_nrs1_rateints.fits'])
 
-# background file --> leave as None if the is no background available for
-#    the mode - if empty DO_BACKGROUND is set to False regardless of the value
-Cdict.set('BKGFILE', group=cgroup, source=__NAME__,
-          value='model_background256.fits')
-
 # do background correction - must have BKGFILE defined to do this
-Cdict.set('DO_BACKGROUND', value=True, group=cgroup, source=__NAME__)
+Cdict.set('DO_BACKGROUND', value=False, group=cgroup, source=__NAME__)
 
 # flat field file --> leave as '' if there is no flat field available
 #     for the mode
 Cdict.set('FLATFILE', group=cgroup, source=__NAME__,
-          value='jwst_niriss_flat_0275.fits')
+          value=None)
 
 # trace position file
 Cdict.set('POS_FILE', group=cgroup, source=__NAME__,
-          value='SOSS_ref_trace_table_SUBSTRIP256.fits')
+          value=None)
 
 # Wavelength calibration file
 Cdict.set('WAVE_FILE', group=cgroup, source=__NAME__,
