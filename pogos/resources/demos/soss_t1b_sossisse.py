@@ -35,7 +35,7 @@ INFO['description'] = 'Trappist 1b transit observed on 2022-07-18'
 INFO['date'] = '2025-03-25'
 INFO['author'] = 'Etienne Artigau'
 INFO['red_steps'] = ['Extraction:SOSSISSE']
-INFO['sid'] = 'DEMO-Trappist1b-SOSS-20250718'
+INFO['sid'] = 'DEMO-Trappist1b-SOSS-20220718'
 # url for data download
 URL = 'http://206.12.93.77/ari/data/pogos/demos/soss/'
 # download: key = file, value = local path

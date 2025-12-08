@@ -38,8 +38,8 @@ INFO['date'] = '2025-03-25'
 INFO['author'] = 'Etienne Artigau + Charles Cadieux'
 INFO['red_steps'] = ['Extraction:SOSSISSE', 'Post-extraction:SORBET.WLCA',
                      'Post-extraction:SORBET.SLCTA']
-INFO['sid'] = 'DEMO-Trappist1b-SOSS-20250718'
-INFO['sbid'] = 'DEMO-Trappist1b-SOSS-20250718'
+INFO['sid'] = 'DEMO-Trappist1b-SOSS-20220718'
+INFO['sbid'] = 'DEMO-Trappist1b-SOSS-20220718'
 # url for data download
 URL = 'http://206.12.93.77/ari/data/pogos/demos/soss/'
 # download: key = file, value = local path

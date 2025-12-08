@@ -15,13 +15,14 @@ from pogos.constants import constants as pconst
 # =============================================================================
 # Define variables
 # =============================================================================
-__NAME__ = 'nirspec_prism_wasp39b.py'
+__NAME__ = 'soss_trappist1b.py'
 
 # copy of CDict
 Cdict = pconst.CDict.copy(source=__NAME__)
 S_Cdict = sconst.CDict.copy(source=__NAME__)
 # copy sossisse constants into Cdict
 Cdict.add_sub_cdict('SOSSISSE', S_Cdict, source=__NAME__)
+
 
 # =============================================================================
 # Define info (must contain "title")
@@ -30,25 +31,26 @@ INFO = dict()
 INFO['title'] = 'JWST.NIRSPEC.PRISM WASP 39b transit [SOSSISSE]'
 INFO['object'] = 'WASP 39b'
 INFO['instrument'] = 'JWST.NIRSPEC.PRISM'
-INFO['description'] = 'WASP 39b transit observed XXX'
-INFO['date'] = '2025-03-25'
-INFO['author'] = 'Loic Albert'
-INFO['sid'] = 'DEMO-WASP39b-PRISM-SOSSISSE-20250325'
+INFO['description'] = 'WASP 39b transit observed on 2022-07-10'
+INFO['date'] = '2025-12-08'
+INFO['author'] = 'Neil Cook'
 INFO['red_steps'] = ['Extraction:SOSSISSE']
+INFO['sid'] = 'DEMO-WASP39b-NIRSPEC.PRISM-20220710'
 # url for data download
 URL = 'http://206.12.93.77/ari/data/pogos/demos/nirspec/'
 # download: key = file, value = local path
 DOWNLOAD = dict()
 DOWNLOAD['SOSSISSE.GENERAL.FILES'] = 'SOSSISSE.PATHS.RAWPATH'
-DOWNLOAD['SOSSISSE.GENERAL.WAVE_FILE'] = 'SOSSISSE.PATHS.CALIBPATH'
-
+DOWNLOAD['SOSSISSE.GENERAL.BKGFILE'] = 'SOSSISSE.PATHS.CALIBPATH'
+DOWNLOAD['SOSSISSE.GENERAL.FLATFILE'] = 'SOSSISSE.PATHS.CALIBPATH'
+DOWNLOAD['SOSSISSE.GENERAL.POS_FILE'] = 'SOSSISSE.PATHS.CALIBPATH'
 
 # =============================================================================
 # global settings (generally don't touch these)
 # =============================================================================
 cgroup = 'GLOBAL'
 
-# Instrument mode i.e. JWST.NIRISS.SOSS or JWST.NIRISS.PRISM
+# Instrument mode i.e. JWST.NIRISS.SOSS or JWST.NIRSPEC.PRISM
 Cdict.set('INSTRUMENTMODE', group=cgroup, source=__NAME__,
           value=INFO['instrument'])
 
@@ -109,7 +111,7 @@ Cdict.set('INSTRUMENTMODE', group=cgroup, source=__NAME__,
 
 # Name of the object (must match the object directory name)
 Cdict.set('OBJECTNAME', group=cgroup, source=__NAME__,
-          value='Wasp39b')
+          value='WASP39b')
 
 # =============================================================================
 # Definition of general inputs
@@ -130,19 +132,19 @@ Cdict.set('FILES', group=cgroup, source=__NAME__,
 # background file --> leave as None if the is no background available for
 #    the mode - if empty DO_BACKGROUND is set to False regardless of the value
 Cdict.set('BKGFILE', group=cgroup, source=__NAME__,
-          value=None)
+          value='model_background256.fits')
 
 # do background correction - must have BKGFILE defined to do this
-Cdict.set('DO_BACKGROUND', value=False, group=cgroup, source=__NAME__)
+Cdict.set('DO_BACKGROUND', value=True, group=cgroup, source=__NAME__)
 
 # flat field file --> leave as '' if there is no flat field available
 #     for the mode
 Cdict.set('FLATFILE', group=cgroup, source=__NAME__,
-          value=None)
+          value='jwst_niriss_flat_0275.fits')
 
 # trace position file
 Cdict.set('POS_FILE', group=cgroup, source=__NAME__,
-          value=None)
+          value='SOSS_ref_trace_table_SUBSTRIP256.fits')
 
 # Wavelength calibration file
 Cdict.set('WAVE_FILE', group=cgroup, source=__NAME__,
@@ -152,6 +154,11 @@ Cdict.set('WAVE_FILE', group=cgroup, source=__NAME__,
 Cdict.set('WAVE_FILE_TYPE', group=cgroup, source=__NAME__,
           value='ext1d')
 
+# Define which orders to use e.g.
+# - 1
+# - 2
+Cdict.set('TRACE_ORDERS', group=cgroup, source=__NAME__,
+          value=None)
 
 # =============================================================================
 # Definition of inputs related to the position within data cube timeseries
@@ -175,7 +182,8 @@ cgroup = 'SOSSISSE.WLC.INPUTS'
 #               - [0, 89]
 #               - [111, 153]
 Cdict.set('BASELINE_INTS', group=cgroup, source=__NAME__,
-          value=[[0, 8199], [15701, 21500]])
+          value=[[0, 8199], [15700, 21500]])
+
 
 # =============================================================================
 # Definition of inputs related to handling of the data within each frame
@@ -184,12 +192,12 @@ cgroup = 'SOSSISSE.WLC.GENERAL'
 
 # Trace extraction width. Set to 0 to use the full image
 Cdict.set('LINRECON_TRACE_WIDTH', group=cgroup, source=__NAME__,
-          value=7)
+          value=40)
 
 # define the width for masking the white light curve trace
 #         Default
 Cdict.set('TRACE_WIDTH_MASKING', group=cgroup, source=__NAME__,
-          value=5)
+          value=40)
 # Set the range of dys to scan over number of -nbypix/trace_y_scale to
 #     +nbyix/trace_y_scale
 Cdict.set('TRACE_Y_SCALE', group=cgroup, source=__NAME__,
@@ -198,10 +206,21 @@ Cdict.set('TRACE_Y_SCALE', group=cgroup, source=__NAME__,
 #     +nbxpix/trace_x_scale
 Cdict.set('TRACE_X_SCALE', group=cgroup, source=__NAME__,
           value=10)
+
+# Trace extraction width. Set to 0 to use the full image
+Cdict.set('LINRECON_TRACE_WIDTH', group=cgroup, source=__NAME__,
+          value=7)
+
+# define the width for masking the white light curve trace
+Cdict.set('TRACE_WIDTH_MASKING', group=cgroup, source=__NAME__,
+          value=5)
+
+
 # =============================================================================
 # Definition for white light curve
 # =============================================================================
 cgroup = 'SOSSISSE.SPEC_EXT'
+
 
 # =============================================================================
 # Start of code
