@@ -62,6 +62,14 @@ def main(**kwargs):
     msg = f'Using yaml file: {os.path.realpath(params["GLOBAL.YAML_FILE"])}'
     WLOG(params, 'info', msg)
     # -------------------------------------------------------------------------
+    # Make sure runs are not None - this means something is very wrong with
+    # the yaml file
+    run_keys = ['RUN.TSOVORE', 'RUN.SOSSISSE', 'RUN.MIRIAM', 'RUN.SORBET']
+    for run_key in run_keys:
+        if params.get(run_key) is None:
+            emsg = f'Parameter "{run_key}" is None - check yaml file!'
+            raise drs_log.AperoCodedException(emsg)
+    # -------------------------------------------------------------------------
     # run tsovore
     if params['RUN.TSOVORE']:
         tsovore_inst = tsovore.run_tsovore(params)
