@@ -55,7 +55,8 @@ MIRIAM_CDict.add('SUBDIRECTORY', value=None, dtype=str, source=__NAME__,
                              '\nIt should contain no whitespaces or special '
                              'characters other than underscoes.'
                              '\nAll miriam data will be stored in '
-                             '{GLOBAL.DATA_PATH}/miriam/{SUBDIRECTORY}/')
+                             '{GLOBAL.DATA_PATH}/miriam/{SUBDIRECTORY}/'
+                             '\n\nWe suggest {OBJNAME}-{INST.MODE}-{STEP}-{YYYYMMDD}')
 
 # define what we are running through MIRIAM
 MIRIAM_CDict.add('DESCRIPTION', value='', dtype=str, source=__NAME__,

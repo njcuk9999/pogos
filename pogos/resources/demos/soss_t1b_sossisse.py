@@ -35,7 +35,7 @@ INFO['description'] = 'Trappist 1b transit observed on 2022-07-18'
 INFO['date'] = '2025-03-25'
 INFO['author'] = 'Etienne Artigau'
 INFO['red_steps'] = ['Extraction:SOSSISSE']
-INFO['sid'] = 'DEMO-Trappist1b-SOSS-20220718'
+INFO['id'] = 'DEMO-T1b-JWST.NIRISS.SOSS-SOSSISSE-20220718'
 # url for data download
 URL = 'http://206.12.93.77/ari/data/pogos/demos/soss/'
 # download: key = file, value = local path
@@ -98,7 +98,7 @@ cgroup = 'SOSSISSE.INPUTS'
 # It should contain no whitespaces or special
 # characters other than underscoes
 # All sossisse data will be stored in {GLOBAL.DATA_PATH}/sossisse/{SUBDIRECTORY}/
-Cdict.set('SUBDIRECTORY', group=cgroup, source=__NAME__, value=INFO['sid'])
+Cdict.set('SUBDIRECTORY', group=cgroup, source=__NAME__, value=INFO['id'])
 
 # Description of the SOSSISSE run e.g. object name, date of observation,
 # is it a transit or an eclipse etc.

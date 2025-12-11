@@ -11,6 +11,7 @@ Created on 2024-10-29 at 09:32
 """
 
 from aperocore.constants import load_functions
+from aperocore.core import drs_log
 
 from pogos.constants.constants import CDict
 from pogos.core import base
@@ -30,6 +31,8 @@ __version__ = base.__version__
 __authors__ = base.__authors__
 __date__ = base.__date__
 __release__ = base.__release__
+# get the logger
+WLOG = drs_log.wlog
 # set description
 __description__ = ('Setup the POGOS recipes starting from a demo.'
                    'Creates a configuration (yaml) file and a file structure')
@@ -63,6 +66,15 @@ def main(**kwargs):
     # -------------------------------------------------------------------------
     # ask for data download
     load_functions.download_data(params)
+    # -------------------------------------------------------------------------
+    # Tell user to look at the yaml file created
+    msg = 'Please review the yaml file created at:'
+    msg += '\n  {0} \n\n You can now run POGOS with'
+    msg += '\n\n\t>> pogos_run --yamlfile={0}'
+    msg += '\n\n and you can use \n\n\t>> pogos_copy --demo_file={0}'
+    msg += '\n\nto use this as a basis for your own setup/data'
+    margs = [params['GLOBAL.YAML_FILE']]
+    WLOG(None, 'info', msg.format(*margs), colour='magenta')
     # -------------------------------------------------------------------------
     # print splash
     general.end_splash()

@@ -33,7 +33,7 @@ INFO['instrument'] = 'JWST.NIRSPEC.G395'
 INFO['description'] = 'WASP 39b transit observed XXX'
 INFO['date'] = '2025-03-25'
 INFO['author'] = 'Loic Albert'
-INFO['sid'] = 'DEMO-WASP39b-G395-SOSSISSE-20250325'
+INFO['id'] = 'DEMO-WASP39b-JWST.NIRSPEC.G395-SOSSISSE-20250325'
 INFO['red_steps'] = ['Extraction:SOSSISSE']
 # url for data download
 URL = 'http://206.12.93.77/ari/data/pogos/demos/nirspec/'
@@ -95,7 +95,7 @@ cgroup = 'SOSSISSE.INPUTS'
 # It should contain no whitespaces or special
 # characters other than underscoes
 # All sossisse data will be stored in {GLOBAL.DATA_PATH}/sossisse/{SUBDIRECTORY}/
-Cdict.set('SUBDIRECTORY', group=cgroup, source=__NAME__, value=INFO['sid'])
+Cdict.set('SUBDIRECTORY', group=cgroup, source=__NAME__, value=INFO['id'])
 
 # Description of the SOSSISSE run e.g. object name, date of observation,
 # is it a transit or an eclipse etc.

@@ -27,13 +27,13 @@ Cdict.add_sub_cdict('MIRIAM', MIRIAM_CDict, source=__NAME__)
 # Define info (must contain "title")
 # =============================================================================
 INFO = dict()
-INFO['title'] = 'JWST.MIRI.IMAGE LHS-1140 eclipse [MIRIAM]'
+INFO['title'] = 'JWST.MIRI.IMAGING LHS-1140 eclipse [MIRIAM]'
 INFO['object'] = 'LHS-1140'
 INFO['instrument'] = 'JWST.MIRI.IMAGING'
 INFO['description'] = 'LHS-1140 eclipse observed on 2024-07-07'
 INFO['date'] = '2025-10-16'
 INFO['author'] = 'Etienne Artigau'
-INFO['mbid'] = 'DEMO-LHS-1140-MIRIAM-20240707'
+INFO['id'] = 'DEMO-LHS-1140-JWST.MIRIM.IM-MIRIAM-20240707'
 INFO['red_steps'] = ['Extraction:MIRIAM']
 # url for data download
 URL = 'http://206.12.93.77/ari/data/pogos/demos/miri/'
@@ -83,7 +83,7 @@ cgroup = 'MIRIAM.GENERAL'
 # It should contain no whitespaces or special
 # characters other than underscoes
 # All miriam data will be stored in {GLOBAL.DATA_PATH}/miriam/{SUBDIRECTORY}/
-Cdict.set('SUBDIRECTORY', group=cgroup, source=__NAME__, value=INFO['mbid'])
+Cdict.set('SUBDIRECTORY', group=cgroup, source=__NAME__, value=INFO['id'])
 
 # Description of the MIRIAM run e.g. object name, date of observation,
 # is it a transit or an eclipse etc.

@@ -83,6 +83,9 @@ REQ_MODULE_PARAMS['SOSSISSE'] = ['SOSSISSE.INPUTS.OBJECTNAME']
 REQ_MODULE_PARAMS['MIRIAM'] = []
 REQ_MODULE_PARAMS['SORBET'] = []
 
+# Define allowed punctuation for sub-directory names
+VALID_PUNC = ['-', '+', '.', '_']
+
 
 # =============================================================================
 # Define functions
@@ -102,6 +105,9 @@ def setup(params: ParamDict, start_from_demo: bool = True):
         # or blank
         params = load_functions.starting_point(params, 'GLOBAL.INSTRUMENTMODE',
                                                demo_list)
+
+    # now set up yaml file name
+    params = core_yaml_setup(params)
     # -------------------------------------------------------------------------
     # print progress
     WLOG(params, 'info', params['LOG.HEADER'])
@@ -245,93 +251,6 @@ def core_setup(params: ParamDict, demo_mod: Any, start_from_demo: bool = True):
     func_name = f'{__NAME__}.core_setup()'
 
     # -------------------------------------------------------------------------
-    # Ask for the global data path
-    # -------------------------------------------------------------------------
-    if params['GLOBAL.DATA_PATH'] is None:
-        WLOG(params, 'info', params['LOG.HEADER'])
-        WLOG(params, 'info', 'Checking GLOBAL.DATA_PATH')
-        WLOG(params, 'info', params['LOG.HEADER'])
-    # keep asking until this variable is set
-    while params['GLOBAL.DATA_PATH'] is None:
-        # get the desription of the data path from the constant instance
-        description = params.instances['GLOBAL.DATA_PATH'].description
-        # ask user for data path
-        question = '\nPlease enter {0}\n'.format(description)
-        data_path = drs_text.user_input(question, dtype=str, required=True)
-        params['GLOBAL.DATA_PATH'] = data_path
-        params.set_source('GLOBAL.DATA_PATH', func_name)
-
-        # If directory does not exist ask the user if they want to create it
-        if not os.path.exists(data_path):
-            question = '\nPath does not exist: {0}\nWould you like to create it?'
-            question = question.format(data_path)
-            # ask user
-            if drs_text.user_input(question, dtype='YN', required=True):
-                os.makedirs(data_path)
-            # otherwise we start again with the question
-            else:
-                params['GLOBAL.DATA_PATH'] = None
-    # Deal with data path ending in /data/ (we will add this afterwards)
-    #  so for now we remote it
-    if os.path.basename(params['GLOBAL.DATA_PATH']) == 'data':
-        data_path = os.path.dirname(params['GLOBAL.DATA_PATH'])
-        params['GLOBAL.DATA_PATH'] = data_path
-    # -------------------------------------------------------------------------
-    # we want to make sure the yaml file is set
-    # -------------------------------------------------------------------------
-    if params['GLOBAL.YAML_FILE'] is None:
-        WLOG(params, 'info', params['LOG.HEADER'])
-        WLOG(params, 'info', 'Checking GLOBAL.YAML_FILE')
-        WLOG(params, 'info', params['LOG.HEADER'])
-    # Make sure yaml file is a file (and path exists)
-    test_yamlfile(params)
-    # keep asking until this variable is set
-    while params['GLOBAL.YAML_FILE'] is None:
-        # get the desription of the yaml file from the constant instance
-        description = params.instances['GLOBAL.YAML_FILE'].description
-        yamldir = os.path.join(params['GLOBAL.DATA_PATH'], 'yamls')
-        # ask user for yaml file
-        question = '\nPlease enter {0}'
-        question += ('\n\nNote if no path is given the yaml file will '
-                     'be put in the {1} directory.')
-        question = question.format(description, yamldir)
-        yaml_file = drs_text.user_input(question, dtype=str, required=True)
-        params['GLOBAL.YAML_FILE'] = yaml_file
-        params.set_source('GLOBAL.YAML_FILE', func_name)
-        # test yaml file
-        test_yamlfile(params)
-        if params['GLOBAL.YAML_FILE'] is None:
-            continue
-        # test if we have no path
-        if os.sep not in yaml_file:
-            yaml_file = os.path.join(params['GLOBAL.DATA_PATH'], 'yamls',
-                                     yaml_file)
-            params['GLOBAL.YAML_FILE'] = yaml_file
-            params.set_source('GLOBAL.YAML_FILE', func_name)
-        # If directory does not exist ask the user if they want to create it
-        yaml_path = os.path.dirname(yaml_file)
-        if not os.path.exists(yaml_path):
-            question = '\nPath does not exist: {0}\nWould you like to create it?'
-            question = question.format(yaml_path)
-            # ask user
-            if drs_text.user_input(question, dtype='YN', required=True):
-                os.makedirs(yaml_path)
-            # otherwise we start again with the question
-            else:
-                params['GLOBAL.YAML_FILE'] = None
-    # -------------------------------------------------------------------------
-    # finally make sure the yaml file has .yaml on the end
-    if not params['GLOBAL.YAML_FILE'].endswith('.yaml'):
-        params['GLOBAL.YAML_FILE'] += '.yaml'
-    # and finally make sure the data path has /data on the end
-    if not os.path.basename(params['GLOBAL.DATA_PATH']) == 'data':
-        # add data path
-        params['GLOBAL.DATA_PATH'] = os.path.join(params['GLOBAL.DATA_PATH'],
-                                                  'data')
-        # make sure this data path exists
-        if not os.path.exists(params['GLOBAL.DATA_PATH']):
-            os.makedirs(params['GLOBAL.DATA_PATH'])
-    # -------------------------------------------------------------------------
     # get instrument modes
     # -------------------------------------------------------------------------
     instrument_modes = pogos_base.INSTRUMENT_MODES
@@ -457,7 +376,112 @@ def core_setup(params: ParamDict, demo_mod: Any, start_from_demo: bool = True):
                 # add mode
                 demo_dict[inst_key][demo_name] = demo
     # -------------------------------------------------------------------------
+    # Ask for the global data path
+    # -------------------------------------------------------------------------
+    if params['GLOBAL.DATA_PATH'] is None:
+        WLOG(params, 'info', params['LOG.HEADER'])
+        WLOG(params, 'info', 'Checking GLOBAL.DATA_PATH')
+        WLOG(params, 'info', params['LOG.HEADER'])
+    # keep asking until this variable is set
+    while params['GLOBAL.DATA_PATH'] is None:
+        # get the desription of the data path from the constant instance
+        description = params.instances['GLOBAL.DATA_PATH'].description
+        # ask user for data path
+        question = '\nPlease enter {0}\n'.format(description)
+        data_path = drs_text.user_input(question, dtype=str, required=True)
+        params['GLOBAL.DATA_PATH'] = data_path
+        params.set_source('GLOBAL.DATA_PATH', func_name)
+
+        # If directory does not exist ask the user if they want to create it
+        if not os.path.exists(data_path):
+            question = '\nPath does not exist: {0}\nWould you like to create it?'
+            question = question.format(data_path)
+            # ask user
+            if drs_text.user_input(question, dtype='YN', required=True):
+                os.makedirs(data_path)
+            # otherwise we start again with the question
+            else:
+                params['GLOBAL.DATA_PATH'] = None
+    # Deal with data path ending in /data/ (we will add this afterwards)
+    #  so for now we remote it
+    if os.path.basename(params['GLOBAL.DATA_PATH']) == 'data':
+        data_path = os.path.dirname(params['GLOBAL.DATA_PATH'])
+        params['GLOBAL.DATA_PATH'] = data_path
+    # -------------------------------------------------------------------------
     return params, demo_dict
+
+
+
+def core_yaml_setup(params: ParamDict):
+    # -------------------------------------------------------------------------
+    # define function name
+    func_name = f'{__NAME__}.core_setup()'
+
+    # Make sure yaml file is a file (and path exists)
+    test_yamlfile(params)
+    # keep asking until this variable is set
+    while params['GLOBAL.YAML_FILE'] is None:
+        # get the yaml directory
+        yamldir = os.path.join(params['GLOBAL.DATA_PATH'], 'yamls')
+        # create this directory
+        if not os.path.exists(yamldir):
+            os.makedirs(yamldir)
+        # Form demos we do not need to ask the user
+        if 'DEMO_PARAMS' in params:
+            if 'ID' in params['DEMO_PARAMS']:
+                # set yaml file from the DEMO ID
+                yamlfile = params['DEMO_PARAMS']['ID'] + '.yaml'
+                # get the full path
+                yaml_path = os.path.join(yamldir, yamlfile)
+                # push into params
+                params['GLOBAL.YAML_FILE'] = yaml_path
+                # tell the user what we have done
+                msg = 'Using demo ID to set yaml file to: {0}'
+                WLOG(params, '', msg.format(yaml_path))
+                # break the loop
+                break
+        # get the desription of the yaml file from the constant instance
+        description = params.instances['GLOBAL.YAML_FILE'].description
+        # ask user for yaml file
+        question = '\nPlease enter {0}'
+        question += ('\n\nNote if no path is given the yaml file will '
+                     'be put in the {1} directory.')
+        question = question.format(description, yamldir)
+        yaml_file = drs_text.user_input(question, dtype=str, required=True)
+        params['GLOBAL.YAML_FILE'] = yaml_file
+        params.set_source('GLOBAL.YAML_FILE', func_name)
+        # test yaml file
+        test_yamlfile(params)
+        if params['GLOBAL.YAML_FILE'] is None:
+            continue
+        # test if we have no path
+        if os.sep not in yaml_file:
+            yaml_file = os.path.join(params['GLOBAL.DATA_PATH'], 'yamls',
+                                     yaml_file)
+            params['GLOBAL.YAML_FILE'] = yaml_file
+            params.set_source('GLOBAL.YAML_FILE', func_name)
+        # If directory does not exist ask the user if they want to create it
+        yaml_path = os.path.dirname(yaml_file)
+        if not os.path.exists(yaml_path):
+            question = '\nPath does not exist: {0}\nWould you like to create it?'
+            question = question.format(yaml_path)
+            # ask user
+            if drs_text.user_input(question, dtype='YN', required=True):
+                os.makedirs(yaml_path)
+            # otherwise we start again with the question
+            else:
+                params['GLOBAL.YAML_FILE'] = None
+    # -------------------------------------------------------------------------
+    # and finally make sure the data path has /data on the end
+    if not os.path.basename(params['GLOBAL.DATA_PATH']) == 'data':
+        # add data path
+        params['GLOBAL.DATA_PATH'] = os.path.join(params['GLOBAL.DATA_PATH'],
+                                                  'data')
+        # make sure this data path exists
+        if not os.path.exists(params['GLOBAL.DATA_PATH']):
+            os.makedirs(params['GLOBAL.DATA_PATH'])
+
+    return params
 
 
 def initial_setup():
@@ -553,6 +577,9 @@ def copy_ask_description(params: ParamDict):
 
 
 def copy_ask_subdirectories(params: ParamDict):
+
+    prev = None
+
     for submodule in pogos_base.SUBMODULES:
         # skip if we don't have this sub-module
         if 'RUN.{0}'.format(submodule) not in params:
@@ -566,10 +593,8 @@ def copy_ask_subdirectories(params: ParamDict):
         subdir, subdir_key, desc_key = None, None, None
         if 'GENERAL.SUBDIRECTORY' in subparams:
             subdir_key = 'GENERAL.SUBDIRECTORY'
-            desc_key = 'GENERAL.DESCRIPTION'
         elif 'INPUTS.SUBDIRECTORY' in subparams:
             subdir_key = 'INPUTS.SUBDIRECTORY'
-            desc_key = 'INPUTS.DESCRIPTION'
         # skip if no sub-directory
         if subdir_key is None:
             continue
@@ -599,7 +624,13 @@ def copy_ask_subdirectories(params: ParamDict):
         # ---------------------------------------------------------------------
         # loop and ask the question
         while True:
-            value = drs_text.user_input(question, dtype=str, required=True)
+            if prev is None:
+                required = True
+            else:
+                required = False
+
+            value = drs_text.user_input(question, dtype=str, required=required,
+                                        default=prev)
             # -----------------------------------------------------------------
             # make sure there are no white spaces
             if any([c.isspace() for c in value]):
@@ -617,10 +648,11 @@ def copy_ask_subdirectories(params: ParamDict):
             # make sure there are no special characters other than underscores
             char_passed = True
             for char in string.punctuation:
-                if char != '_' and char in value:
-                    WLOG(params, '',
-                         'The value cannot contain special characters '
-                         'other than underscores. Please try again.',
+                if char not in VALID_PUNC and char in value:
+                    msg = ('The value cannot contain special characters '
+                           'other than {0}. Please try again.')
+                    margs = [', '.join(VALID_PUNC)]
+                    WLOG(params, '', msg.format(*margs),
                          no_timestamp=True, colour='yellow')
                     char_passed = False
                     break
@@ -633,6 +665,8 @@ def copy_ask_subdirectories(params: ParamDict):
         # set the new value
         params.set(key=f'{submodule}.{subdir_key}', value=value,
                    source='user input')
+        # update prev
+        prev = str(value)
 
     return params
 

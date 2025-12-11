@@ -38,8 +38,7 @@ INFO['date'] = '2025-03-25'
 INFO['author'] = 'Etienne Artigau + Charles Cadieux'
 INFO['red_steps'] = ['Extraction:SOSSISSE', 'Post-extraction:SORBET.WLCA',
                      'Post-extraction:SORBET.SLCTA']
-INFO['sid'] = 'DEMO-Trappist1b-SOSS-20220718'
-INFO['sbid'] = 'DEMO-Trappist1b-SOSS-20220718'
+INFO['id'] = 'DEMO-T1b-JWST.NIRISS.SOSS-SOSSISSE-SORBET-20220718'
 # url for data download
 URL = 'http://206.12.93.77/ari/data/pogos/demos/soss/'
 # download: key = file, value = local path
@@ -102,7 +101,7 @@ cgroup = 'SOSSISSE.INPUTS'
 # It should contain no whitespaces or special
 # characters other than underscoes
 # All sossisse data will be stored in {GLOBAL.DATA_PATH}/sossisse/{SUBDIRECTORY}/
-Cdict.set('SUBDIRECTORY', group=cgroup, source=__NAME__, value=INFO['sid'])
+Cdict.set('SUBDIRECTORY', group=cgroup, source=__NAME__, value=INFO['id'])
 
 # Description of the SOSSISSE run e.g. object name, date of observation,
 # is it a transit or an eclipse etc.
@@ -233,7 +232,7 @@ cgroup = 'SORBET.GENERAL'
 # It should contain no whitespaces or special
 # characters other than underscoes
 # All sorbet data will be stored in {GLOBAL.DATA_PATH}/sorbet/{SUBDIRECTORY}/
-Cdict.set('SUBDIRECTORY', group=cgroup, source=__NAME__, value=INFO['sbid'])
+Cdict.set('SUBDIRECTORY', group=cgroup, source=__NAME__, value=INFO['id'])
 # Description of the SORBET run e.g. object name, date of observation,
 # is it a transit or an eclipse etc.
 Cdict.set('DESCRIPTION', group=cgroup, source=__NAME__,
