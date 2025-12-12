@@ -421,8 +421,13 @@ def core_yaml_setup(params: ParamDict):
     test_yamlfile(params)
     # keep asking until this variable is set
     while params['GLOBAL.YAML_FILE'] is None:
+        # remove data path if preset
+        if os.path.dirname(params['GLOBAL.DATA_PATH']) == 'data':
+            data_path = os.path.dirname(params['GLOBAL.DATA_PATH'])
+        else:
+            data_path = params['GLOBAL.DATA_PATH']
         # get the yaml directory
-        yamldir = os.path.join(params['GLOBAL.DATA_PATH'], 'yamls')
+        yamldir = os.path.join(data_path, 'yamls')
         # create this directory
         if not os.path.exists(yamldir):
             os.makedirs(yamldir)
@@ -456,8 +461,7 @@ def core_yaml_setup(params: ParamDict):
             continue
         # test if we have no path
         if os.sep not in yaml_file:
-            yaml_file = os.path.join(params['GLOBAL.DATA_PATH'], 'yamls',
-                                     yaml_file)
+            yaml_file = os.path.join(yamldir, yaml_file)
             params['GLOBAL.YAML_FILE'] = yaml_file
             params.set_source('GLOBAL.YAML_FILE', func_name)
         # If directory does not exist ask the user if they want to create it
@@ -480,7 +484,7 @@ def core_yaml_setup(params: ParamDict):
         # make sure this data path exists
         if not os.path.exists(params['GLOBAL.DATA_PATH']):
             os.makedirs(params['GLOBAL.DATA_PATH'])
-
+    # -------------------------------------------------------------------------
     return params
 
 
@@ -681,6 +685,12 @@ def copy_clear_files(params: ParamDict):
         # skip if we don't have this fileset
         if fileset not in params:
             continue
+        # get sub-module from fileset
+        submodule = fileset.split('.')[0]
+        # skip if we are not running this sub-module
+        if 'RUN.{0}'.format(submodule) in params:
+            if not params['RUN.{0}'.format(submodule)]:
+                continue
         # get the value from params
         file_value = params[fileset]
         # skip if None or empty
