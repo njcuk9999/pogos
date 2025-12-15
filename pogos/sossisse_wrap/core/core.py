@@ -71,23 +71,21 @@ def run_sossisse_module(params: ParamDict,
     # Deal with input from TSOVORE if available
     # ----------------------------------------------------------------------
     if tsovore_inst is not None:
-        params = tsovore_input(params, tsovore_inst)
-    # ----------------------------------------------------------------------
-    # SOSSISSE requires raw data to be copied to a specific location
-    # check here if that exists and if not prompt the user
-    spath = os.path.join(sparams['INPUTS.SOSSIOPATH'],
-                         params['GLOBAL.INSTRUMENTMODE'],
-                         sparams['INPUTS.OBJECTNAME'], 'rawdata')
-    # deal with SOSSISSE raw data path not existing
-    if not os.path.exists(spath):
-        msg = ('\n\nSOSSISSE requires raw data to be in a specific location:\n'
-               '  {0}\n'
-               'Please copy the raw data to this location and re-run.\n'
-               'Skipping SOSSISSE run.')
-        # create path if not there
-        os.makedirs(spath, exist_ok=True)
-        # return an error
-        raise SossisseFileException(msg.format(spath))
+        _ = tsovore_input(params, tsovore_inst)
+        # ---------------------------------------------------------------------
+        # SOSSISSE requires raw data to be copied to a specific location
+        # check here if that exists and if not prompt the user
+        spath = sparams['PATHS.RAWPATH']
+        # deal with SOSSISSE raw data path not existing
+        if not os.path.exists(spath):
+            msg = ('\n\nSOSSISSE requires raw data to be in a '
+                   'specific location:\n   {0}\n'
+                   'Please copy the raw data to this location and re-run.\n'
+                   'Skipping SOSSISSE run.')
+            # create path if not there
+            os.makedirs(spath, exist_ok=True)
+            # return an error
+            raise SossisseFileException(msg.format(spath))
     # -------------------------------------------------------------------------
     # run the sossisse recipe
     inst = sossisse_run.main(__YAML_DICT__=sparams)
