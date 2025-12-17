@@ -504,11 +504,7 @@ def prepare_dataset(params: ParamDict, data_table: Table,
             msg = (f'Failed to load data from file "{filename}": {e}'
                    f'\n\tFunction = {func_name}')
             raise sorbet_base.SorbetException(msg)
-        
-        # fetch columns names
-        lm_cols = lm_tbl.colnames
-        # convert table to array
-        lm_quantities = np.ones((len(lm_tbl[lm_cols[0]]), len(lm_cols)))
+
         # fetch columns names
         lm_cols = lm_tbl.colnames
         # convert table to array
