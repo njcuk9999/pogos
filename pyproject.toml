@@ -48,6 +48,6 @@ pogos_run = "pogos:recipes.pogos_run.run"
 pogos_copy = "pogos:recipes.pogos_copy.run"
 
 [project.optional-dependencies]
-full = ["aperocore @ git+https://github.com/njcuk9999/apero-drs.git@v0.8.003#subdirectory=apero-core",
+full = ["aperocore @ git+https://github.com/njcuk9999/apero-drs.git@v0.8.running#subdirectory=apero-core",
         "sossisse @ git+https://github.com/njcuk9999/sossisse.git@developer"]
 dev = ["aperocore", "sossisse"]
