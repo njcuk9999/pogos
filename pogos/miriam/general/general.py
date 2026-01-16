@@ -170,7 +170,7 @@ def prepare_directories(params: ParamDict):
 
 
 def tsovore_input(params: ParamDict,
-                  tsovore_inst: Optional[ts_default.Instrument] = None):
+                  tsovore_inst: Optional[ts_default.JWST] = None):
     # set function name
     func_name = f'{__NAME__}.tsovore_input'
     # -------------------------------------------------------------------------

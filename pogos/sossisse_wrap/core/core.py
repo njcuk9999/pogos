@@ -45,7 +45,7 @@ WLOG = drs_log.wlog
 # Define functions
 # =============================================================================
 def run_sossisse_module(params: ParamDict,
-                        tsovore_inst: ts_default.Instrument = None):
+                        tsovore_inst: ts_default.JWST = None):
     """
     Run the sossisse run recipe
 
@@ -149,7 +149,7 @@ def setup_sossisse_module(params: ParamDict, cdict):
 
 
 def tsovore_input(params: ParamDict,
-                  tsovore_inst: Optional[ts_default.Instrument] = None):
+                  tsovore_inst: Optional[ts_default.JWST] = None):
     # set function name
     func_name = f'{__NAME__}.tsovore_input'
     # -------------------------------------------------------------------------

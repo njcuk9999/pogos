@@ -51,7 +51,7 @@ for instrument in INSTRUMENTS.keys():
 # =============================================================================
 # Define functions
 # =============================================================================
-def load_instrument(params: ParamDict) -> ts_default.Instrument:
+def load_instrument(params: ParamDict) -> ts_default.JWST:
     """
     Load the instrument class
 

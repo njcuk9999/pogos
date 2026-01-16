@@ -59,7 +59,7 @@ def tsovore_unique_id() -> str:
     return sid
 
 
-def run_tsovore(params: ParamDict) -> ts_default.Instrument:
+def run_tsovore(params: ParamDict) -> ts_default.JWST:
     """
     Run the TSOVORE processing
 
