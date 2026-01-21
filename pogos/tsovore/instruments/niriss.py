@@ -142,10 +142,10 @@ class NirissSoss(ts_default.JWST):
         self.assign_wcs_solution()
 
         # Step 2.2: Optional Clean Flicker Noise
-        # self.remove_flicker_noise()
+        self.remove_flicker_noise()
 
         # Step 2.3: Background Subtraction (usually skipped for TSO)
-        # self.subtract_background()
+        self.subtract_background()
 
         # Step 2.4: Source Type (srctype)
         self.srctype_determination()
