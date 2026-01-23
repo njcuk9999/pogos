@@ -3,44 +3,53 @@
 """
 MIRI Imaging Detector1 Pipeline - Benchmark Implementation
 
-This module provides an alternative implementation of the MIRI Imaging detector-level
-processing pipeline that more closely follows the official JWST calwebb_detector1 pipeline
-structure.
+This module provides an alternative implementation of the MIRI Imaging
+detector-level processing pipeline that more closely follows the official
+JWST calwebb_detector1 pipeline structure.
 
 KEY DIFFERENCES FROM miri.py:
 ============================
 
 1. EXPANDED INDIVIDUAL DETECTOR INIT STEPS:
-   - miri.py uses: self.initialize_detector_data() (bundles steps 1.1-1.4)
-   - miri2.py calls: group_scale_step(), dq_init_step(), emicorr_step(), saturation_step()
+   - miri.py uses: self.initialize_detector_data()
+     (bundles steps 1.1-1.4)
+   - miri2.py calls: group_scale_step(), dq_init_step(),
+     emicorr_step(), saturation_step()
    - This matches the official JWST pipeline granularity exactly
 
 2. EXPLICIT STEP ORDERING:
-   - Each step is called individually with clear comments matching official pipeline
+   - Each step is called individually with clear comments matching
+     official pipeline
    - Makes the exact processing sequence visible and auditable
-   - Official order: group_scale → dq_init → emicorr → saturation → ipc → firstframe →
-     lastframe → reset → linearity → rscd → dark_current → refpix → (common steps)
+   - Official order: group_scale → dq_init → emicorr →
+     saturation → ipc → firstframe → lastframe → reset →
+     linearity → rscd → dark_current → refpix → (common steps)
 
 3. PROPER RAMP_FIT OUTPUT HANDLING:
    - miri.py: self.fit_signal_ramps() - ignores return values
-   - miri2.py: Explicitly handles tuple return (rate_data, ints_model)
-   - Matches official JWST behavior where ramp_fit returns two products
+   - miri2.py: Explicitly handles tuple return
+     (rate_data, ints_model)
+   - Matches official JWST behavior where ramp_fit returns two
+     products
 
 4. SEPARATE GAIN SCALE APPLICATIONS:
    - miri.py: Calls apply_gain_scaling() once, saves _rateints.fits
-   - miri2.py: Applies gain_scale separately to rate product (_rate.fits) and
-     ints_model (_rateints.fits)
-   - Matches official pipeline where gain_scale is applied to both products
+   - miri2.py: Applies gain_scale separately to rate product
+     (_rate.fits) and ints_model (_rateints.fits)
+   - Matches official pipeline where gain_scale is applied to both
+     products
 
 5. ENABLED COMMON STEPS:
-   - miri.py: Comments out charge_migration and clean_flicker_noise
+   - miri.py: Comments out charge_migration and
+     clean_flicker_noise
    - miri2.py: Calls both steps (matching official pipeline)
    - Persistence is still correctly skipped (MIRI-specific)
 
 6. DETECTOR-LEVEL FOCUS (MiriImaging2):
    - miri.py includes Level 2 steps (WCS, flat field, photometry)
    - MiriImaging2 includes Level 2 processing (calwebb_image2)
-   - For a fair comparison, Level 2 steps are included in the full pipeline
+   - For a fair comparison, Level 2 steps are included in the full
+     pipeline
 
 7. SUPPORTED MODES:
    - MiriImaging: Direct imaging mode with calwebb_image2 processing
@@ -48,7 +57,9 @@ KEY DIFFERENCES FROM miri.py:
 
 REFERENCE:
 ==========
-Official JWST Pipeline: https://github.com/spacetelescope/jwst/blob/main/jwst/pipeline/calwebb_detector1.py
+Official JWST Pipeline:
+https://github.com/spacetelescope/jwst/blob/main/jwst/pipeline/
+calwebb_detector1.py
 
 Created on 2025-01-16 at 11:00
 
@@ -77,25 +88,31 @@ WLOG = drs_log.wlog
 # =============================================================================
 class MiriImaging2(ts_default.JWST):
     """
-    MIRI Imaging detector-level processing following official JWST pipeline structure.
+    MIRI Imaging detector-level processing following official JWST
+    pipeline structure.
 
-    This is a benchmark implementation for comparing against the standard miri.py approach.
+    This is a benchmark implementation for comparing against the standard
+    miri.py approach.
     """
     def __init__(self, params):
         super().__init__(params, instrument='JWST.MIRI.IMAGING')
 
     def process(self):
         """
-        Process the MIRI Imaging data - Following JWST calwebb_detector1 pipeline structure
+        Process the MIRI Imaging data - Following JWST
+        calwebb_detector1 pipeline structure
 
-        This implementation follows the official JWST pipeline structure more closely
-        than the miri.py version, with explicit individual step calls and proper
-        handling of multi-value returns (e.g., from ramp_fit).
+        This implementation follows the official JWST pipeline structure
+        more closely than the miri.py version, with explicit individual
+        step calls and proper handling of multi-value returns (e.g., from
+        ramp_fit).
 
-        Processing order matches: https://github.com/spacetelescope/jwst/blob/main/jwst/pipeline/calwebb_detector1.py
+        Processing order matches:
+        https://github.com/spacetelescope/jwst/blob/main/jwst/pipeline/
+        calwebb_detector1.py
         """
         # Initialize processing
-        self.handle_input_data()
+        infiles = self.handle_input_data()
 
         # =====================================================================
         # MIRI-Specific Level 1 Processing (in official pipeline order)
@@ -105,90 +122,100 @@ class MiriImaging2(ts_default.JWST):
 
         # Group Scale Step (1.1)
         # Scales group data to account for on-chip amplifier effects
-        self.group_scale_step()
+        infiles = self.group_scale_step(infiles)
 
         # DQ Init Step (1.2)
         # Initialize the data quality flags
-        self.dq_init_step()
+        infiles = self.dq_init_step(infiles)
 
         # Emi Corr Step (1.3)
         # Apply EMI (electro-magnetic interference) corrections
-        self.emicorr_step()
+        infiles = self.emicorr_step(infiles)
 
         # Saturation Step (1.4)
         # Flag saturated pixels
-        self.saturation_step()
+        infiles = self.saturation_step(infiles)
 
         # IPC Step (1.5)
         # Correct for interpixel capacitance
-        self.apply_interpixel_capacitance()
+        infiles = self.apply_interpixel_capacitance(infiles)
 
         # First Frame Step (1.6)
         # Remove or flag the first frame of data
         # TODO: Replace this step with a copy and simply change that
         #       so that more than 1 frame is set to DO NOT USE
         #       (if that is what Etienne needs)
-        self.remove_first_frame_signal()
+        infiles = self.remove_first_frame_signal(infiles)
 
         # Last Frame Step (1.7)
         # Remove or flag the last frame of data
-        self.remove_last_frame_signal()
+        infiles = self.remove_last_frame_signal(infiles)
 
         # Reset Step (1.8)
         # Correct for reset anomaly
-        self.correct_reset_anomaly()
+        infiles = self.correct_reset_anomaly(infiles)
 
         # Linearity Step (1.9)
         # Apply linearity correction
-        self.apply_linearity_correction()
+        infiles = self.apply_linearity_correction(infiles)
 
         # RSCD Step (1.10)
         # Apply RSCD (Reset Switch Charge Decay) corrections
-        self.apply_rscd_correction()
+        infiles = self.apply_rscd_correction(infiles)
 
         # Dark Current Step (1.11)
         # Subtract dark current
-        self.subtract_dark_current()
+        infiles = self.subtract_dark_current(infiles)
 
         # Ref Pix Step (1.12)
         # Apply reference pixel correction
-        self.apply_reference_pixel_correction()
+        infiles = self.apply_reference_pixel_correction(infiles)
 
         # NOTE: Persistence step is skipped for MIRI in official pipeline
         # (MIRI team has not figured out algorithm yet)
 
         # =====================================================================
-        # Common Processing Steps (applied to all instruments after MIRI-specific)
+        # Common Processing Steps (applied to all instruments
+        # after MIRI-specific)
         # =====================================================================
 
         # Charge Migration Step (1.13)
         # Correct for charge migration
-        # NOTE: In official pipeline, this is called even though it may be skipped
-        self.correct_charge_migration()
+        # NOTE: In official pipeline, this is called even though it may
+        # be skipped
+        infiles = self.correct_charge_migration(infiles)
 
         # Jump Step (1.14)
         # Detect and flag cosmic ray jumps
-        self.detect_and_flag_jumps()
+        infiles = self.detect_and_flag_jumps(infiles)
 
         # Picture Frame Step (1.15)
         # Correct for picture frame effect
-        self.picture_frame_step()
+        infiles = self.picture_frame_step(infiles)
 
         # Clean Flicker Noise Step (1.16)
         # Remove flicker noise
-        # NOTE: In official pipeline, this is called even though it may be skipped
-        self.remove_flicker_noise()
+        # NOTE: In official pipeline, this is called even though it may
+        # be skipped
+        infiles = self.remove_flicker_noise(infiles)
 
-        # Gain Scale Step (TSO-only: no ramp_fit handling)
+        # Ramp Fit Step
+        # Fit ramps to derive count rates
+        infiles = self.fit_signal_ramps(infiles)
+
+        # Gain Scale Step
         # Apply gain scaling to convert DN to electrons
-        self.apply_gain_scaling()
+        infiles = self.apply_gain_scaling(infiles)
         # Save TSO-style integration product
-        self.save_outputs('_rateints.fits')
+        infiles = self.save_outputs('_rateints.fits', infiles)
 
         # =====================================================================
-        # Level 2 Processing Steps (calwebb_image2 - MIRI Imaging specific)
+        # Level 2 Processing Steps (calwebb_image2 - MIRI Imaging
+        # specific)
         # =====================================================================
-        # Reference: https://github.com/spacetelescope/jwst/blob/main/jwst/pipeline/calwebb_image2.py
+        # Reference:
+        # https://github.com/spacetelescope/jwst/blob/main/jwst/pipeline/
+        # calwebb_image2.py
 
         msg = ('Applying Level 2 calibration steps to MIRI Imaging data')
         WLOG(self.params, 'info', msg)
@@ -196,157 +223,171 @@ class MiriImaging2(ts_default.JWST):
         # Step 2.1: Background Subtraction
         # Subtract background/dark exposures from science data
         # For time-series observations, typically skipped
-        self.subtract_background()
+        infiles = self.subtract_background(infiles)
 
         # Step 2.2: Assign WCS
         # Assign world coordinate system to the data
-        self.assign_wcs_solution()
+        infiles = self.assign_wcs_solution(infiles)
 
         # Step 2.3: Flat Field Correction
         # Apply flat field correction using reference files
-        self.apply_flat_field()
+        infiles = self.apply_flat_field(infiles)
 
         # Step 2.4: Photometric Calibration
         # Apply photometric calibration and convert DN/s to physical units
-        self.apply_photometric_calibration()
+        infiles = self.apply_photometric_calibration(infiles)
         # Save TSO-style calibrated product
-        self.save_outputs('_calints.fits')
+        infiles = self.save_outputs('_calints.fits', infiles)
 
 
 class MiriLrs(ts_default.JWST):
     """
-    MIRI Low Resolution Spectroscopy detector and spectroscopic processing following official JWST pipeline.
+    MIRI Low Resolution Spectroscopy detector and spectroscopic
+    processing following official JWST pipeline.
 
-    This is a benchmark implementation for comparing against standard approaches.
-    Supports both MIR_LRS-FIXEDSLIT and MIR_LRS-SLITLESS modes.
+    This is a benchmark implementation for comparing against standard
+    approaches. Supports both MIR_LRS-FIXEDSLIT and
+    MIR_LRS-SLITLESS modes.
     """
     def __init__(self, params):
         super().__init__(params, instrument='JWST.MIRI.LRS')
 
     def process(self):
         """
-        Process MIRI LRS data through Level 1 (detector) and Level 2 (spectroscopic) pipelines.
+        Process MIRI LRS data through Level 1 (detector) and Level 2
+        (spectroscopic) pipelines.
 
         Processing order matches:
-        - Level 1: https://github.com/spacetelescope/jwst/blob/main/jwst/pipeline/calwebb_detector1.py
-        - Level 2: https://github.com/spacetelescope/jwst/blob/main/jwst/pipeline/calwebb_spec2.py (common processing for LRS)
+        - Level 1:
+          https://github.com/spacetelescope/jwst/blob/main/jwst/
+          pipeline/calwebb_detector1.py
+        - Level 2:
+          https://github.com/spacetelescope/jwst/blob/main/jwst/
+          pipeline/calwebb_spec2.py (common processing for LRS)
         """
         # Initialize processing
-        self.handle_input_data()
+        infiles = self.handle_input_data()
 
         # =====================================================================
         # LEVEL 1: Detector-Level Processing (calwebb_detector1)
         # =====================================================================
-        msg = ('Applying Level 1 (detector) calibration steps to MIRI LRS '
-               'data')
+        msg = ('Applying Level 1 (detector) calibration steps to MIRI '
+               'LRS data')
         WLOG(self.params, 'info', msg)
 
         # Group Scale Step (1.1)
-        self.group_scale_step()
+        infiles = self.group_scale_step(infiles)
 
         # DQ Init Step (1.2)
-        self.dq_init_step()
+        infiles = self.dq_init_step(infiles)
 
         # Emi Corr Step (1.3)
-        self.emicorr_step()
+        infiles = self.emicorr_step(infiles)
 
         # Saturation Step (1.4)
-        self.saturation_step()
+        infiles = self.saturation_step(infiles)
 
         # IPC Step (1.5)
-        self.apply_interpixel_capacitance()
+        infiles = self.apply_interpixel_capacitance(infiles)
 
         # First Frame Step (1.6)
-        self.remove_first_frame_signal()
+        infiles = self.remove_first_frame_signal(infiles)
 
         # Last Frame Step (1.7)
-        self.remove_last_frame_signal()
+        infiles = self.remove_last_frame_signal(infiles)
 
         # Reset Step (1.8)
-        self.correct_reset_anomaly()
+        infiles = self.correct_reset_anomaly(infiles)
 
         # Linearity Step (1.9)
-        self.apply_linearity_correction()
+        infiles = self.apply_linearity_correction(infiles)
 
         # RSCD Step (1.10)
-        self.apply_rscd_correction()
+        infiles = self.apply_rscd_correction(infiles)
 
         # Dark Current Step (1.11)
-        self.subtract_dark_current()
+        infiles = self.subtract_dark_current(infiles)
 
         # Ref Pix Step (1.12)
-        self.apply_reference_pixel_correction()
+        infiles = self.apply_reference_pixel_correction(infiles)
 
         # NOTE: Persistence step is skipped for MIRI in official pipeline
 
         # Charge Migration Step (1.13)
-        self.correct_charge_migration()
+        infiles = self.correct_charge_migration(infiles)
 
         # Jump Step (1.14)
-        self.detect_and_flag_jumps()
+        infiles = self.detect_and_flag_jumps(infiles)
 
         # Picture Frame Step (1.15)
-        self.picture_frame_step()
+        infiles = self.picture_frame_step(infiles)
 
         # Clean Flicker Noise Step (1.16)
-        self.remove_flicker_noise()
+        infiles = self.remove_flicker_noise(infiles)
 
-        # Gain Scale Step (TSO-only: no ramp_fit handling)
-        self.apply_gain_scaling()
+        # Ramp Fit Step
+        infiles = self.fit_signal_ramps(infiles)
+
+        # Gain Scale Step
+        infiles = self.apply_gain_scaling(infiles)
         # Save TSO-style integration product
-        self.save_outputs('_rateints.fits')
+        infiles = self.save_outputs('_rateints.fits', infiles)
 
         # =====================================================================
-        # LEVEL 2: Spectroscopic Processing (calwebb_spec2 - MIRI LRS common mode)
+        # LEVEL 2: Spectroscopic Processing (calwebb_spec2 - MIRI LRS
+        # common mode)
         # =====================================================================
-        # Reference: https://github.com/spacetelescope/jwst/blob/main/jwst/pipeline/calwebb_spec2.py
+        # Reference:
+        # https://github.com/spacetelescope/jwst/blob/main/jwst/pipeline/
+        # calwebb_spec2.py
 
-        msg = ('Applying Level 2 (spectroscopic) calibration steps to MIRI '
-               'LRS data')
+        msg = ('Applying Level 2 (spectroscopic) calibration steps to '
+               'MIRI LRS data')
+        WLOG(self.params, 'info', msg)
         WLOG(self.params, 'info', msg)
 
         # Step 2.1: Assign WCS
-        self.assign_wcs_solution()
+        infiles = self.assign_wcs_solution(infiles)
 
         # Step 2.2: Source Type (srctype)
         # Convert to SlitModel type for LRS time-series data
-        self.srctype_determination()
+        infiles = self.srctype_determination(infiles)
 
         # Step 2.3: Target Centroid (for TA verification image if present)
         # Typically skipped for LRS but included for completeness
-        # self.measure_target_centroid()
+        # infiles = self.measure_target_centroid(infiles)
 
         # Step 2.4: Stray Light Correction
-        self.correct_stray_light()
+        infiles = self.correct_stray_light(infiles)
 
         # Step 2.5: Flat Field
-        self.apply_flat_field()
+        infiles = self.apply_flat_field(infiles)
 
         # Step 2.6: Fringe Correction
-        self.correct_fringe()
+        infiles = self.correct_fringe(infiles)
 
         # Step 2.7: Path Loss Correction
         # Note: Path loss is NOT applied to MIR_LRS in official pipeline
         # but step is included for completeness
-        # self.correct_path_loss()
+        # infiles = self.correct_path_loss(infiles)
+        # infiles = self.correct_path_loss(infiles)
 
         # Step 2.8: Bar Shadow Correction
-        self.correct_bar_shadow()
+        infiles = self.correct_bar_shadow(infiles)
 
         # Step 2.9: Photometric Calibration
-        self.apply_photometric_calibration()
+        infiles = self.apply_photometric_calibration(infiles)
         # Save TSO-style calibrated product
-        self.save_outputs('_calints.fits')
+        infiles = self.save_outputs('_calints.fits', infiles)
 
         # Step 2.10: Residual Fringe Correction (MIRI-specific)
-        self.correct_residual_fringe()
+        infiles = self.correct_residual_fringe(infiles)
 
         # Step 2.11: Extract 1D
         # For LRS: extract_1d for 1D spectrum
-        x1d_files = self.extract_1d_spectrum()
-        if x1d_files:
-            # Save 1D extracted spectra overriding LAST
-            self.save_outputs('_x1dints.fits', infiles=x1d_files)
+        x1d_files = self.extract_1d_spectrum(infiles)
+        # Save 1D extracted spectra
+        x1d_files = self.save_outputs('_x1dints.fits', x1d_files)
 
 
 # =============================================================================

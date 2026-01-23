@@ -80,7 +80,7 @@ class NirissSoss(ts_default.JWST):
           calwebb_spec2.py
         """
         # Initialize processing
-        self.handle_input_data()
+        infiles = self.handle_input_data()
 
         # =====================================================================
         # LEVEL 1: Detector-Level Processing (calwebb_detector1)
@@ -90,46 +90,47 @@ class NirissSoss(ts_default.JWST):
         WLOG(self.params, 'info', msg)
 
         # Group Scale Step
-        self.group_scale_step()
+        infiles = self.group_scale_step(infiles)
 
         # DQ Init Step
-        self.dq_init_step()
+        infiles = self.dq_init_step(infiles)
 
         # Saturation Step
-        self.saturation_step()
+        infiles = self.saturation_step(infiles)
 
         # IPC Step
-        self.apply_interpixel_capacitance()
+        infiles = self.apply_interpixel_capacitance(infiles)
 
         # Superbias Step (NIR-specific)
-        self.subtract_superbias()
+        infiles = self.subtract_superbias(infiles)
 
         # Refpix Step
-        self.apply_reference_pixel_correction()
+        infiles = self.apply_reference_pixel_correction(infiles)
 
         # Linearity Step
-        self.apply_linearity_correction()
+        infiles = self.apply_linearity_correction(infiles)
 
         # Dark Current Step
-        self.subtract_dark_current()
+        infiles = self.subtract_dark_current(infiles)
 
         # Persistence Step (optional)
-        # self.correct_persistence()
+        # infiles = self.correct_persistence(infiles)
 
         # Charge Migration Step
-        self.correct_charge_migration()
+        infiles = self.correct_charge_migration(infiles)
 
         # Jump Step
-        self.detect_and_flag_jumps()
+        infiles = self.detect_and_flag_jumps(infiles)
 
         # Clean Flicker Noise Step
-        self.remove_flicker_noise()
+        infiles = self.remove_flicker_noise(infiles)
 
-        # TSO-only: Ramp Fit and ints_model logic removed; rely on LAST.
+        # Ramp Fit Step
+        infiles = self.fit_signal_ramps(infiles)
 
         # Gain Scale Step → save _rateints.fits
-        self.apply_gain_scaling()
-        self.save_outputs('_rateints.fits')
+        infiles = self.apply_gain_scaling(infiles)
+        infiles = self.save_outputs('_rateints.fits', infiles)
 
         # =====================================================================
         # LEVEL 2: Spectroscopic Processing (calwebb_spec2 - SOSS specific)
@@ -139,41 +140,40 @@ class NirissSoss(ts_default.JWST):
         WLOG(self.params, 'info', msg)
 
         # Step 2.1: Assign WCS
-        self.assign_wcs_solution()
+        infiles = self.assign_wcs_solution(infiles)
 
         # Step 2.2: Optional Clean Flicker Noise
-        self.remove_flicker_noise()
+        infiles = self.remove_flicker_noise(infiles)
 
         # Step 2.3: Background Subtraction (usually skipped for TSO)
-        self.subtract_background()
+        infiles = self.subtract_background(infiles)
 
         # Step 2.4: Source Type (srctype)
-        self.srctype_determination()
+        infiles = self.srctype_determination(infiles)
 
         # Step 2.5: Flat Field
-        self.apply_flat_field()
+        infiles = self.apply_flat_field(infiles)
 
         # Step 2.6: Stray Light Correction
-        self.correct_stray_light()
+        infiles = self.correct_stray_light(infiles)
 
         # Step 2.7: Fringe Correction
-        self.correct_fringe()
+        infiles = self.correct_fringe(infiles)
 
         # Step 2.8: Path Loss Correction
-        self.correct_path_loss()
+        infiles = self.correct_path_loss(infiles)
 
         # Step 2.9: Bar Shadow Correction
-        self.correct_bar_shadow()
+        infiles = self.correct_bar_shadow(infiles)
 
         # Step 2.10: Extract 1D Spectrum → save _x1dints.fits
-        x1d_files = self.extract_1d_spectrum()
-        if x1d_files:
-            # Save 1D extracted spectra overriding LAST
-            self.save_outputs('_x1dints.fits', infiles=x1d_files)
+        x1d_files = self.extract_1d_spectrum(infiles)
+        # Save 1D extracted spectra
+        x1d_files = self.save_outputs('_x1dints.fits', x1d_files)
 
-        # Step 2.11: Photometric Calibration on LAST → save _calints.fits
-        self.apply_photometric_calibration()
-        self.save_outputs('_calints.fits')
+        # Step 2.11: Photometric Calibration on infiles → save _calints.fits
+        infiles = self.apply_photometric_calibration(infiles)
+        infiles = self.save_outputs('_calints.fits', infiles)
 
 
 class NirissSossSuperstripe(NirissSoss):

@@ -86,18 +86,24 @@ TSOVORE_CDict.add('INPUT_PATH', value='inputs', dtype=str, source=__NAME__,
 # Temporary results folder
 TSOVORE_CDict.add('TEMP_PATH', value='temporary', dtype=str,
                  source=__NAME__,
-                 user=False, active=False, group=cgroup,
-                 description='Temporary result folder or path to the output folder.'
-                             '\nIf this is an aboslute path it will be used as is'
+                 user=False, active=False,
+                 group=cgroup,
+                 description='Temporary result folder or path to the '
+                             'output folder.'
+                             '\nIf this is an aboslute path it will be '
+                             'used as is'
                              '\n otherwise it will be relative to '
                              'GLOBAL.DATA_PATH/tsovore/')
 
 # Output results folder
 TSOVORE_CDict.add('OUTPUT_PATH', value='outputs', dtype=str,
                  source=__NAME__,
-                 user=False, active=False, group=cgroup,
-                 description='Output result folder or path to the output folder.'
-                             '\nIf this is an aboslute path it will be used as is'
+                 user=False, active=False,
+                 group=cgroup,
+                 description='Output result folder or path to the '
+                             'output folder.'
+                             '\nIf this is an aboslute path it will '
+                             'be used as is'
                              '\n otherwise it will be relative to '
                              'GLOBAL.DATA_PATH/tsovore/')
 # the plot path
@@ -174,44 +180,123 @@ cgroup = 'STEP'
 TSOVORE_CDict.add_group(cgroup, source=__NAME__, user=True, active=True,
                        description='Settings for the science steps')
 # -----------------------------------------------------------------------------
-STEPS = ['INITIALIZE_DETECTOR_DATA',
+STEPS = ['GROUP_SCALE_STEP',
+         'DQ_INIT_STEP',
+         'EMICORR_STEP',
+         'SATURATION_STEP',
          'APPLY_INTERPIXEL_CAPACITANCE',
+         'SUBTRACT_SUPERBIAS',
+         'APPLY_REFERENCE_PIXEL_CORRECTION',
          'REMOVE_FIRST_FRAME_SIGNAL',
          'REMOVE_LAST_FRAME_SIGNAL',
          'CORRECT_RESET_ANOMALY',
          'APPLY_LINEARITY_CORRECTION',
          'APPLY_RSCD_CORRECTION',
          'SUBTRACT_DARK_CURRENT',
-         'APPLY_REFERENCE_PIXEL_CORRECTION',
+         'CORRECT_PERSISTENCE',
          'CORRECT_CHARGE_MIGRATION',
          'DETECT_AND_FLAG_JUMPS',
+         'PICTURE_FRAME_STEP',
          'REMOVE_FLICKER_NOISE',
          'FIT_SIGNAL_RAMPS',
          'APPLY_GAIN_SCALING',
          'SUBTRACT_BACKGROUND',
          'ASSIGN_WCS_SOLUTION',
+         'EXTRACT_2D_SPECTRUM',
+         'SRCTYPE_DETERMINATION',
+         'CORRECT_STRAY_LIGHT',
          'APPLY_FLAT_FIELD',
-         'APPLY_PHOTOMETRIC_CALIBRATION']
-# default mode for each step
-DEFAULT_MODES = dict()
-DEFAULT_MODES['INITIALIZE_DETECTOR_DATA'] = 'jwst'
-DEFAULT_MODES['APPLY_INTERPIXEL_CAPACTIANCE'] = 'jwst'
-DEFAULT_MODES['REMOVE_FIRST_FRAME_SIGNAL'] = 'jwst'
-DEFAULT_MODES['REMOVE_LAST_FRAME_SIGNAL'] = 'jwst'
-DEFAULT_MODES['CORRECT_RESET_ANOMALY'] = 'jwst'
-DEFAULT_MODES['APPLY_LINEARITY_CORRECTION'] = 'jwst'
-DEFAULT_MODES['APPLY_RSCD_CORRECTION'] = 'jwst'
-DEFAULT_MODES['SUBTRACT_DARK_CURRENT'] = 'jwst'
-DEFAULT_MODES['APPLY_REFERENCE_PIXEL_CORRECTION'] = 'jwst'
-DEFAULT_MODES['CORRECT_CHARGE_MIGRATION'] = 'tsovore'
-DEFAULT_MODES['DETECT_AND_FLAG_JUMPS'] = 'jwst'
-DEFAULT_MODES['REMOVE_FLICKER_NOISE'] = 'tsovore'
-DEFAULT_MODES['FIT_SIGNAL_RAMPS'] = 'jwst'
-DEFAULT_MODES['APPLY_GAIN_SCALING'] = 'jwst'
-DEFAULT_MODES['SUBTRACT_BACKGROUND'] = 'tsovore'
-DEFAULT_MODES['ASSIGN_WCS_SOLUTION'] = 'jwst'
-DEFAULT_MODES['APPLY_FLAT_FIELD'] = 'jwst'
-DEFAULT_MODES['APPLY_PHOTOMETRIC_CALIBRATION'] = 'jwst'
+         'CORRECT_FRINGE',
+         'CORRECT_PATH_LOSS',
+         'CORRECT_BAR_SHADOW',
+         'CORRECT_WFSS_CONTAMINATION',
+         'CORRECT_WAVELENGTH',
+         'SUBTRACT_MASTER_BACKGROUND',
+         'MEASURE_TARGET_CENTROID',
+         'CORRECT_RESIDUAL_FRINGE',
+         'EXTRACT_1D_SPECTRUM',
+         'APPLY_PHOTOMETRIC_CALIBRATION',
+         'RESAMPLE_IMAGES']
+
+# default flavour for each step
+DEFAULT_FLAVOURS = dict()
+DEFAULT_FLAVOURS['GROUP_SCALE_STEP'] = 'jwst'
+DEFAULT_FLAVOURS['DQ_INIT_STEP'] = 'jwst'
+DEFAULT_FLAVOURS['EMICORR_STEP'] = 'jwst'
+DEFAULT_FLAVOURS['SATURATION_STEP'] = 'jwst'
+DEFAULT_FLAVOURS['APPLY_INTERPIXEL_CAPACITANCE'] = 'jwst'
+DEFAULT_FLAVOURS['SUBTRACT_SUPERBIAS'] = 'jwst'
+DEFAULT_FLAVOURS['APPLY_REFERENCE_PIXEL_CORRECTION'] = 'jwst'
+DEFAULT_FLAVOURS['REMOVE_FIRST_FRAME_SIGNAL'] = 'jwst'
+DEFAULT_FLAVOURS['REMOVE_LAST_FRAME_SIGNAL'] = 'jwst'
+DEFAULT_FLAVOURS['CORRECT_RESET_ANOMALY'] = 'jwst'
+DEFAULT_FLAVOURS['APPLY_LINEARITY_CORRECTION'] = 'jwst'
+DEFAULT_FLAVOURS['APPLY_RSCD_CORRECTION'] = 'jwst'
+DEFAULT_FLAVOURS['SUBTRACT_DARK_CURRENT'] = 'jwst'
+DEFAULT_FLAVOURS['CORRECT_PERSISTENCE'] = 'jwst'
+DEFAULT_FLAVOURS['CORRECT_CHARGE_MIGRATION'] = 'jwst'
+DEFAULT_FLAVOURS['DETECT_AND_FLAG_JUMPS'] = 'jwst'
+DEFAULT_FLAVOURS['PICTURE_FRAME_STEP'] = 'jwst'
+DEFAULT_FLAVOURS['REMOVE_FLICKER_NOISE'] = 'jwst'
+DEFAULT_FLAVOURS['FIT_SIGNAL_RAMPS'] = 'jwst'
+DEFAULT_FLAVOURS['APPLY_GAIN_SCALING'] = 'jwst'
+DEFAULT_FLAVOURS['SUBTRACT_BACKGROUND'] = 'jwst'
+DEFAULT_FLAVOURS['ASSIGN_WCS_SOLUTION'] = 'jwst'
+DEFAULT_FLAVOURS['EXTRACT_2D_SPECTRUM'] = 'jwst'
+DEFAULT_FLAVOURS['SRCTYPE_DETERMINATION'] = 'jwst'
+DEFAULT_FLAVOURS['CORRECT_STRAY_LIGHT'] = 'jwst'
+DEFAULT_FLAVOURS['APPLY_FLAT_FIELD'] = 'jwst'
+DEFAULT_FLAVOURS['CORRECT_FRINGE'] = 'jwst'
+DEFAULT_FLAVOURS['CORRECT_PATH_LOSS'] = 'jwst'
+DEFAULT_FLAVOURS['CORRECT_BAR_SHADOW'] = 'jwst'
+DEFAULT_FLAVOURS['CORRECT_WFSS_CONTAMINATION'] = 'jwst'
+DEFAULT_FLAVOURS['CORRECT_WAVELENGTH'] = 'jwst'
+DEFAULT_FLAVOURS['SUBTRACT_MASTER_BACKGROUND'] = 'jwst'
+DEFAULT_FLAVOURS['MEASURE_TARGET_CENTROID'] = 'jwst'
+DEFAULT_FLAVOURS['CORRECT_RESIDUAL_FRINGE'] = 'jwst'
+DEFAULT_FLAVOURS['EXTRACT_1D_SPECTRUM'] = 'jwst'
+DEFAULT_FLAVOURS['APPLY_PHOTOMETRIC_CALIBRATION'] = 'jwst'
+DEFAULT_FLAVOURS['RESAMPLE_IMAGES'] = 'jwst'
+
+# Default run state for each step (based on JWST pipeline defaults)
+DEFAULT_RUN = dict()
+DEFAULT_RUN['GROUP_SCALE_STEP'] = True
+DEFAULT_RUN['DQ_INIT_STEP'] = True
+DEFAULT_RUN['EMICORR_STEP'] = True
+DEFAULT_RUN['SATURATION_STEP'] = True
+DEFAULT_RUN['APPLY_INTERPIXEL_CAPACITANCE'] = True
+DEFAULT_RUN['SUBTRACT_SUPERBIAS'] = True
+DEFAULT_RUN['APPLY_REFERENCE_PIXEL_CORRECTION'] = True
+DEFAULT_RUN['REMOVE_FIRST_FRAME_SIGNAL'] = True
+DEFAULT_RUN['REMOVE_LAST_FRAME_SIGNAL'] = True
+DEFAULT_RUN['CORRECT_RESET_ANOMALY'] = True
+DEFAULT_RUN['APPLY_LINEARITY_CORRECTION'] = True
+DEFAULT_RUN['APPLY_RSCD_CORRECTION'] = True
+DEFAULT_RUN['SUBTRACT_DARK_CURRENT'] = True
+DEFAULT_RUN['CORRECT_PERSISTENCE'] = False  # Always commented out
+DEFAULT_RUN['CORRECT_CHARGE_MIGRATION'] = True
+DEFAULT_RUN['DETECT_AND_FLAG_JUMPS'] = True
+DEFAULT_RUN['PICTURE_FRAME_STEP'] = True
+DEFAULT_RUN['REMOVE_FLICKER_NOISE'] = True
+DEFAULT_RUN['FIT_SIGNAL_RAMPS'] = True
+DEFAULT_RUN['APPLY_GAIN_SCALING'] = True
+DEFAULT_RUN['SUBTRACT_BACKGROUND'] = True
+DEFAULT_RUN['ASSIGN_WCS_SOLUTION'] = True
+DEFAULT_RUN['EXTRACT_2D_SPECTRUM'] = True
+DEFAULT_RUN['SRCTYPE_DETERMINATION'] = True
+DEFAULT_RUN['CORRECT_STRAY_LIGHT'] = True
+DEFAULT_RUN['APPLY_FLAT_FIELD'] = True
+DEFAULT_RUN['CORRECT_FRINGE'] = True
+DEFAULT_RUN['CORRECT_PATH_LOSS'] = True
+DEFAULT_RUN['CORRECT_BAR_SHADOW'] = True
+DEFAULT_RUN['CORRECT_WFSS_CONTAMINATION'] = True
+DEFAULT_RUN['CORRECT_WAVELENGTH'] = True
+DEFAULT_RUN['SUBTRACT_MASTER_BACKGROUND'] = True
+DEFAULT_RUN['MEASURE_TARGET_CENTROID'] = False  # Commented out in MIRI LRS
+DEFAULT_RUN['CORRECT_RESIDUAL_FRINGE'] = True
+DEFAULT_RUN['EXTRACT_1D_SPECTRUM'] = True
+DEFAULT_RUN['APPLY_PHOTOMETRIC_CALIBRATION'] = True
+DEFAULT_RUN['RESAMPLE_IMAGES'] = True
 
 # -----------------------------------------------------------------------------
 # Step description
@@ -239,39 +324,60 @@ Kwargs for jump detection:
 # -----------------------------------------------------------------------------
 # Step output filenames (for skipping)
 STEP_SUFFIX = dict()
-STEP_SUFFIX['INITIALIZE_DETECTOR_DATA'] = '_saturationstep.fits'
+# Detector1 level steps (calwebb_detector1.py)
+STEP_SUFFIX['GROUP_SCALE_STEP'] = '_groupscalestep.fits'
+STEP_SUFFIX['DQ_INIT_STEP'] = '_dqinitstep.fits'
+STEP_SUFFIX['EMICORR_STEP'] = '_emicorrstep.fits'
+STEP_SUFFIX['SATURATION_STEP'] = '_saturationstep.fits'
 STEP_SUFFIX['APPLY_INTERPIXEL_CAPACITANCE'] = '_ipcstep.fits'
+STEP_SUFFIX['SUBTRACT_SUPERBIAS'] = '_superbiasstep.fits'
+STEP_SUFFIX['APPLY_REFERENCE_PIXEL_CORRECTION'] = '_refpixstep.fits'
+STEP_SUFFIX['APPLY_RSCD_CORRECTION'] = '_rscdstep.fits'
 STEP_SUFFIX['REMOVE_FIRST_FRAME_SIGNAL'] = '_firstframestep.fits'
 STEP_SUFFIX['REMOVE_LAST_FRAME_SIGNAL'] = '_lastframestep.fits'
-STEP_SUFFIX['CORRECT_RESET_ANOMALY'] = '_resetstep.fits'
 STEP_SUFFIX['APPLY_LINEARITY_CORRECTION'] = '_linearitystep.fits'
-STEP_SUFFIX['APPLY_RSCD_CORRECTION'] = '_rscdstep.fits'
 STEP_SUFFIX['SUBTRACT_DARK_CURRENT'] = '_darkcurrentstep.fits'
-STEP_SUFFIX['APPLY_REFERENCE_PIXEL_CORRECTION'] = '_refpixstep.fits'
-STEP_SUFFIX['CORRECT_CHARGE_MIGRATION'] = '_chargemigrationstep.fits' # TODO: Check
+STEP_SUFFIX['CORRECT_RESET_ANOMALY'] = '_resetstep.fits'
+STEP_SUFFIX['CORRECT_PERSISTENCE'] = '_persistencestep.fits'
+STEP_SUFFIX['CORRECT_CHARGE_MIGRATION'] = '_chargemigrationstep.fits'
 STEP_SUFFIX['DETECT_AND_FLAG_JUMPS'] = '_jump.fits'
-STEP_SUFFIX['REMOVE_FLICKER_NOISE'] = '_flickernoisestep.fits' # TODO: Check
-STEP_SUFFIX['FIT_SIGNAL_RAMPS'] = '_1_rampfitstep.fits' # TODO: 0 or 1?
-STEP_SUFFIX['APPLY_GAIN_SCALING'] = '_1_gainscalestep.fits' # TODO: 0 or 1?
-STEP_SUFFIX['SUBTRACT_BACKGROUND'] = '_1_backgroundstep.fits' # TODO: Check
-STEP_SUFFIX['ASSIGN_WCS_SOLUTION'] = '_1_assignwcsstep.fits' # TODO: 0 or 1?
-STEP_SUFFIX['APPLY_FLAT_FIELD'] = '_1_flatfieldstep.fits' # TODO: 0 or 1?
-STEP_SUFFIX['APPLY_PHOTOMETRIC_CALIBRATION'] = '_1_photomstep.fits' # TODO: 0 or 1?
+STEP_SUFFIX['PICTURE_FRAME_STEP'] = '_pictureframestep.fits'
+STEP_SUFFIX['REMOVE_FLICKER_NOISE'] = '_cleanflickernoisestep.fits'
+STEP_SUFFIX['FIT_SIGNAL_RAMPS'] = '_rampfitstep.fits'
+STEP_SUFFIX['APPLY_GAIN_SCALING'] = '_gainscalestep.fits'
+# Image2/Spec2 level steps (calwebb_image2.py / calwebb_spec2.py)
+STEP_SUFFIX['SUBTRACT_BACKGROUND'] = '_backgroundstep.fits'
+STEP_SUFFIX['ASSIGN_WCS_SOLUTION'] = '_assignwcsstep.fits'
+STEP_SUFFIX['EXTRACT_2D_SPECTRUM'] = '_extract2dstep.fits'
+STEP_SUFFIX['EXTRACT_1D_SPECTRUM'] = '_extract1dstep.fits'
+STEP_SUFFIX['SRCTYPE_DETERMINATION'] = '_srctypestep.fits'
+STEP_SUFFIX['CORRECT_STRAY_LIGHT'] = '_straylightstep.fits'
+STEP_SUFFIX['APPLY_FLAT_FIELD'] = '_flatfieldstep.fits'
+STEP_SUFFIX['CORRECT_FRINGE'] = '_fringestep.fits'
+STEP_SUFFIX['CORRECT_PATH_LOSS'] = '_pathlossstep.fits'
+STEP_SUFFIX['CORRECT_BAR_SHADOW'] = '_barshadowstep.fits'
+STEP_SUFFIX['CORRECT_WFSS_CONTAMINATION'] = '_wfsscontamstep.fits'
+STEP_SUFFIX['CORRECT_WAVELENGTH'] = '_wavecorrstep.fits'
+STEP_SUFFIX['SUBTRACT_MASTER_BACKGROUND'] = '_masterbackgroundstep.fits'
+STEP_SUFFIX['MEASURE_TARGET_CENTROID'] = '_targcentroidstep.fits'
+STEP_SUFFIX['CORRECT_RESIDUAL_FRINGE'] = '_residualfringestep.fits'
+STEP_SUFFIX['APPLY_PHOTOMETRIC_CALIBRATION'] = '_photomstep.fits'
+STEP_SUFFIX['RESAMPLE_IMAGES'] = '_resamplestep.fits'
 
 # -----------------------------------------------------------------------------
-# loop around all steps to create constant
+# Loop around all steps to create constant
 for step in STEPS:
     # setup each step value
     value = dict()
-    value['RUN'] = True
-    value['MODE'] = DEFAULT_MODES.get(step, 'None')
+    value['RUN'] = DEFAULT_RUN.get(step, False)
+    value['FLAVOUR'] = DEFAULT_FLAVOURS.get(step, 'None')
     value['KWARGS'] = dict()
     value['SUFFIX'] = STEP_SUFFIX.get(step, None)
     # deal with additional step descriptions
     desc = STEP_DESCRIPTION
-    if value['MODE'] in STEP_DESCS:
-        if step in STEP_DESCS[value['MODE']]:
-            desc = STEP_DESCRIPTION + '\n' + STEP_DESCS[value['MODE']]
+    if value['FLAVOUR'] in STEP_DESCS:
+        if step in STEP_DESCS[value['FLAVOUR']]:
+            desc = STEP_DESCRIPTION + '\n' + STEP_DESCS[value['FLAVOUR']]
     # give the step name
     step_name = step.replace('_', ' ').title()
     # push into a normal POGOS constant

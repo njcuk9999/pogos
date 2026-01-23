@@ -50,7 +50,7 @@ from aperocore.constants import param_functions
 from aperocore.core import drs_log
 from pogos.core import base as pogos_base
 from pogos.tsovore.core import base as ts_base
-
+from jwst import pipeline
 # =============================================================================
 # Define variables
 # =============================================================================
@@ -74,6 +74,7 @@ class Instrument:
     Base instrument class - must have all methods given in
     any child class
     """
+
     def __init__(self, params: ParamDict, instrument: str = 'None'):
         # set function name
         func_name = f"{__NAME__}.Instrument.__init__"
@@ -88,8 +89,6 @@ class Instrument:
         self.variables.set('ABSFILES', [], source=func_name)
         self.variables.set('PREFIXES', [], source=func_name)
         self.variables.set('NSEGMENTS', 0, source=func_name)
-        self.variables.set('LAST', [], source=func_name)
-        self.variables.set('OUT', [], source=func_name)
         # lock variables to avoid misuse
         self.variables.lock()
 
@@ -108,9 +107,11 @@ class Instrument:
     # -------------------------------------------------------------------------
     # Define science methods
     # -------------------------------------------------------------------------
-    def handle_input_data(self):
+    def handle_input_data(self) -> list:
         """
         Handle input data - this should work for all instruments/modes
+
+        :return: list[str], list of input files
         """
         # set function name
         func_name = f"{__NAME__}.Instrument.handle_input_data"
@@ -118,11 +119,13 @@ class Instrument:
         nmsg = NOT_IMPLEMENTED_MSG.format(func_name, self.instrument)
         raise NotImplemented(nmsg)
 
-    def initialize_detector_data(self):
+    def initialize_detector_data(self, infiles: list) -> list:
         """
         Handles data load and initial detector corrections
         (scaling, DQ flags, emission correction, saturation map).
 
+        :param infiles: list[str], list of input files
+        :return: list[str], list of output files
         """
         # set function name
         func_name = f"{__NAME__}.Instrument.initialize_detector_data"
@@ -130,9 +133,12 @@ class Instrument:
         nmsg = NOT_IMPLEMENTED_MSG.format(func_name, self.instrument)
         raise NotImplemented(nmsg)
 
-    def apply_interpixel_capacitance(self):
+    def apply_interpixel_capacitance(self, infiles: list) -> list:
         """
         Corrects for interpixel capacitance effects.
+
+        :param infiles: list[str], list of input files
+        :return: list[str], list of output files
         """
         # set function name
         func_name = f"{__NAME__}.Instrument.apply_interpixel_capacitance"
@@ -140,9 +146,12 @@ class Instrument:
         nmsg = NOT_IMPLEMENTED_MSG.format(func_name, self.instrument)
         raise NotImplemented(nmsg)
 
-    def remove_first_frame_signal(self):
+    def remove_first_frame_signal(self, infiles: list) -> list:
         """
         Removes bias introduced in first frame of each integration.
+
+        :param infiles: list[str], list of input files
+        :return: list[str], list of output files
         """
         # set function name
         func_name = f"{__NAME__}.Instrument.remove_first_frame_signal"
@@ -150,9 +159,12 @@ class Instrument:
         nmsg = NOT_IMPLEMENTED_MSG.format(func_name, self.instrument)
         raise NotImplemented(nmsg)
 
-    def remove_last_frame_signal(self):
+    def remove_last_frame_signal(self, infiles: list) -> list:
         """
         Removes last-frame pedestal effect.
+
+        :param infiles: list[str], list of input files
+        :return: list[str], list of output files
         """
         # set function name
         func_name = f"{__NAME__}.Instrument.remove_last_frame_signal"
@@ -160,9 +172,12 @@ class Instrument:
         nmsg = NOT_IMPLEMENTED_MSG.format(func_name, self.instrument)
         raise NotImplemented(nmsg)
 
-    def correct_reset_anomaly(self):
+    def correct_reset_anomaly(self, infiles: list) -> list:
         """
         Fixes reset anomaly across integrations.
+
+        :param infiles: list[str], list of input files
+        :return: list[str], list of output files
         """
         # set function name
         func_name = f"{__NAME__}.Instrument.correct_reset_anomaly"
@@ -170,9 +185,12 @@ class Instrument:
         nmsg = NOT_IMPLEMENTED_MSG.format(func_name, self.instrument)
         raise NotImplemented(nmsg)
 
-    def apply_linearity_correction(self):
+    def apply_linearity_correction(self, infiles: list) -> list:
         """
         Corrects for detector nonlinearity.
+
+        :param infiles: list[str], list of input files
+        :return: list[str], list of output files
         """
         # set function name
         func_name = f"{__NAME__}.Instrument.apply_linearity_correction"
@@ -180,9 +198,12 @@ class Instrument:
         nmsg = NOT_IMPLEMENTED_MSG.format(func_name, self.instrument)
         raise NotImplemented(nmsg)
 
-    def apply_rscd_correction(self):
+    def apply_rscd_correction(self, infiles: list) -> list:
         """
         Applies reset switch charge decay correction.
+
+        :param infiles: list[str], list of input files
+        :return: list[str], list of output files
         """
         # set function name
         func_name = f"{__NAME__}.Instrument.apply_rscd_correction"
@@ -190,9 +211,12 @@ class Instrument:
         nmsg = NOT_IMPLEMENTED_MSG.format(func_name, self.instrument)
         raise NotImplemented(nmsg)
 
-    def subtract_dark_current(self):
+    def subtract_dark_current(self, infiles: list) -> list:
         """
         Removes dark current signal using reference darks.
+
+        :param infiles: list[str], list of input files
+        :return: list[str], list of output files
         """
         # set function name
         func_name = f"{__NAME__}.Instrument.subtract_dark_current"
@@ -200,9 +224,12 @@ class Instrument:
         nmsg = NOT_IMPLEMENTED_MSG.format(func_name, self.instrument)
         raise NotImplemented(nmsg)
 
-    def apply_reference_pixel_correction(self):
+    def apply_reference_pixel_correction(self, infiles: list) -> list:
         """
         Corrects readout noise using reference pixels.
+
+        :param infiles: list[str], list of input files
+        :return: list[str], list of output files
         """
         # set function name
         func_name = f"{__NAME__}.Instrument.apply_reference_pixel_correction"
@@ -210,9 +237,12 @@ class Instrument:
         nmsg = NOT_IMPLEMENTED_MSG.format(func_name, self.instrument)
         raise NotImplemented(nmsg)
 
-    def correct_charge_migration(self):
+    def correct_charge_migration(self, infiles: list) -> list:
         """
         Mitigates charge migration between pixels.
+
+        :param infiles: list[str], list of input files
+        :return: list[str], list of output files
         """
         # set function name
         func_name = f"{__NAME__}.Instrument.correct_charge_migration"
@@ -220,9 +250,12 @@ class Instrument:
         nmsg = NOT_IMPLEMENTED_MSG.format(func_name, self.instrument)
         raise NotImplemented(nmsg)
 
-    def detect_and_flag_jumps(self):
+    def detect_and_flag_jumps(self, infiles: list) -> list:
         """
         Identifies and flags cosmic ray hits (jumps) in the data.
+
+        :param infiles: list[str], list of input files
+        :return: list[str], list of output files
         """
         # set function name
         func_name = f"{__NAME__}.Instrument.detect_and_flag_jumps"
@@ -230,9 +263,12 @@ class Instrument:
         nmsg = NOT_IMPLEMENTED_MSG.format(func_name, self.instrument)
         raise NotImplemented(nmsg)
 
-    def remove_flicker_noise(self):
+    def remove_flicker_noise(self, infiles: list) -> list:
         """
         Removes flicker noise from the data.
+
+        :param infiles: list[str], list of input files
+        :return: list[str], list of output files
         """
         # set function name
         func_name = f"{__NAME__}.Instrument.remove_flicker_noise"
@@ -240,9 +276,12 @@ class Instrument:
         nmsg = NOT_IMPLEMENTED_MSG.format(func_name, self.instrument)
         raise NotImplemented(nmsg)
 
-    def fit_signal_ramps(self):
+    def fit_signal_ramps(self, infiles: list) -> list:
         """
         Fits slopes to groups to derive count rates.
+
+        :param infiles: list[str], list of input files
+        :return: list[str], list of output files
         """
         # set function name
         func_name = f"{__NAME__}.Instrument.fit_signal_ramps"
@@ -250,9 +289,12 @@ class Instrument:
         nmsg = NOT_IMPLEMENTED_MSG.format(func_name, self.instrument)
         raise NotImplemented(nmsg)
 
-    def apply_gain_scaling(self):
+    def apply_gain_scaling(self, infiles: list) -> list:
         """
         Scales results to correct gain differences.
+
+        :param infiles: list[str], list of input files
+        :return: list[str], list of output files
         """
         # set function name
         func_name = f"{__NAME__}.Instrument.apply_gain_scaling"
@@ -260,9 +302,12 @@ class Instrument:
         nmsg = NOT_IMPLEMENTED_MSG.format(func_name, self.instrument)
         raise NotImplemented(nmsg)
 
-    def subtract_background(self):
+    def subtract_background(self, infiles: list) -> list:
         """
         Removes background using reference or modeled backgrounds.
+
+        :param infiles: list[str], list of input files
+        :return: list[str], list of output files
         """
         # set function name
         func_name = f"{__NAME__}.Instrument.subtract_background"
@@ -270,9 +315,12 @@ class Instrument:
         nmsg = NOT_IMPLEMENTED_MSG.format(func_name, self.instrument)
         raise NotImplemented(nmsg)
 
-    def assign_wcs_solution(self):
+    def assign_wcs_solution(self, infiles: list) -> list:
         """
         Adds WCS (world coordinate system) information.
+
+        :param infiles: list[str], list of input files
+        :return: list[str], list of output files
         """
         # set function name
         func_name = f"{__NAME__}.Instrument.assign_wcs_solution"
@@ -280,9 +328,12 @@ class Instrument:
         nmsg = NOT_IMPLEMENTED_MSG.format(func_name, self.instrument)
         raise NotImplemented(nmsg)
 
-    def apply_flat_field(self):
+    def apply_flat_field(self, infiles: list) -> list:
         """
         Corrects pixel-to-pixel sensitivity variations.
+
+        :param infiles: list[str], list of input files
+        :return: list[str], list of output files
         """
         # set function name
         func_name = f"{__NAME__}.Instrument.apply_flat_field"
@@ -290,9 +341,12 @@ class Instrument:
         nmsg = NOT_IMPLEMENTED_MSG.format(func_name, self.instrument)
         raise NotImplemented(nmsg)
 
-    def apply_photometric_calibration(self):
+    def apply_photometric_calibration(self, infiles: list) -> list:
         """
         Converts data units to physical flux units.
+
+        :param infiles: list[str], list of input files
+        :return: list[str], list of output files
         """
         # set function name
         func_name = f"{__NAME__}.Instrument.apply_photometric_calibration"
@@ -300,9 +354,12 @@ class Instrument:
         nmsg = NOT_IMPLEMENTED_MSG.format(func_name, self.instrument)
         raise NotImplemented(nmsg)
 
-    def group_scale_step(self):
+    def group_scale_step(self, infiles: list) -> list:
         """
         Scale group data to account for on-chip amplifier effects.
+
+        :param infiles: list[str], list of input files
+        :return: list[str], list of output files
         """
         # set function name
         func_name = f"{__NAME__}.Instrument.group_scale_step"
@@ -310,9 +367,12 @@ class Instrument:
         nmsg = NOT_IMPLEMENTED_MSG.format(func_name, self.instrument)
         raise NotImplemented(nmsg)
 
-    def dq_init_step(self):
+    def dq_init_step(self, infiles: list) -> list:
         """
         Initialize data quality flags.
+
+        :param infiles: list[str], list of input files
+        :return: list[str], list of output files
         """
         # set function name
         func_name = f"{__NAME__}.Instrument.dq_init_step"
@@ -320,9 +380,12 @@ class Instrument:
         nmsg = NOT_IMPLEMENTED_MSG.format(func_name, self.instrument)
         raise NotImplemented(nmsg)
 
-    def emicorr_step(self):
+    def emicorr_step(self, infiles: list) -> list:
         """
         Apply EMI (electro-magnetic interference) corrections.
+
+        :param infiles: list[str], list of input files
+        :return: list[str], list of output files
         """
         # set function name
         func_name = f"{__NAME__}.Instrument.emicorr_step"
@@ -330,9 +393,12 @@ class Instrument:
         nmsg = NOT_IMPLEMENTED_MSG.format(func_name, self.instrument)
         raise NotImplemented(nmsg)
 
-    def saturation_step(self):
+    def saturation_step(self, infiles: list) -> list:
         """
         Flag saturated pixels.
+
+        :param infiles: list[str], list of input files
+        :return: list[str], list of output files
         """
         # set function name
         func_name = f"{__NAME__}.Instrument.saturation_step"
@@ -340,9 +406,12 @@ class Instrument:
         nmsg = NOT_IMPLEMENTED_MSG.format(func_name, self.instrument)
         raise NotImplemented(nmsg)
 
-    def subtract_superbias(self):
+    def subtract_superbias(self, infiles: list) -> list:
         """
         Subtract superbias reference for NIR instruments.
+
+        :param infiles: list[str], list of input files
+        :return: list[str], list of output files
         """
         # set function name
         func_name = f"{__NAME__}.Instrument.subtract_superbias"
@@ -350,9 +419,12 @@ class Instrument:
         nmsg = NOT_IMPLEMENTED_MSG.format(func_name, self.instrument)
         raise NotImplemented(nmsg)
 
-    def picture_frame_step(self):
+    def picture_frame_step(self, infiles: list) -> list:
         """
         Correct for picture frame effect.
+
+        :param infiles: list[str], list of input files
+        :return: list[str], list of output files
         """
         # set function name
         func_name = f"{__NAME__}.Instrument.picture_frame_step"
@@ -360,9 +432,12 @@ class Instrument:
         nmsg = NOT_IMPLEMENTED_MSG.format(func_name, self.instrument)
         raise NotImplemented(nmsg)
 
-    def correct_persistence(self):
+    def correct_persistence(self, infiles: list) -> list:
         """
         Correct for charge persistence between integrations.
+
+        :param infiles: list[str], list of input files
+        :return: list[str], list of output files
         """
         # set function name
         func_name = f"{__NAME__}.Instrument.correct_persistence"
@@ -370,9 +445,12 @@ class Instrument:
         nmsg = NOT_IMPLEMENTED_MSG.format(func_name, self.instrument)
         raise NotImplemented(nmsg)
 
-    def extract_2d_spectrum(self):
+    def extract_2d_spectrum(self, infiles: list) -> list:
         """
         Extract 2D spectrum from detector image.
+
+        :param infiles: list[str], list of input files
+        :return: list[str], list of output files
         """
         # set function name
         func_name = f"{__NAME__}.Instrument.extract_2d_spectrum"
@@ -380,14 +458,12 @@ class Instrument:
         nmsg = NOT_IMPLEMENTED_MSG.format(func_name, self.instrument)
         raise NotImplemented(nmsg)
 
-    def extract_1d_spectrum(self):
+    def extract_1d_spectrum(self, infiles: list) -> list:
         """
         Extract 1D spectrum from 2D data.
 
-        Returns
-        -------
-        list[str]
-            Absolute paths to the produced 1D spectrum files.
+        :param infiles: list[str], list of input files
+        :return: list[str], list of output files
         """
         # set function name
         func_name = f"{__NAME__}.Instrument.extract_1d_spectrum"
@@ -395,9 +471,12 @@ class Instrument:
         nmsg = NOT_IMPLEMENTED_MSG.format(func_name, self.instrument)
         raise NotImplemented(nmsg)
 
-    def srctype_determination(self):
+    def srctype_determination(self, infiles: list) -> list:
         """
         Determine source type for photometric calibration.
+
+        :param infiles: list[str], list of input files
+        :return: list[str], list of output files
         """
         # set function name
         func_name = f"{__NAME__}.Instrument.srctype_determination"
@@ -405,9 +484,12 @@ class Instrument:
         nmsg = NOT_IMPLEMENTED_MSG.format(func_name, self.instrument)
         raise NotImplemented(nmsg)
 
-    def correct_stray_light(self):
+    def correct_stray_light(self, infiles: list) -> list:
         """
         Remove stray light from the data.
+
+        :param infiles: list[str], list of input files
+        :return: list[str], list of output files
         """
         # set function name
         func_name = f"{__NAME__}.Instrument.correct_stray_light"
@@ -415,9 +497,12 @@ class Instrument:
         nmsg = NOT_IMPLEMENTED_MSG.format(func_name, self.instrument)
         raise NotImplemented(nmsg)
 
-    def correct_fringe(self):
+    def correct_fringe(self, infiles: list) -> list:
         """
         Remove fringe patterns from the data.
+
+        :param infiles: list[str], list of input files
+        :return: list[str], list of output files
         """
         # set function name
         func_name = f"{__NAME__}.Instrument.correct_fringe"
@@ -425,9 +510,12 @@ class Instrument:
         nmsg = NOT_IMPLEMENTED_MSG.format(func_name, self.instrument)
         raise NotImplemented(nmsg)
 
-    def correct_path_loss(self):
+    def correct_path_loss(self, infiles: list) -> list:
         """
         Correct for path loss through the optical system.
+
+        :param infiles: list[str], list of input files
+        :return: list[str], list of output files
         """
         # set function name
         func_name = f"{__NAME__}.Instrument.correct_path_loss"
@@ -435,9 +523,12 @@ class Instrument:
         nmsg = NOT_IMPLEMENTED_MSG.format(func_name, self.instrument)
         raise NotImplemented(nmsg)
 
-    def correct_bar_shadow(self):
+    def correct_bar_shadow(self, infiles: list) -> list:
         """
         Correct for bar shadow effect.
+
+        :param infiles: list[str], list of input files
+        :return: list[str], list of output files
         """
         # set function name
         func_name = f"{__NAME__}.Instrument.correct_bar_shadow"
@@ -445,9 +536,12 @@ class Instrument:
         nmsg = NOT_IMPLEMENTED_MSG.format(func_name, self.instrument)
         raise NotImplemented(nmsg)
 
-    def correct_wfss_contamination(self):
+    def correct_wfss_contamination(self, infiles: list) -> list:
         """
         Correct for WFSS contamination.
+
+        :param infiles: list[str], list of input files
+        :return: list[str], list of output files
         """
         # set function name
         func_name = f"{__NAME__}.Instrument.correct_wfss_contamination"
@@ -455,9 +549,12 @@ class Instrument:
         nmsg = NOT_IMPLEMENTED_MSG.format(func_name, self.instrument)
         raise NotImplemented(nmsg)
 
-    def correct_wavelength(self):
+    def correct_wavelength(self, infiles: list) -> list:
         """
         Correct wavelength calibration.
+
+        :param infiles: list[str], list of input files
+        :return: list[str], list of output files
         """
         # set function name
         func_name = f"{__NAME__}.Instrument.correct_wavelength"
@@ -465,9 +562,12 @@ class Instrument:
         nmsg = NOT_IMPLEMENTED_MSG.format(func_name, self.instrument)
         raise NotImplemented(nmsg)
 
-    def subtract_master_background(self):
+    def subtract_master_background(self, infiles: list) -> list:
         """
         Subtract master background for NIRSpec MOS data.
+
+        :param infiles: list[str], list of input files
+        :return: list[str], list of output files
         """
         # set function name
         func_name = f"{__NAME__}.Instrument.subtract_master_background"
@@ -475,9 +575,12 @@ class Instrument:
         nmsg = NOT_IMPLEMENTED_MSG.format(func_name, self.instrument)
         raise NotImplemented(nmsg)
 
-    def measure_target_centroid(self):
+    def measure_target_centroid(self, infiles: list) -> list:
         """
         Measure target centroid position.
+
+        :param infiles: list[str], list of input files
+        :return: list[str], list of output files
         """
         # set function name
         func_name = f"{__NAME__}.Instrument.measure_target_centroid"
@@ -485,9 +588,12 @@ class Instrument:
         nmsg = NOT_IMPLEMENTED_MSG.format(func_name, self.instrument)
         raise NotImplemented(nmsg)
 
-    def correct_residual_fringe(self):
+    def correct_residual_fringe(self, infiles: list) -> list:
         """
         Correct for residual fringe patterns (MIRI-specific).
+
+        :param infiles: list[str], list of input files
+        :return: list[str], list of output files
         """
         # set function name
         func_name = f"{__NAME__}.Instrument.correct_residual_fringe"
@@ -495,9 +601,12 @@ class Instrument:
         nmsg = NOT_IMPLEMENTED_MSG.format(func_name, self.instrument)
         raise NotImplemented(nmsg)
 
-    def resample_images(self):
+    def resample_images(self, infiles: list) -> list:
         """
         Resample images to a common grid.
+
+        :param infiles: list[str], list of input files
+        :return: list[str], list of output files
         """
         # set function name
         func_name = f"{__NAME__}.Instrument.resample_images"
@@ -508,56 +617,37 @@ class Instrument:
     # -------------------------------------------------------------------------
     # Define additional methods (worker functions)
     # -------------------------------------------------------------------------
-    def update_last(self, it: int, output_dir: str, output_filename: Any,
-                       func_name: str):
+    def get_output_path(self, it: int, output_dir: str,
+                        output_filename: Any) -> str:
         """
-        Update the LAST variable in the variables dictionary
+        Construct the output file path
 
-        :param variables: ParamDict, the variables dictionary
         :param it: int, the iteration number
         :param output_dir: str, the output directory
-        :param result: The JWST data result to store
-        :param func_name: str, the function name calling this function
-
-        :return: ParamDict, the updated variables dictionary
+        :param output_filename: str, the output filename
+        :return: str, the absolute path to the output file
         """
         # construct absolute path to filename
         absfile = os.path.join(output_dir, output_filename)
-        # deal with bad iteration number
-        if it < 0 or it >= len(self.variables['LAST']):
-            emsg = ('Iteration number {} is out of bounds for LAST variable of '
-                    'length {}')
-            eargs = [it, len(self.variables['LAST'])]
-            raise ts_base.TSOvoreException(emsg.format(*eargs))
-        # update the LAST variable
-        self.variables.unlock()
-        self.variables['LAST'][it] = absfile
-        # update the source of the LAST variable
-        self.variables.set_source('LAST', func_name)
-        self.variables.lock()
+        return absfile
 
-    def save_outputs(self, suffix: str, infiles: Any = None):
+    def save_outputs(self, suffix: str, infiles: list):
         """
         Rename/copy the current files to have a given suffix.
 
         :param suffix: str, the suffix to add to the filename
-        :param infiles: list[str] or None, optional override for files to copy.
-                        If None, uses self.variables['LAST'].
+        :param infiles: list[str], list of files to copy
+        :return: list[str], list of output files
         """
         # set function name
         func_name = f"{__NAME__}.Instrument.rename_results"
-        # choose input files: override or LAST
-        if infiles is None:
-            in_files = self.variables['LAST']
-        else:
-            in_files = infiles
         prefixes = self.variables['PREFIXES']
         # get parameters from params
         datadir = self.tparams['PATHS.TEMP_PATH']
         # storage for OUT variable
         out_files = []
         # loop around files
-        for it, filename in enumerate(in_files):
+        for it, filename in enumerate(infiles):
             # construct new filename
             new_base_name = prefixes[it] + suffix
             new_filename = str(os.path.join(datadir, new_base_name))
@@ -566,45 +656,42 @@ class Instrument:
                 wmsg = ('File {0} does not exist on disk. Cannot add to out. '
                         'This may crash future steps.').format(filename)
                 WLOG(self.params, 'warning', wmsg)
-                return
+                return out_files
             else:
                 msg = ('Copying file {0} to {1}').format(filename,
-                                                          new_filename)
+                                                         new_filename)
                 WLOG(self.params, 'info', msg)
             # copy the file
             shutil.copy(filename, new_filename)
             # save files to list
             out_files.append(new_filename)
-        # update the OUT variable
-        self.variables.unlock()
-        self.variables['OUT'] = out_files
-        self.variables.set_source('OUT', func_name)
-        self.variables.lock()
 
-    def remove_intermediate_files(self, it: int):
+        return out_files
+
+    def remove_intermediate_files(self, filepath: str):
         """
         Remove intermediate files to save disk space
-        
-        :param it: int, the iteration number
+
+        :param filepath: str, the path to the file to remove
         """
         # set function name
         func_name = f"{__NAME__}.Instrument.remove_intermediate_files"
         # get parameters from params
         remove_intermediates = self.tparams['INPUTS.REMOVE_INTERMEDIATES']
-        # get variables from self
-        infiles = self.variables['LAST']
         # check if we need to remove intermediate files
-        if remove_intermediates:
+        if remove_intermediates and os.path.exists(filepath):
             # remove the file
-            os.remove(infiles[it])
+            os.remove(filepath)
 
-    def from_step_args(self, func_name: str) -> Tuple[bool, str, Dict[str, Any]]:
+    def from_step_args(self, func_name: str) -> Tuple[bool, str,
+                                                      Dict[str, Any], str]:
         """
         Get step arguments from params
 
         :param func_name: str, the function name calling this function
 
-        :return: tuple, (run_step: bool, mode: str, kwargs: dict)
+        :return: tuple, (run_step: bool, flavour: str, kwargs: dict,
+                 suffix: str)
         """
         # get step name from function name
         step_name = func_name.split('.')[-1].upper()
@@ -618,8 +705,8 @@ class Instrument:
         # ---------------------------------------------------------------------
         # get run step
         run_step = self.tparams[f'{step_arg}'].get('RUN', True)
-        # get mode
-        mode = self.tparams[f'{step_arg}'].get('MODE', 'None')
+        # get flavour
+        flavour = self.tparams[f'{step_arg}'].get('FLAVOUR', 'None')
         # get kwargs
         kwargs = self.tparams[f'{step_arg}'].get('KWARGS', dict())
         # get the suffix
@@ -627,7 +714,8 @@ class Instrument:
         # ---------------------------------------------------------------------
         # if we are running this step print message
         if run_step:
-            msg = ('\n\nRunning {0} mode={1}').format(step_name, mode)
+            msg = ('\n\nRunning {0} flavour={1}').format(
+                step_name, flavour)
             mlevel = 'info'
         else:
             msg = ('\n\nSkipping "{0}" [{1}.RUN=False]').format(
@@ -638,34 +726,33 @@ class Instrument:
         WLOG(self.params, mlevel, msg)
         WLOG(self.params, mlevel, sep)
         # ---------------------------------------------------------------------
-        # deal with skipping step
-        run_step = self.skip_step(run_step, step_name, suffix)
-        # ---------------------------------------------------------------------
         # return values
-        return run_step, mode, kwargs
+        return run_step, flavour, kwargs, suffix
 
-    def skip_step(self, run_step: bool, step_name: str, suffix: str):
+    def skip_step(self, run_step: bool, step_name: str,
+                  suffix: str, infiles: list):
         """
         Decide whether to skip a step based on existing files and parameters
 
         :param run_step: bool, whether to run the step (from params)
         :param step_name: str, the name of the step
         :param suffix: str, the suffix expected for output files
-        :return:
+        :param infiles: list[str], the input files
+        :return: tuple (bool, list[str]), whether to skip and list of
+                 expected files
         """
         # set function name
         func_name = f"{__NAME__}.Instrument.skip_step"
         # if we are already not running step then we don't need to check skips
         if not run_step:
-            return False
+            return False, infiles
         # skip if we have no suffix
         if suffix is None:
-            return run_step
+            return run_step, infiles
         # skip if we are not skipping processed files
         if not self.tparams['INPUTS.SKIP_PROCESSED_FILES']:
-            return run_step
+            return run_step, infiles
         # get variables from self
-        infiles = self.variables['LAST']
         prefixes = self.variables['PREFIXES']
         # assume all files are found
         all_found = True
@@ -682,7 +769,7 @@ class Instrument:
             # check if file exists
             if not os.path.isfile(expected_filename):
                 all_found = False
-        # if all found then run_step is False and we update variables
+        # if all found then run_step is False and we return expected files
         if all_found:
             # update run step
             run_step = False
@@ -691,26 +778,24 @@ class Instrument:
                    'output files found with suffix "{0}".'
                    '\n\tSkipping step "{1}".').format(suffix, step_name)
             WLOG(self.params, '', msg)
-            # update LAST variable to point to expected file
-            for it in range(len(expected_files)):
-                self.variables.unlock()
-                self.variables['LAST'][it] = expected_files[it]
-                self.variables.set_source('LAST', func_name)
-                self.variables.lock()
+            return run_step, expected_files
 
-        return run_step
+        return run_step, infiles
 
 
 class JWST(Instrument):
     """
     JWST Instrument class
     """
+
     def __init__(self, params: ParamDict, instrument: str = 'JWST.NONE'):
         super().__init__(params, instrument)
 
-    def handle_input_data(self):
+    def handle_input_data(self) -> list:
         """
         Handle input data - this should work for all JWST instruments/modes
+
+        :return: list[str], list of absolute paths to input files
         """
         # set function name
         func_name = f"{__NAME__}.JWST.handle_input_data"
@@ -750,7 +835,8 @@ class JWST(Instrument):
         self.variables.set('ABSFILES', input_absfiles, source=func_name)
         self.variables.set('PREFIXES', input_prefixes, source=func_name)
         self.variables.set('NSEGMENTS', nsegments, source=func_name)
-        self.variables.set('LAST', input_absfiles, source=func_name)
+
+        return input_absfiles
 
     def process(self):
         """
@@ -764,24 +850,30 @@ class JWST(Instrument):
         nmsg = NOT_IMPLEMENTED_MSG.format(func_name, self.instrument)
         raise NotImplemented(nmsg)
 
-    def initialize_detector_data(self):
+    def initialize_detector_data(self, infiles: list) -> list:
         """
         Handles data load and initial detector corrections
         (scaling, DQ flags, emission correction, saturation map).
 
+        :param infiles: list[str], list of input files
+        :return: list[str], list of output files
         """
         # set function name
         func_name = f"{__NAME__}.JWST.initialize_detector_data"
         # ---------------------------------------------------------------------
         # get params from step constant
-        run_step, mode, kwargs = self.from_step_args(func_name)
+        run_step, flavour, kwargs, suffix = self.from_step_args(func_name)
+        # deal with skipping step
+        run_step, infiles = self.skip_step(
+            run_step, 'INITIALIZE_DETECTOR_DATA', suffix, infiles)
         # deal with not running this step
-        if not run_step: return
+        if not run_step:
+            return infiles
         # ---------------------------------------------------------------------
         # get parameters from params
         datadir = self.tparams['PATHS.TEMP_PATH']
-        # get variables from self
-        infiles = self.variables['LAST']
+        # storage for output files
+        outfiles = []
         # loop around infiles
         for it, filename in enumerate(infiles):
             # Read input segments files from disk
@@ -799,56 +891,76 @@ class JWST(Instrument):
             # this time saving files on disk
             result = SaturationStep.call(result, output_dir=datadir,
                                          save_results=True)
-            # update the LAST and RESULT variables
-            self.update_last(it, datadir, result.meta.filename, func_name)
+            # get output path
+            outfile = self.get_output_path(it, datadir, result.meta.filename)
+            outfiles.append(outfile)
 
-    def apply_interpixel_capacitance(self):
+        return outfiles
+
+    def apply_interpixel_capacitance(self, infiles: list) -> list:
         """
         Corrects for interpixel capacitance effects.
+
+        :param infiles: list[str], list of input files
+        :return: list[str], list of output files
         """
         # set function name
         func_name = f"{__NAME__}.JWST.apply_interpixel_capacitance"
         # ---------------------------------------------------------------------
         # get params from step constant
-        run_step, mode, kwargs = self.from_step_args(func_name)
+        run_step, flavour, kwargs, suffix = self.from_step_args(func_name)
+        # deal with skipping step
+        run_step, infiles = self.skip_step(
+            run_step, 'APPLY_INTERPIXEL_CAPACITANCE', suffix, infiles)
         # deal with not running this step
-        if not run_step: return
+        if not run_step:
+            return infiles
         # ---------------------------------------------------------------------
         # get parameters from params
         datadir = self.tparams['PATHS.TEMP_PATH']
-        # get variables from self
-        infiles = self.variables['LAST']
+        # storage for output files
+        outfiles = []
         # loop around infiles
         for it, filename in enumerate(infiles):
             # Read input segments files from disk
             input_data = datamodels.open(filename)
-            result = IPCStep.call(input_data, output_dir=datadir, 
+            result = IPCStep.call(input_data, output_dir=datadir,
                                   save_results=True, **kwargs)
             # To limit disk usage, erase the file from the previously saved step
-            self.remove_intermediate_files(it)
-            # update the LAST and RESULT variables
-            self.update_last(it, datadir, result.meta.filename, func_name)
+            self.remove_intermediate_files(filename)
+            # get output path
+            outfile = self.get_output_path(it, datadir, result.meta.filename)
+            outfiles.append(outfile)
 
-    def remove_first_frame_signal(self):
+        return outfiles
+
+    def remove_first_frame_signal(self, infiles: list) -> list:
         """
         Removes bias introduced in first frame of each integration.
-        
+
         All this does is set the DQflag of the first frame of every integration
         to DO NOT USE provided that the integrations have more than 3 usable 
         (non-saturated group).
+
+        :param infiles: list[str], list of input files
+        :return: list[str], list of output files
         """
         # set function name
         func_name = f"{__NAME__}.JWST.remove_first_frame_signal"
         # ---------------------------------------------------------------------
         # get params from step constant
-        run_step, mode, kwargs = self.from_step_args(func_name)
+        run_step, flavour, kwargs, suffix = self.from_step_args(func_name)
+        # deal with skipping step
+        run_step, infiles = self.skip_step(
+            run_step, 'REMOVE_FIRST_FRAME_SIGNAL', suffix, infiles)
         # deal with not running this step
-        if not run_step: return
+        if not run_step:
+            return infiles
         # ---------------------------------------------------------------------
         # get parameters from params
         datadir = self.tparams['PATHS.TEMP_PATH']
-        # get variables from self
-        infiles = self.variables['LAST']
+        # storage for output files
+        outfiles = []
         # loop around infiles
         for it, filename in enumerate(infiles):
             # Read input segments files from disk
@@ -856,26 +968,36 @@ class JWST(Instrument):
             result = FirstFrameStep.call(input_data, output_dir=datadir,
                                          save_results=True, **kwargs)
             # To limit disk usage, erase the file from the previously saved step
-            self.remove_intermediate_files(it)
-            # update the LAST and RESULT variables
-            self.update_last(it, datadir, result.meta.filename, func_name)
+            self.remove_intermediate_files(filename)
+            # get output path
+            outfile = self.get_output_path(it, datadir, result.meta.filename)
+            outfiles.append(outfile)
 
-    def remove_last_frame_signal(self):
+        return outfiles
+
+    def remove_last_frame_signal(self, infiles: list) -> list:
         """
         Removes last-frame pedestal effect.
+
+        :param infiles: list[str], list of input files
+        :return: list[str], list of output files
         """
         # set function name
         func_name = f"{__NAME__}.JWST.remove_last_frame_signal"
         # ---------------------------------------------------------------------
         # get params from step constant
-        run_step, mode, kwargs = self.from_step_args(func_name)
+        run_step, flavour, kwargs, suffix = self.from_step_args(func_name)
+        # deal with skipping step
+        run_step, infiles = self.skip_step(
+            run_step, 'REMOVE_LAST_FRAME_SIGNAL', suffix, infiles)
         # deal with not running this step
-        if not run_step: return
+        if not run_step:
+            return infiles
         # ---------------------------------------------------------------------
         # get parameters from params
         datadir = self.tparams['PATHS.TEMP_PATH']
-        # get variables from self
-        infiles = self.variables['LAST']
+        # storage for output files
+        outfiles = []
         # loop around infiles
         for it, filename in enumerate(infiles):
             # Read input segments files from disk
@@ -883,26 +1005,36 @@ class JWST(Instrument):
             result = LastFrameStep.call(input_data, output_dir=datadir,
                                         save_results=True, **kwargs)
             # To limit disk usage, erase the file from the previously saved step
-            self.remove_intermediate_files(it)
-            # update the LAST and RESULT variables
-            self.update_last(it, datadir, result.meta.filename, func_name)
-            
-    def correct_reset_anomaly(self):
+            self.remove_intermediate_files(filename)
+            # get output path
+            outfile = self.get_output_path(it, datadir, result.meta.filename)
+            outfiles.append(outfile)
+
+        return outfiles
+
+    def correct_reset_anomaly(self, infiles: list) -> list:
         """
         Fixes reset anomaly across integrations.
+
+        :param infiles: list[str], list of input files
+        :return: list[str], list of output files
         """
         # set function name
         func_name = f"{__NAME__}.JWST.correct_reset_anomaly"
         # ---------------------------------------------------------------------
         # get params from step constant
-        run_step, mode, kwargs = self.from_step_args(func_name)
+        run_step, flavour, kwargs, suffix = self.from_step_args(func_name)
+        # deal with skipping step
+        run_step, infiles = self.skip_step(
+            run_step, 'CORRECT_RESET_ANOMALY', suffix, infiles)
         # deal with not running this step
-        if not run_step: return
+        if not run_step:
+            return infiles
         # ---------------------------------------------------------------------
         # get parameters from params
         datadir = self.tparams['PATHS.TEMP_PATH']
-        # get variables from self
-        infiles = self.variables['LAST']
+        # storage for output files
+        outfiles = []
         # loop around infiles
         for it, filename in enumerate(infiles):
             # Read input segments files from disk
@@ -910,26 +1042,36 @@ class JWST(Instrument):
             result = ResetStep.call(input_data, output_dir=datadir,
                                     save_results=True, **kwargs)
             # To limit disk usage, erase the file from the previously saved step
-            self.remove_intermediate_files(it)
-            # update the LAST and RESULT variables
-            self.update_last(it, datadir, result.meta.filename, func_name)
-        
-    def apply_linearity_correction(self):
+            self.remove_intermediate_files(filename)
+            # get output path
+            outfile = self.get_output_path(it, datadir, result.meta.filename)
+            outfiles.append(outfile)
+
+        return outfiles
+
+    def apply_linearity_correction(self, infiles: list) -> list:
         """
         Corrects for detector nonlinearity.
+
+        :param infiles: list[str], list of input files
+        :return: list[str], list of output files
         """
         # set function name
         func_name = f"{__NAME__}.JWST.apply_linearity_correction"
         # ---------------------------------------------------------------------
         # get params from step constant
-        run_step, mode, kwargs = self.from_step_args(func_name)
+        run_step, flavour, kwargs, suffix = self.from_step_args(func_name)
+        # deal with skipping step
+        run_step, infiles = self.skip_step(
+            run_step, 'APPLY_LINEARITY_CORRECTION', suffix, infiles)
         # deal with not running this step
-        if not run_step: return
+        if not run_step:
+            return infiles
         # ---------------------------------------------------------------------
         # get parameters from params
         datadir = self.tparams['PATHS.TEMP_PATH']
-        # get variables from self
-        infiles = self.variables['LAST']
+        # storage for output files
+        outfiles = []
         # loop around infiles
         for it, filename in enumerate(infiles):
             # Read input segments files from disk
@@ -937,26 +1079,36 @@ class JWST(Instrument):
             result = LinearityStep.call(input_data, output_dir=datadir,
                                         save_results=True, **kwargs)
             # To limit disk usage, erase the file from the previously saved step
-            self.remove_intermediate_files(it)
-            # update the LAST and RESULT variables
-            self.update_last(it, datadir, result.meta.filename, func_name)
+            self.remove_intermediate_files(filename)
+            # get output path
+            outfile = self.get_output_path(it, datadir, result.meta.filename)
+            outfiles.append(outfile)
 
-    def apply_rscd_correction(self):
+        return outfiles
+
+    def apply_rscd_correction(self, infiles: list) -> list:
         """
         Applies reset switch charge decay correction.
+
+        :param infiles: list[str], list of input files
+        :return: list[str], list of output files
         """
         # set function name
         func_name = f"{__NAME__}.JWST.apply_rscd_correction"
         # ---------------------------------------------------------------------
         # get params from step constant
-        run_step, mode, kwargs = self.from_step_args(func_name)
+        run_step, flavour, kwargs, suffix = self.from_step_args(func_name)
+        # deal with skipping step
+        run_step, infiles = self.skip_step(
+            run_step, 'APPLY_RSCD_CORRECTION', suffix, infiles)
         # deal with not running this step
-        if not run_step: return
+        if not run_step:
+            return infiles
         # ---------------------------------------------------------------------
         # get parameters from params
         datadir = self.tparams['PATHS.TEMP_PATH']
-        # get variables from self
-        infiles = self.variables['LAST']
+        # storage for output files
+        outfiles = []
         # loop around infiles
         for it, filename in enumerate(infiles):
             # Read input segments files from disk
@@ -964,26 +1116,36 @@ class JWST(Instrument):
             result = RscdStep.call(input_data, output_dir=datadir,
                                    save_results=True, **kwargs)
             # To limit disk usage, erase the file from the previously saved step
-            self.remove_intermediate_files(it)
-            # update the LAST and RESULT variables
-            self.update_last(it, datadir, result.meta.filename, func_name)
-            
-    def subtract_dark_current(self):
+            self.remove_intermediate_files(filename)
+            # get output path
+            outfile = self.get_output_path(it, datadir, result.meta.filename)
+            outfiles.append(outfile)
+
+        return outfiles
+
+    def subtract_dark_current(self, infiles: list) -> list:
         """
         Removes dark current signal using reference darks.
+
+        :param infiles: list[str], list of input files
+        :return: list[str], list of output files
         """
         # set function name
         func_name = f"{__NAME__}.JWST.subtract_dark_current"
         # ---------------------------------------------------------------------
         # get params from step constant
-        run_step, mode, kwargs = self.from_step_args(func_name)
+        run_step, flavour, kwargs, suffix = self.from_step_args(func_name)
+        # deal with skipping step
+        run_step, infiles = self.skip_step(
+            run_step, 'SUBTRACT_DARK_CURRENT', suffix, infiles)
         # deal with not running this step
-        if not run_step: return
+        if not run_step:
+            return infiles
         # ---------------------------------------------------------------------
         # get parameters from params
         datadir = self.tparams['PATHS.TEMP_PATH']
-        # get variables from self
-        infiles = self.variables['LAST']
+        # storage for output files
+        outfiles = []
         # loop around infiles
         for it, filename in enumerate(infiles):
             # Read input segments files from disk
@@ -991,26 +1153,36 @@ class JWST(Instrument):
             result = DarkCurrentStep.call(input_data, output_dir=datadir,
                                           save_results=True, **kwargs)
             # To limit disk usage, erase the file from the previously saved step
-            self.remove_intermediate_files(it)
-            # update the LAST and RESULT variables
-            self.update_last(it, datadir, result.meta.filename, func_name)
-            
-    def apply_reference_pixel_correction(self):
+            self.remove_intermediate_files(filename)
+            # get output path
+            outfile = self.get_output_path(it, datadir, result.meta.filename)
+            outfiles.append(outfile)
+
+        return outfiles
+
+    def apply_reference_pixel_correction(self, infiles: list) -> list:
         """
         Corrects readout noise using reference pixels.
+
+        :param infiles: list[str], list of input files
+        :return: list[str], list of output files
         """
         # set function name
         func_name = f"{__NAME__}.JWST.apply_reference_pixel_correction"
         # ---------------------------------------------------------------------
         # get params from step constant
-        run_step, mode, kwargs = self.from_step_args(func_name)
+        run_step, flavour, kwargs, suffix = self.from_step_args(func_name)
+        # deal with skipping step
+        run_step, infiles = self.skip_step(
+            run_step, 'APPLY_REFERENCE_PIXEL_CORRECTION', suffix, infiles)
         # deal with not running this step
-        if not run_step: return
+        if not run_step:
+            return infiles
         # ---------------------------------------------------------------------
         # get parameters from params
         datadir = self.tparams['PATHS.TEMP_PATH']
-        # get variables from self
-        infiles = self.variables['LAST']
+        # storage for output files
+        outfiles = []
         # loop around infiles
         for it, filename in enumerate(infiles):
             # Read input segments files from disk
@@ -1018,108 +1190,147 @@ class JWST(Instrument):
             result = RefPixStep.call(input_data, output_dir=datadir,
                                      save_results=True, **kwargs)
             # To limit disk usage, erase the file from the previously saved step
-            self.remove_intermediate_files(it)
-            # update the LAST and RESULT variables
-            self.update_last(it, datadir, result.meta.filename, func_name)
-            
-    def correct_charge_migration(self):
+            self.remove_intermediate_files(filename)
+            # get output path
+            outfile = self.get_output_path(it, datadir, result.meta.filename)
+            outfiles.append(outfile)
+
+        return outfiles
+
+    def correct_charge_migration(self, infiles: list) -> list:
         """
         Mitigates charge migration between pixels.
+
+        :param infiles: list[str], list of input files
+        :return: list[str], list of output files
         """
         # set function name
         func_name = f"{__NAME__}.JWST.correct_charge_migration"
         # ---------------------------------------------------------------------
         # get params from step constant
-        run_step, mode, kwargs = self.from_step_args(func_name)
+        run_step, flavour, kwargs, suffix = self.from_step_args(func_name)
+        # deal with skipping step
+        run_step, infiles = self.skip_step(
+            run_step, 'CORRECT_CHARGE_MIGRATION', suffix, infiles)
         # deal with not running this step
-        if not run_step: return
+        if not run_step:
+            return infiles
         # ---------------------------------------------------------------------
         # get parameters from params
         datadir = self.tparams['PATHS.TEMP_PATH']
-        # get variables from self
-        infiles = self.variables['LAST']
+        # storage for output files
+        outfiles = []
         # loop around infiles
         for it, filename in enumerate(infiles):
             # Read input segments files from disk
             input_data = datamodels.open(filename)
             result = ChargeMigrationStep.call(input_data, output_dir=datadir,
-                                             save_results=True, **kwargs)
+                                              save_results=True, **kwargs)
             # To limit disk usage, erase the file from the previously saved step
-            self.remove_intermediate_files(it)
-            # update the LAST and RESULT variables
-            self.update_last(it, datadir, result.meta.filename, func_name)
-            
-    def detect_and_flag_jumps(self):
+            self.remove_intermediate_files(filename)
+            # get output path
+            outfile = self.get_output_path(it, datadir, result.meta.filename)
+            outfiles.append(outfile)
+
+        return outfiles
+
+    def detect_and_flag_jumps(self, infiles: list) -> list:
         """
         Identifies and flags cosmic ray hits (jumps) in the data.
+
+        :param infiles: list[str], list of input files
+        :return: list[str], list of output files
         """
         # set function name
         func_name = f"{__NAME__}.JWST.detect_and_flag_jumps"
         # ---------------------------------------------------------------------
         # get params from step constant
-        run_step, mode, kwargs = self.from_step_args(func_name)
+        run_step, flavour, kwargs, suffix = self.from_step_args(func_name)
+        # deal with skipping step
+        run_step, infiles = self.skip_step(
+            run_step, 'DETECT_AND_FLAG_JUMPS', suffix, infiles)
         # deal with not running this step
-        if not run_step: return
+        if not run_step:
+            return infiles
         # ---------------------------------------------------------------------
         # get parameters from params
         datadir = self.tparams['PATHS.TEMP_PATH']
-        # get variables from self
-        infiles = self.variables['LAST']
+        # storage for output files
+        outfiles = []
         # loop around infiles
         for it, filename in enumerate(infiles):
             # Read input segments files from disk
             input_data = datamodels.open(filename)
             result = JumpStep.call(input_data, output_dir=datadir,
                                    save_results=True, **kwargs)
-            # Fot the JumpStep, no new outfile file is created, instead,
-            # the previous step's file is modified when running the JumpStep.
-            # I don't know why.
-            # update the LAST and RESULT variables
-            self.update_last(it, datadir, result.meta.filename, func_name)
+            # Note: JumpStep may modify the input file instead of creating
+            # new file
+            # get output path
+            outfile = self.get_output_path(it, datadir, result.meta.filename)
+            outfiles.append(outfile)
 
-    def remove_flicker_noise(self):
+        return outfiles
+
+    def remove_flicker_noise(self, infiles: list) -> list:
         """
         Removes flicker noise from the data.
+
+        :param infiles: list[str], list of input files
+        :return: list[str], list of output files
         """
         # set function name
         func_name = f"{__NAME__}.JWST.remove_flicker_noise"
         # ---------------------------------------------------------------------
         # get params from step constant
-        run_step, mode, kwargs = self.from_step_args(func_name)
+        run_step, flavour, kwargs, suffix = self.from_step_args(func_name)
+        # deal with skipping step
+        run_step, infiles = self.skip_step(
+            run_step, 'REMOVE_FLICKER_NOISE', suffix, infiles)
         # deal with not running this step
-        if not run_step: return
+        if not run_step:
+            return infiles
         # ---------------------------------------------------------------------
         # get parameters from params
         datadir = self.tparams['PATHS.TEMP_PATH']
-        # get variables from self
-        infiles = self.variables['LAST']
+        # storage for output files
+        outfiles = []
         # loop around infiles
         for it, filename in enumerate(infiles):
             # Read input segments files from disk
             input_data = datamodels.open(filename)
             result = CleanFlickerNoiseStep.call(input_data, output_dir=datadir,
-                                               save_results=True, **kwargs)
+                                                save_results=True, **kwargs)
             # To limit disk usage, erase the file from the previously saved step
-            self.remove_intermediate_files(it)
-            # update the LAST and RESULT variables
-            self.update_last(it, datadir, result.meta.filename, func_name)
+            self.remove_intermediate_files(filename)
+            # get output path
+            outfile = self.get_output_path(it, datadir, result.meta.filename)
+            outfiles.append(outfile)
 
-    def fit_signal_ramps(self):
+        return outfiles
+
+    def fit_signal_ramps(self, infiles: list) -> list:
         """
         Fits slopes to groups to derive count rates.
+
+        :param infiles: list[str], list of input files
+        :return: list[str], list of output files
         """
         # set function name
         func_name = f"{__NAME__}.JWST.fit_signal_ramps"
         # ---------------------------------------------------------------------
         # get params from step constant
-        run_step, mode, kwargs = self.from_step_args(func_name)
+        run_step, flavour, kwargs, suffix = self.from_step_args(func_name)
+        # deal with skipping step
+        run_step, infiles = self.skip_step(
+            run_step, 'FIT_SIGNAL_RAMPS', suffix, infiles)
         # deal with not running this step
-        if not run_step: return
+        if not run_step:
+            return infiles
         # ---------------------------------------------------------------------
         # get parameters from params
         datadir = self.tparams['PATHS.TEMP_PATH']
-        # get variables from self
-        infiles = self.variables['LAST']
+        # storage for output files
+        outfiles = []
         # loop around infiles
         for it, filename in enumerate(infiles):
             # Read input segments files from disk
@@ -1127,26 +1338,36 @@ class JWST(Instrument):
             rate, result = RampFitStep.call(input_data, output_dir=datadir,
                                             save_results=True, **kwargs)
             # To limit disk usage, erase the file from the previously saved step
-            self.remove_intermediate_files(it)
-            # update the LAST and RESULT variables
-            self.update_last(it, datadir, result.meta.filename, func_name)
-            
-    def apply_gain_scaling(self):
+            self.remove_intermediate_files(filename)
+            # get output path
+            outfile = self.get_output_path(it, datadir, result.meta.filename)
+            outfiles.append(outfile)
+
+        return outfiles
+
+    def apply_gain_scaling(self, infiles: list) -> list:
         """
         Scales results to correct gain differences.
+
+        :param infiles: list[str], list of input files
+        :return: list[str], list of output files
         """
         # set function name
         func_name = f"{__NAME__}.JWST.apply_gain_scaling"
         # ---------------------------------------------------------------------
         # get params from step constant
-        run_step, mode, kwargs = self.from_step_args(func_name)
+        run_step, flavour, kwargs, suffix = self.from_step_args(func_name)
+        # deal with skipping step
+        run_step, infiles = self.skip_step(
+            run_step, 'APPLY_GAIN_SCALING', suffix, infiles)
         # deal with not running this step
-        if not run_step: return
+        if not run_step:
+            return infiles
         # ---------------------------------------------------------------------
         # get parameters from params
         datadir = self.tparams['PATHS.TEMP_PATH']
-        # get variables from self
-        infiles = self.variables['LAST']
+        # storage for output files
+        outfiles = []
         # loop around infiles
         for it, filename in enumerate(infiles):
             # Read input segments files from disk
@@ -1154,26 +1375,36 @@ class JWST(Instrument):
             result = GainScaleStep.call(input_data, output_dir=datadir,
                                         save_results=True, **kwargs)
             # To limit disk usage, erase the file from the previously saved step
-            self.remove_intermediate_files(it)
-            # update the LAST and RESULT variables
-            self.update_last(it, datadir, result.meta.filename, func_name)
-    
-    def subtract_background(self):
+            self.remove_intermediate_files(filename)
+            # get output path
+            outfile = self.get_output_path(it, datadir, result.meta.filename)
+            outfiles.append(outfile)
+
+        return outfiles
+
+    def subtract_background(self, infiles: list) -> list:
         """
         Removes background using reference or modeled backgrounds.
+
+        :param infiles: list[str], list of input files
+        :return: list[str], list of output files
         """
         # set function name
         func_name = f"{__NAME__}.JWST.subtract_background"
         # ---------------------------------------------------------------------
         # get params from step constant
-        run_step, mode, kwargs = self.from_step_args(func_name)
+        run_step, flavour, kwargs, suffix = self.from_step_args(func_name)
+        # deal with skipping step
+        run_step, infiles = self.skip_step(
+            run_step, 'SUBTRACT_BACKGROUND', suffix, infiles)
         # deal with not running this step
-        if not run_step: return
+        if not run_step:
+            return infiles
         # ---------------------------------------------------------------------
         # get parameters from params
         datadir = self.tparams['PATHS.TEMP_PATH']
-        # get variables from self
-        infiles = self.variables['LAST']
+        # storage for output files
+        outfiles = []
         # loop around infiles
         for it, filename in enumerate(infiles):
             # Read input segments files from disk
@@ -1181,26 +1412,36 @@ class JWST(Instrument):
             result = BackgroundStep.call(input_data, output_dir=datadir,
                                          save_results=True, **kwargs)
             # To limit disk usage, erase the file from the previously saved step
-            self.remove_intermediate_files(it)
-            # update the LAST and RESULT variables
-            self.update_last(it, datadir, result.meta.filename, func_name)
-    
-    def assign_wcs_solution(self):
+            self.remove_intermediate_files(filename)
+            # get output path
+            outfile = self.get_output_path(it, datadir, result.meta.filename)
+            outfiles.append(outfile)
+
+        return outfiles
+
+    def assign_wcs_solution(self, infiles: list) -> list:
         """
         Adds WCS (world coordinate system) information.
+
+        :param infiles: list[str], list of input files
+        :return: list[str], list of output files
         """
         # set function name
         func_name = f"{__NAME__}.JWST.assign_wcs_solution"
         # ---------------------------------------------------------------------
         # get params from step constant
-        run_step, mode, kwargs = self.from_step_args(func_name)
+        run_step, flavour, kwargs, suffix = self.from_step_args(func_name)
+        # deal with skipping step
+        run_step, infiles = self.skip_step(
+            run_step, 'ASSIGN_WCS_SOLUTION', suffix, infiles)
         # deal with not running this step
-        if not run_step: return
+        if not run_step:
+            return infiles
         # ---------------------------------------------------------------------
         # get parameters from params
         datadir = self.tparams['PATHS.TEMP_PATH']
-        # get variables from self
-        infiles = self.variables['LAST']
+        # storage for output files
+        outfiles = []
         # loop around infiles
         for it, filename in enumerate(infiles):
             # Read input segments files from disk
@@ -1208,29 +1449,37 @@ class JWST(Instrument):
             result = AssignWcsStep.call(input_data, output_dir=datadir,
                                         save_results=True, **kwargs)
             # To limit disk usage, erase the file from the previously saved step
-            self.remove_intermediate_files(it)
-            # update the LAST and RESULT variables
-            self.update_last(it, datadir, result.meta.filename, func_name)
+            self.remove_intermediate_files(filename)
+            # get output path
+            outfile = self.get_output_path(it, datadir, result.meta.filename)
+            outfiles.append(outfile)
 
-    def apply_flat_field(self):
+        return outfiles
+
+    def apply_flat_field(self, infiles: list) -> list:
         """
         Corrects pixel-to-pixel sensitivity variations.
+
+        :param infiles: list[str], list of input files
+        :return: list[str], list of output files
         """
         # set function name
         func_name = f"{__NAME__}.JWST.apply_flat_field"
         # ---------------------------------------------------------------------
         # get params from step constant
-        run_step, mode, kwargs = self.from_step_args(func_name)
+        run_step, flavour, kwargs, suffix = self.from_step_args(func_name)
+        # deal with skipping step
+        run_step, infiles = self.skip_step(
+            run_step, 'APPLY_FLAT_FIELD', suffix, infiles)
         # deal with not running this step
         if not run_step:
             # save output files to {PREFIX}_rateints.fits
-            self.save_outputs('_rateints.fits')
-            return
+            return self.save_outputs('_rateints.fits', infiles)
         # ---------------------------------------------------------------------
         # get parameters from params
         datadir = self.tparams['PATHS.TEMP_PATH']
-        # get variables from self
-        infiles = self.variables['LAST']
+        # storage for output files
+        outfiles = []
         # loop around infiles
         for it, filename in enumerate(infiles):
             # Read input segments files from disk
@@ -1238,29 +1487,37 @@ class JWST(Instrument):
             result = FlatFieldStep.call(input_data, output_dir=datadir,
                                         save_results=True, **kwargs)
             # To limit disk usage, erase the file from the previously saved step
-            self.remove_intermediate_files(it)
-            # update the LAST and RESULT variables
-            self.update_last(it, datadir, result.meta.filename, func_name)
-        
-    def apply_photometric_calibration(self):
+            self.remove_intermediate_files(filename)
+            # get output path
+            outfile = self.get_output_path(it, datadir, result.meta.filename)
+            outfiles.append(outfile)
+
+        return outfiles
+
+    def apply_photometric_calibration(self, infiles: list) -> list:
         """
         Converts data units to physical flux units.
+
+        :param infiles: list[str], list of input files
+        :return: list[str], list of output files
         """
         # set function name
         func_name = f"{__NAME__}.JWST.apply_photometric_calibration"
         # ---------------------------------------------------------------------
         # get params from step constant
-        run_step, mode, kwargs = self.from_step_args(func_name)
+        run_step, flavour, kwargs, suffix = self.from_step_args(func_name)
+        # deal with skipping step
+        run_step, infiles = self.skip_step(
+            run_step, 'APPLY_PHOTOMETRIC_CALIBRATION', suffix, infiles)
         # deal with not running this step
         if not run_step:
-            # save output files to {PREFIX}_rateints.fits
-            self.save_outputs('_calints.fits')
-            return
+            # save output files to {PREFIX}_calints.fits
+            return self.save_outputs('_calints.fits', infiles)
         # ---------------------------------------------------------------------
         # get parameters from params
         datadir = self.tparams['PATHS.TEMP_PATH']
-        # get variables from self
-        infiles = self.variables['LAST']
+        # storage for output files
+        outfiles = []
         # loop around infiles
         for it, filename in enumerate(infiles):
             # Read input segments files from disk
@@ -1268,9 +1525,12 @@ class JWST(Instrument):
             result = PhotomStep.call(input_data, output_dir=datadir,
                                      save_results=True, **kwargs)
             # To limit disk usage, erase the file from the previously saved step
-            self.remove_intermediate_files(it)
-            # update the LAST and RESULT variables
-            self.update_last(it, datadir, result.meta.filename, func_name)
+            self.remove_intermediate_files(filename)
+            # get output path
+            outfile = self.get_output_path(it, datadir, result.meta.filename)
+            outfiles.append(outfile)
+
+        return outfiles
 
     # =========================================================================
     # Additional Level 1 detector processing steps (individual step callers)
@@ -1278,20 +1538,27 @@ class JWST(Instrument):
     # These methods are called by benchmark implementations to run individual
     # steps rather than bundled into initialize_detector_data()
 
-    def group_scale_step(self):
+    def group_scale_step(self, infiles: list) -> list:
         """
         Scale group data to account for on-chip amplifier effects.
+
+        :param infiles: list[str], list of input files
+        :return: list[str], list of output files
         """
         # set function name
         func_name = f"{__NAME__}.JWST.group_scale_step"
         # get params from step constant
-        run_step, mode, kwargs = self.from_step_args(func_name)
+        run_step, flavour, kwargs, suffix = self.from_step_args(func_name)
+        # deal with skipping step
+        run_step, infiles = self.skip_step(
+            run_step, 'GROUP_SCALE_STEP', suffix, infiles)
         # deal with not running this step
-        if not run_step: return
+        if not run_step:
+            return infiles
         # get parameters from params
         datadir = self.tparams['PATHS.TEMP_PATH']
-        # get variables from self
-        infiles = self.variables['LAST']
+        # storage for output files
+        outfiles = []
         # loop around infiles
         for it, filename in enumerate(infiles):
             # Read input segments files from disk
@@ -1299,24 +1566,34 @@ class JWST(Instrument):
             result = GroupScaleStep.call(input_data, output_dir=datadir,
                                          save_results=True, **kwargs)
             # To limit disk usage, erase the file from the previously saved step
-            self.remove_intermediate_files(it)
-            # update the LAST and RESULT variables
-            self.update_last(it, datadir, result.meta.filename, func_name)
+            self.remove_intermediate_files(filename)
+            # get output path
+            outfile = self.get_output_path(it, datadir, result.meta.filename)
+            outfiles.append(outfile)
 
-    def dq_init_step(self):
+        return outfiles
+
+    def dq_init_step(self, infiles: list) -> list:
         """
         Initialize data quality flags.
+
+        :param infiles: list[str], list of input files
+        :return: list[str], list of output files
         """
         # set function name
         func_name = f"{__NAME__}.JWST.dq_init_step"
         # get params from step constant
-        run_step, mode, kwargs = self.from_step_args(func_name)
+        run_step, flavour, kwargs, suffix = self.from_step_args(func_name)
+        # deal with skipping step
+        run_step, infiles = self.skip_step(
+            run_step, 'DQ_INIT_STEP', suffix, infiles)
         # deal with not running this step
-        if not run_step: return
+        if not run_step:
+            return infiles
         # get parameters from params
         datadir = self.tparams['PATHS.TEMP_PATH']
-        # get variables from self
-        infiles = self.variables['LAST']
+        # storage for output files
+        outfiles = []
         # loop around infiles
         for it, filename in enumerate(infiles):
             # Read input segments files from disk
@@ -1324,24 +1601,34 @@ class JWST(Instrument):
             result = DQInitStep.call(input_data, output_dir=datadir,
                                      save_results=True, **kwargs)
             # To limit disk usage, erase the file from the previously saved step
-            self.remove_intermediate_files(it)
-            # update the LAST and RESULT variables
-            self.update_last(it, datadir, result.meta.filename, func_name)
+            self.remove_intermediate_files(filename)
+            # get output path
+            outfile = self.get_output_path(it, datadir, result.meta.filename)
+            outfiles.append(outfile)
 
-    def emicorr_step(self):
+        return outfiles
+
+    def emicorr_step(self, infiles: list) -> list:
         """
         Apply EMI (electro-magnetic interference) corrections.
+
+        :param infiles: list[str], list of input files
+        :return: list[str], list of output files
         """
         # set function name
         func_name = f"{__NAME__}.JWST.emicorr_step"
         # get params from step constant
-        run_step, mode, kwargs = self.from_step_args(func_name)
+        run_step, flavour, kwargs, suffix = self.from_step_args(func_name)
+        # deal with skipping step
+        run_step, infiles = self.skip_step(
+            run_step, 'EMICORR_STEP', suffix, infiles)
         # deal with not running this step
-        if not run_step: return
+        if not run_step:
+            return infiles
         # get parameters from params
         datadir = self.tparams['PATHS.TEMP_PATH']
-        # get variables from self
-        infiles = self.variables['LAST']
+        # storage for output files
+        outfiles = []
         # loop around infiles
         for it, filename in enumerate(infiles):
             # Read input segments files from disk
@@ -1349,24 +1636,34 @@ class JWST(Instrument):
             result = EmiCorrStep.call(input_data, output_dir=datadir,
                                       save_results=True, **kwargs)
             # To limit disk usage, erase the file from the previously saved step
-            self.remove_intermediate_files(it)
-            # update the LAST and RESULT variables
-            self.update_last(it, datadir, result.meta.filename, func_name)
+            self.remove_intermediate_files(filename)
+            # get output path
+            outfile = self.get_output_path(it, datadir, result.meta.filename)
+            outfiles.append(outfile)
 
-    def saturation_step(self):
+        return outfiles
+
+    def saturation_step(self, infiles: list) -> list:
         """
         Flag saturated pixels.
+
+        :param infiles: list[str], list of input files
+        :return: list[str], list of output files
         """
         # set function name
         func_name = f"{__NAME__}.JWST.saturation_step"
         # get params from step constant
-        run_step, mode, kwargs = self.from_step_args(func_name)
+        run_step, flavour, kwargs, suffix = self.from_step_args(func_name)
+        # deal with skipping step
+        run_step, infiles = self.skip_step(
+            run_step, 'SATURATION_STEP', suffix, infiles)
         # deal with not running this step
-        if not run_step: return
+        if not run_step:
+            return infiles
         # get parameters from params
         datadir = self.tparams['PATHS.TEMP_PATH']
-        # get variables from self
-        infiles = self.variables['LAST']
+        # storage for output files
+        outfiles = []
         # loop around infiles
         for it, filename in enumerate(infiles):
             # Read input segments files from disk
@@ -1374,24 +1671,34 @@ class JWST(Instrument):
             result = SaturationStep.call(input_data, output_dir=datadir,
                                          save_results=True, **kwargs)
             # To limit disk usage, erase the file from the previously saved step
-            self.remove_intermediate_files(it)
-            # update the LAST and RESULT variables
-            self.update_last(it, datadir, result.meta.filename, func_name)
+            self.remove_intermediate_files(filename)
+            # get output path
+            outfile = self.get_output_path(it, datadir, result.meta.filename)
+            outfiles.append(outfile)
 
-    def subtract_superbias(self):
+        return outfiles
+
+    def subtract_superbias(self, infiles: list) -> list:
         """
         Subtract superbias reference for NIR instruments.
+
+        :param infiles: list[str], list of input files
+        :return: list[str], list of output files
         """
         # set function name
         func_name = f"{__NAME__}.JWST.subtract_superbias"
         # get params from step constant
-        run_step, mode, kwargs = self.from_step_args(func_name)
+        run_step, flavour, kwargs, suffix = self.from_step_args(func_name)
+        # deal with skipping step
+        run_step, infiles = self.skip_step(
+            run_step, 'SUBTRACT_SUPERBIAS', suffix, infiles)
         # deal with not running this step
-        if not run_step: return
+        if not run_step:
+            return infiles
         # get parameters from params
         datadir = self.tparams['PATHS.TEMP_PATH']
-        # get variables from self
-        infiles = self.variables['LAST']
+        # storage for output files
+        outfiles = []
         # loop around infiles
         for it, filename in enumerate(infiles):
             # Read input segments files from disk
@@ -1399,58 +1706,76 @@ class JWST(Instrument):
             result = SuperBiasStep.call(input_data, output_dir=datadir,
                                         save_results=True, **kwargs)
             # To limit disk usage, erase the file from the previously saved step
-            self.remove_intermediate_files(it)
-            # update the LAST and RESULT variables
-            self.update_last(it, datadir, result.meta.filename, func_name)
+            self.remove_intermediate_files(filename)
+            # get output path
+            outfile = self.get_output_path(it, datadir, result.meta.filename)
+            outfiles.append(outfile)
 
-    def picture_frame_step(self):
+        return outfiles
+
+    def picture_frame_step(self, infiles: list) -> list:
         """
         Correct for picture frame effect.
+
+        :param infiles: list[str], list of input files
+        :return: list[str], list of output files
         """
         # set function name
         func_name = f"{__NAME__}.JWST.picture_frame_step"
         # get params from step constant
-        run_step, mode, kwargs = self.from_step_args(func_name)
+        run_step, flavour, kwargs, suffix = self.from_step_args(func_name)
         # deal with not running this step
-        if not run_step: return
+        if not run_step:
+            return infiles
         # NOTE: Picture frame step is not a standard step in JWST pipeline
         msg = 'Picture frame step not implemented in standard JWST pipeline'
         WLOG(self.params, 'warning', msg)
-        return
+        return infiles
 
-    def correct_persistence(self):
+    def correct_persistence(self, infiles: list) -> list:
         """
         Correct for charge persistence between integrations.
+
+        :param infiles: list[str], list of input files
+        :return: list[str], list of output files
         """
         # set function name
         func_name = f"{__NAME__}.JWST.correct_persistence"
         # get params from step constant
-        run_step, mode, kwargs = self.from_step_args(func_name)
+        run_step, flavour, kwargs, suffix = self.from_step_args(func_name)
         # deal with not running this step
-        if not run_step: return
+        if not run_step:
+            return infiles
         # NOTE: Persistence step is not implemented in standard JWST pipeline
         msg = 'Persistence correction not available in standard JWST pipeline'
         WLOG(self.params, 'warning', msg)
-        return
+        return infiles
 
     # =========================================================================
     # Level 2 spectroscopic and imaging processing steps
     # =========================================================================
 
-    def extract_2d_spectrum(self):
+    def extract_2d_spectrum(self, infiles: list) -> list:
         """
         Extract 2D spectrum from detector image.
+
+        :param infiles: list[str], list of input files
+        :return: list[str], list of output files
         """
         # set function name
         func_name = f"{__NAME__}.JWST.extract_2d_spectrum"
         # get params from step constant
-        run_step, mode, kwargs = self.from_step_args(func_name)
+        run_step, flavour, kwargs, suffix = self.from_step_args(func_name)
+        # deal with skipping step
+        run_step, infiles = self.skip_step(
+            run_step, 'EXTRACT_2D_SPECTRUM', suffix, infiles)
         # deal with not running this step
-        if not run_step: return
+        if not run_step:
+            return infiles
         # get parameters from params
         datadir = self.tparams['PATHS.TEMP_PATH']
-        # get variables from self
-        infiles = self.variables['LAST']
+        # storage for output files
+        outfiles = []
         # loop around infiles
         for it, filename in enumerate(infiles):
             # Read input segments files from disk
@@ -1458,31 +1783,34 @@ class JWST(Instrument):
             result = Extract2dStep.call(input_data, output_dir=datadir,
                                         save_results=True, **kwargs)
             # To limit disk usage, erase the file from the previously saved step
-            self.remove_intermediate_files(it)
-            # update the LAST and RESULT variables
-            self.update_last(it, datadir, result.meta.filename, func_name)
+            self.remove_intermediate_files(filename)
+            # get output path
+            outfile = self.get_output_path(it, datadir, result.meta.filename)
+            outfiles.append(outfile)
 
-    def extract_1d_spectrum(self):
+        return outfiles
+
+    def extract_1d_spectrum(self, infiles: list) -> list:
         """
         Extract 1D spectrum from 2D data.
 
-        Returns
-        -------
-        list[str]
-            Absolute paths to the produced 1D spectrum files.
+        :param infiles: list[str], list of input files
+        :return: list[str], list of output files
         """
         # set function name
         func_name = f"{__NAME__}.JWST.extract_1d_spectrum"
         # get params from step constant
-        run_step, mode, kwargs = self.from_step_args(func_name)
+        run_step, flavour, kwargs, suffix = self.from_step_args(func_name)
+        # deal with skipping step
+        run_step, infiles = self.skip_step(
+            run_step, 'EXTRACT_1D_SPECTRUM', suffix, infiles)
         # deal with not running this step
         if not run_step:
-            return []
+            return infiles
         # get parameters from params
         datadir = self.tparams['PATHS.TEMP_PATH']
-        # get variables from self
-        infiles = self.variables['LAST']
-        outlist = []
+        # storage for output files
+        outfiles = []
         # loop around infiles
         for it, filename in enumerate(infiles):
             # Read input segments files from disk
@@ -1490,27 +1818,34 @@ class JWST(Instrument):
             result = Extract1dStep.call(input_data, output_dir=datadir,
                                         save_results=True, **kwargs)
             # erase previous step file to limit disk usage
-            self.remove_intermediate_files(it)
-            # update LAST and RESULT
-            self.update_last(it, datadir, result.meta.filename, func_name)
-            # add absolute path to list
-            outlist.append(self.variables['LAST'][it])
-        return outlist
+            self.remove_intermediate_files(filename)
+            # get output path
+            outfile = self.get_output_path(it, datadir, result.meta.filename)
+            outfiles.append(outfile)
 
-    def srctype_determination(self):
+        return outfiles
+
+    def srctype_determination(self, infiles: list) -> list:
         """
         Determine source type for photometric calibration.
+
+        :param infiles: list[str], list of input files
+        :return: list[str], list of output files
         """
         # set function name
         func_name = f"{__NAME__}.JWST.srctype_determination"
         # get params from step constant
-        run_step, mode, kwargs = self.from_step_args(func_name)
+        run_step, flavour, kwargs, suffix = self.from_step_args(func_name)
+        # deal with skipping step
+        run_step, infiles = self.skip_step(
+            run_step, 'SRCTYPE_DETERMINATION', suffix, infiles)
         # deal with not running this step
-        if not run_step: return
+        if not run_step:
+            return infiles
         # get parameters from params
         datadir = self.tparams['PATHS.TEMP_PATH']
-        # get variables from self
-        infiles = self.variables['LAST']
+        # storage for output files
+        outfiles = []
         # loop around infiles
         for it, filename in enumerate(infiles):
             # Read input segments files from disk
@@ -1518,24 +1853,34 @@ class JWST(Instrument):
             result = SourceTypeStep.call(input_data, output_dir=datadir,
                                          save_results=True, **kwargs)
             # To limit disk usage, erase the file from the previously saved step
-            self.remove_intermediate_files(it)
-            # update the LAST and RESULT variables
-            self.update_last(it, datadir, result.meta.filename, func_name)
+            self.remove_intermediate_files(filename)
+            # get output path
+            outfile = self.get_output_path(it, datadir, result.meta.filename)
+            outfiles.append(outfile)
 
-    def correct_stray_light(self):
+        return outfiles
+
+    def correct_stray_light(self, infiles: list) -> list:
         """
         Remove stray light from the data.
+
+        :param infiles: list[str], list of input files
+        :return: list[str], list of output files
         """
         # set function name
         func_name = f"{__NAME__}.JWST.correct_stray_light"
         # get params from step constant
-        run_step, mode, kwargs = self.from_step_args(func_name)
+        run_step, flavour, kwargs, suffix = self.from_step_args(func_name)
+        # deal with skipping step
+        run_step, infiles = self.skip_step(
+            run_step, 'CORRECT_STRAY_LIGHT', suffix, infiles)
         # deal with not running this step
-        if not run_step: return
+        if not run_step:
+            return infiles
         # get parameters from params
         datadir = self.tparams['PATHS.TEMP_PATH']
-        # get variables from self
-        infiles = self.variables['LAST']
+        # storage for output files
+        outfiles = []
         # loop around infiles
         for it, filename in enumerate(infiles):
             # Read input segments files from disk
@@ -1543,24 +1888,34 @@ class JWST(Instrument):
             result = StraylightStep.call(input_data, output_dir=datadir,
                                          save_results=True, **kwargs)
             # To limit disk usage, erase the file from the previously saved step
-            self.remove_intermediate_files(it)
-            # update the LAST and RESULT variables
-            self.update_last(it, datadir, result.meta.filename, func_name)
+            self.remove_intermediate_files(filename)
+            # get output path
+            outfile = self.get_output_path(it, datadir, result.meta.filename)
+            outfiles.append(outfile)
 
-    def correct_fringe(self):
+        return outfiles
+
+    def correct_fringe(self, infiles: list) -> list:
         """
         Remove fringe patterns from the data.
+
+        :param infiles: list[str], list of input files
+        :return: list[str], list of output files
         """
         # set function name
         func_name = f"{__NAME__}.JWST.correct_fringe"
         # get params from step constant
-        run_step, mode, kwargs = self.from_step_args(func_name)
+        run_step, flavour, kwargs, suffix = self.from_step_args(func_name)
+        # deal with skipping step
+        run_step, infiles = self.skip_step(
+            run_step, 'CORRECT_FRINGE', suffix, infiles)
         # deal with not running this step
-        if not run_step: return
+        if not run_step:
+            return infiles
         # get parameters from params
         datadir = self.tparams['PATHS.TEMP_PATH']
-        # get variables from self
-        infiles = self.variables['LAST']
+        # storage for output files
+        outfiles = []
         # loop around infiles
         for it, filename in enumerate(infiles):
             # Read input segments files from disk
@@ -1568,24 +1923,34 @@ class JWST(Instrument):
             result = FringeStep.call(input_data, output_dir=datadir,
                                      save_results=True, **kwargs)
             # To limit disk usage, erase the file from the previously saved step
-            self.remove_intermediate_files(it)
-            # update the LAST and RESULT variables
-            self.update_last(it, datadir, result.meta.filename, func_name)
+            self.remove_intermediate_files(filename)
+            # get output path
+            outfile = self.get_output_path(it, datadir, result.meta.filename)
+            outfiles.append(outfile)
 
-    def correct_path_loss(self):
+        return outfiles
+
+    def correct_path_loss(self, infiles: list) -> list:
         """
         Correct for path loss through the optical system.
+
+        :param infiles: list[str], list of input files
+        :return: list[str], list of output files
         """
         # set function name
         func_name = f"{__NAME__}.JWST.correct_path_loss"
         # get params from step constant
-        run_step, mode, kwargs = self.from_step_args(func_name)
+        run_step, flavour, kwargs, suffix = self.from_step_args(func_name)
+        # deal with skipping step
+        run_step, infiles = self.skip_step(
+            run_step, 'CORRECT_PATH_LOSS', suffix, infiles)
         # deal with not running this step
-        if not run_step: return
+        if not run_step:
+            return infiles
         # get parameters from params
         datadir = self.tparams['PATHS.TEMP_PATH']
-        # get variables from self
-        infiles = self.variables['LAST']
+        # storage for output files
+        outfiles = []
         # loop around infiles
         for it, filename in enumerate(infiles):
             # Read input segments files from disk
@@ -1593,24 +1958,34 @@ class JWST(Instrument):
             result = PathLossStep.call(input_data, output_dir=datadir,
                                        save_results=True, **kwargs)
             # To limit disk usage, erase the file from the previously saved step
-            self.remove_intermediate_files(it)
-            # update the LAST and RESULT variables
-            self.update_last(it, datadir, result.meta.filename, func_name)
+            self.remove_intermediate_files(filename)
+            # get output path
+            outfile = self.get_output_path(it, datadir, result.meta.filename)
+            outfiles.append(outfile)
 
-    def correct_bar_shadow(self):
+        return outfiles
+
+    def correct_bar_shadow(self, infiles: list) -> list:
         """
         Correct for bar shadow effect.
+
+        :param infiles: list[str], list of input files
+        :return: list[str], list of output files
         """
         # set function name
         func_name = f"{__NAME__}.JWST.correct_bar_shadow"
         # get params from step constant
-        run_step, mode, kwargs = self.from_step_args(func_name)
+        run_step, flavour, kwargs, suffix = self.from_step_args(func_name)
+        # deal with skipping step
+        run_step, infiles = self.skip_step(
+            run_step, 'CORRECT_BAR_SHADOW', suffix, infiles)
         # deal with not running this step
-        if not run_step: return
+        if not run_step:
+            return infiles
         # get parameters from params
         datadir = self.tparams['PATHS.TEMP_PATH']
-        # get variables from self
-        infiles = self.variables['LAST']
+        # storage for output files
+        outfiles = []
         # loop around infiles
         for it, filename in enumerate(infiles):
             # Read input segments files from disk
@@ -1618,24 +1993,34 @@ class JWST(Instrument):
             result = BarShadowStep.call(input_data, output_dir=datadir,
                                         save_results=True, **kwargs)
             # To limit disk usage, erase the file from the previously saved step
-            self.remove_intermediate_files(it)
-            # update the LAST and RESULT variables
-            self.update_last(it, datadir, result.meta.filename, func_name)
+            self.remove_intermediate_files(filename)
+            # get output path
+            outfile = self.get_output_path(it, datadir, result.meta.filename)
+            outfiles.append(outfile)
 
-    def correct_wfss_contamination(self):
+        return outfiles
+
+    def correct_wfss_contamination(self, infiles: list) -> list:
         """
         Correct for WFSS contamination.
+
+        :param infiles: list[str], list of input files
+        :return: list[str], list of output files
         """
         # set function name
         func_name = f"{__NAME__}.JWST.correct_wfss_contamination"
         # get params from step constant
-        run_step, mode, kwargs = self.from_step_args(func_name)
+        run_step, flavour, kwargs, suffix = self.from_step_args(func_name)
+        # deal with skipping step
+        run_step, infiles = self.skip_step(
+            run_step, 'CORRECT_WFSS_CONTAMINATION', suffix, infiles)
         # deal with not running this step
-        if not run_step: return
+        if not run_step:
+            return infiles
         # get parameters from params
         datadir = self.tparams['PATHS.TEMP_PATH']
-        # get variables from self
-        infiles = self.variables['LAST']
+        # storage for output files
+        outfiles = []
         # loop around infiles
         for it, filename in enumerate(infiles):
             # Read input segments files from disk
@@ -1643,24 +2028,34 @@ class JWST(Instrument):
             result = WfssContamStep.call(input_data, output_dir=datadir,
                                          save_results=True, **kwargs)
             # To limit disk usage, erase the file from the previously saved step
-            self.remove_intermediate_files(it)
-            # update the LAST and RESULT variables
-            self.update_last(it, datadir, result.meta.filename, func_name)
+            self.remove_intermediate_files(filename)
+            # get output path
+            outfile = self.get_output_path(it, datadir, result.meta.filename)
+            outfiles.append(outfile)
 
-    def correct_wavelength(self):
+        return outfiles
+
+    def correct_wavelength(self, infiles: list) -> list:
         """
         Correct wavelength calibration.
+
+        :param infiles: list[str], list of input files
+        :return: list[str], list of output files
         """
         # set function name
         func_name = f"{__NAME__}.JWST.correct_wavelength"
         # get params from step constant
-        run_step, mode, kwargs = self.from_step_args(func_name)
+        run_step, flavour, kwargs, suffix = self.from_step_args(func_name)
+        # deal with skipping step
+        run_step, infiles = self.skip_step(
+            run_step, 'CORRECT_WAVELENGTH', suffix, infiles)
         # deal with not running this step
-        if not run_step: return
+        if not run_step:
+            return infiles
         # get parameters from params
         datadir = self.tparams['PATHS.TEMP_PATH']
-        # get variables from self
-        infiles = self.variables['LAST']
+        # storage for output files
+        outfiles = []
         # loop around infiles
         for it, filename in enumerate(infiles):
             # Read input segments files from disk
@@ -1668,24 +2063,34 @@ class JWST(Instrument):
             result = WavecorrStep.call(input_data, output_dir=datadir,
                                        save_results=True, **kwargs)
             # To limit disk usage, erase the file from the previously saved step
-            self.remove_intermediate_files(it)
-            # update the LAST and RESULT variables
-            self.update_last(it, datadir, result.meta.filename, func_name)
+            self.remove_intermediate_files(filename)
+            # get output path
+            outfile = self.get_output_path(it, datadir, result.meta.filename)
+            outfiles.append(outfile)
 
-    def subtract_master_background(self):
+        return outfiles
+
+    def subtract_master_background(self, infiles: list) -> list:
         """
         Subtract master background for NIRSpec MOS data.
+
+        :param infiles: list[str], list of input files
+        :return: list[str], list of output files
         """
         # set function name
         func_name = f"{__NAME__}.JWST.subtract_master_background"
         # get params from step constant
-        run_step, mode, kwargs = self.from_step_args(func_name)
+        run_step, flavour, kwargs, suffix = self.from_step_args(func_name)
+        # deal with skipping step
+        run_step, infiles = self.skip_step(
+            run_step, 'SUBTRACT_MASTER_BACKGROUND', suffix, infiles)
         # deal with not running this step
-        if not run_step: return
+        if not run_step:
+            return infiles
         # get parameters from params
         datadir = self.tparams['PATHS.TEMP_PATH']
-        # get variables from self
-        infiles = self.variables['LAST']
+        # storage for output files
+        outfiles = []
         # loop around infiles
         for it, filename in enumerate(infiles):
             # Read input segments files from disk
@@ -1693,46 +2098,61 @@ class JWST(Instrument):
             result = MasterBackgroundStep.call(input_data, output_dir=datadir,
                                                save_results=True, **kwargs)
             # To limit disk usage, erase the file from the previously saved step
-            self.remove_intermediate_files(it)
-            # update the LAST and RESULT variables
-            self.update_last(it, datadir, result.meta.filename, func_name)
+            self.remove_intermediate_files(filename)
+            # get output path
+            outfile = self.get_output_path(it, datadir, result.meta.filename)
+            outfiles.append(outfile)
 
-    def measure_target_centroid(self):
+        return outfiles
+
+    def measure_target_centroid(self, infiles: list) -> list:
         """
         Measure target centroid position.
+
+        :param infiles: list[str], list of input files
+        :return: list[str], list of output files
         """
         # set function name
         func_name = f"{__NAME__}.JWST.measure_target_centroid"
-        # NOTE: Target centroid is rarely used
-        msg = 'Target centroid measurement not commonly used'
-        WLOG(self.params, 'warning', msg)
-        return
+        # raise not implemented error
+        nmsg = NOT_IMPLEMENTED_MSG.format(func_name, self.instrument)
+        raise NotImplemented(nmsg)
 
-    def correct_residual_fringe(self):
+    def correct_residual_fringe(self, infiles: list) -> list:
         """
         Correct for residual fringe patterns (MIRI-specific).
+
+        :param infiles: list[str], list of input files
+        :return: list[str], list of output files
         """
         # set function name
         func_name = f"{__NAME__}.JWST.correct_residual_fringe"
         # NOTE: Residual fringe correction is MIRI-specific and not in standard
         msg = 'Residual fringe correction not in standard JWST pipeline'
         WLOG(self.params, 'warning', msg)
-        return
+        return infiles
 
-    def resample_images(self):
+    def resample_images(self, infiles: list) -> list:
         """
         Resample images to a common grid.
+
+        :param infiles: list[str], list of input files
+        :return: list[str], list of output files
         """
         # set function name
         func_name = f"{__NAME__}.JWST.resample_images"
         # get params from step constant
-        run_step, mode, kwargs = self.from_step_args(func_name)
+        run_step, flavour, kwargs, suffix = self.from_step_args(func_name)
+        # deal with skipping step
+        run_step, infiles = self.skip_step(
+            run_step, 'RESAMPLE_IMAGES', suffix, infiles)
         # deal with not running this step
-        if not run_step: return
+        if not run_step:
+            return infiles
         # get parameters from params
         datadir = self.tparams['PATHS.TEMP_PATH']
-        # get variables from self
-        infiles = self.variables['LAST']
+        # storage for output files
+        outfiles = []
         # loop around infiles
         for it, filename in enumerate(infiles):
             # Read input segments files from disk
@@ -1740,9 +2160,12 @@ class JWST(Instrument):
             result = ResampleStep.call(input_data, output_dir=datadir,
                                        save_results=True, **kwargs)
             # To limit disk usage, erase the file from the previously saved step
-            self.remove_intermediate_files(it)
-            # update the LAST and RESULT variables
-            self.update_last(it, datadir, result.meta.filename, func_name)
+            self.remove_intermediate_files(filename)
+            # get output path
+            outfile = self.get_output_path(it, datadir, result.meta.filename)
+            outfiles.append(outfile)
+
+        return outfiles
 
 
 # =============================================================================

@@ -92,7 +92,7 @@ class NircamImaging(ts_default.JWST):
           calwebb_image2.py
         """
         # Initialize processing
-        self.handle_input_data()
+        infiles = self.handle_input_data()
 
         # =====================================================================
         # LEVEL 1: Detector-Level Processing (calwebb_detector1)
@@ -102,48 +102,51 @@ class NircamImaging(ts_default.JWST):
         WLOG(self.params, 'info', msg)
 
         # Group Scale Step
-        self.group_scale_step()
+        infiles = self.group_scale_step(infiles)
 
         # DQ Init Step
-        self.dq_init_step()
+        infiles = self.dq_init_step(infiles)
 
         # Saturation Step
-        self.saturation_step()
+        infiles = self.saturation_step(infiles)
 
         # IPC Step
-        self.apply_interpixel_capacitance()
+        infiles = self.apply_interpixel_capacitance(infiles)
 
         # Superbias Step
-        self.subtract_superbias()
+        infiles = self.subtract_superbias(infiles)
 
         # Refpix Step
-        self.apply_reference_pixel_correction()
+        infiles = self.apply_reference_pixel_correction(infiles)
 
         # Linearity Step
-        self.apply_linearity_correction()
+        infiles = self.apply_linearity_correction(infiles)
 
         # Dark Current Step
-        self.subtract_dark_current()
+        infiles = self.subtract_dark_current(infiles)
 
-        # Persistence Step (skipped for NIRSpec)
-        # self.correct_persistence()
+        # Persistence Step (skipped for NIRCam)
+        # infiles = self.correct_persistence(infiles)
 
         # Charge Migration Step
-        self.correct_charge_migration()
+        infiles = self.correct_charge_migration(infiles)
 
         # Jump Step
-        self.detect_and_flag_jumps()
+        infiles = self.detect_and_flag_jumps(infiles)
 
         # Picture Frame Step
-        self.picture_frame_step()
+        infiles = self.picture_frame_step(infiles)
 
         # Clean Flicker Noise Step
-        self.remove_flicker_noise()
+        infiles = self.remove_flicker_noise(infiles)
 
-        # Gain Scale Step (TSO-only: no ramp_fit handling)
-        self.apply_gain_scaling()
+        # Ramp Fit Step
+        infiles = self.fit_signal_ramps(infiles)
+
+        # Gain Scale Step
+        infiles = self.apply_gain_scaling(infiles)
         # Save TSO-style integration product
-        self.save_outputs('_rateints.fits')
+        infiles = self.save_outputs('_rateints.fits', infiles)
 
         # =====================================================================
         # LEVEL 2: Image Processing (calwebb_image2)
@@ -153,26 +156,25 @@ class NircamImaging(ts_default.JWST):
         WLOG(self.params, 'info', msg)
 
         # Step 2.1: Background Subtraction
-        self.subtract_background()
+        infiles = self.subtract_background(infiles)
 
         # Step 2.2: Assign WCS
-        self.assign_wcs_solution()
+        infiles = self.assign_wcs_solution(infiles)
 
         # Step 2.3: Flat Field
-        self.apply_flat_field()
+        infiles = self.apply_flat_field(infiles)
 
         # Step 2.4: Photometric Calibration
-        self.apply_photometric_calibration()
+        infiles = self.apply_photometric_calibration(infiles)
 
         # Save the final calibrated product
         # Always TSO-style integration products
-        self.save_outputs('_calints.fits')
+        infiles = self.save_outputs('_calints.fits', infiles)
 
         # Step 2.5: (Optional) Extract 1D for imaging-derived spectra
-        x1d_files = self.extract_1d_spectrum()
-        if x1d_files:
-            # Save 1D extracted spectra overriding LAST
-            self.save_outputs('_x1dints.fits', infiles=x1d_files)
+        x1d_files = self.extract_1d_spectrum(infiles)
+        # Save 1D extracted spectra
+        x1d_files = self.save_outputs('_x1dints.fits', x1d_files)
 
 
 class NircamGrism(ts_default.JWST):
@@ -200,7 +202,7 @@ class NircamGrism(ts_default.JWST):
           calwebb_spec2.py (grism processing)
         """
         # Initialize processing
-        self.handle_input_data()
+        infiles = self.handle_input_data()
 
         # =====================================================================
         # LEVEL 1: Detector-Level Processing (calwebb_detector1)
@@ -210,45 +212,48 @@ class NircamGrism(ts_default.JWST):
         WLOG(self.params, 'info', msg)
 
         # Group Scale Step
-        self.group_scale_step()
+        infiles = self.group_scale_step(infiles)
 
         # DQ Init Step
-        self.dq_init_step()
+        infiles = self.dq_init_step(infiles)
 
         # Saturation Step
-        self.saturation_step()
+        infiles = self.saturation_step(infiles)
 
         # IPC Step
-        self.apply_interpixel_capacitance()
+        infiles = self.apply_interpixel_capacitance(infiles)
 
         # Superbias Step
-        self.subtract_superbias()
+        infiles = self.subtract_superbias(infiles)
 
         # Refpix Step
-        self.apply_reference_pixel_correction()
+        infiles = self.apply_reference_pixel_correction(infiles)
 
         # Linearity Step
-        self.apply_linearity_correction()
+        infiles = self.apply_linearity_correction(infiles)
 
         # Dark Current Step
-        self.subtract_dark_current()
+        infiles = self.subtract_dark_current(infiles)
 
         # Charge Migration Step
-        self.correct_charge_migration()
+        infiles = self.correct_charge_migration(infiles)
 
         # Jump Step
-        self.detect_and_flag_jumps()
+        infiles = self.detect_and_flag_jumps(infiles)
 
         # Picture Frame Step
-        self.picture_frame_step()
+        infiles = self.picture_frame_step(infiles)
 
         # Clean Flicker Noise Step
-        self.remove_flicker_noise()
+        infiles = self.remove_flicker_noise(infiles)
 
-        # Gain Scale Step (TSO-only: no ramp_fit handling)
-        self.apply_gain_scaling()
+        # Ramp Fit Step
+        infiles = self.fit_signal_ramps(infiles)
+
+        # Gain Scale Step
+        infiles = self.apply_gain_scaling(infiles)
         # Save TSO-style integration product
-        self.save_outputs('_rateints.fits')
+        infiles = self.save_outputs('_rateints.fits', infiles)
 
         # =====================================================================
         # LEVEL 2: Spectroscopic Processing (calwebb_spec2 - Grism specific)
@@ -258,44 +263,43 @@ class NircamGrism(ts_default.JWST):
         WLOG(self.params, 'info', msg)
 
         # Step 2.1: Assign WCS
-        self.assign_wcs_solution()
+        infiles = self.assign_wcs_solution(infiles)
 
         # Step 2.2: Flat Field (applied before extract_2d for Grism)
-        self.apply_flat_field()
+        infiles = self.apply_flat_field(infiles)
 
         # Step 2.3: Extract 2D
-        self.extract_2d_spectrum()
+        infiles = self.extract_2d_spectrum(infiles)
 
         # Step 2.4: Source Type (srctype)
-        self.srctype_determination()
+        infiles = self.srctype_determination(infiles)
 
         # Step 2.5: Stray Light Correction
-        self.correct_stray_light()
+        infiles = self.correct_stray_light(infiles)
 
         # Step 2.6: Fringe Correction
-        self.correct_fringe()
+        infiles = self.correct_fringe(infiles)
 
         # Step 2.7: Path Loss Correction
-        self.correct_path_loss()
+        infiles = self.correct_path_loss(infiles)
 
         # Step 2.8: Bar Shadow Correction
-        self.correct_bar_shadow()
+        infiles = self.correct_bar_shadow(infiles)
 
         # Step 2.9: WFSS Contamination Correction
-        self.correct_wfss_contamination()
+        infiles = self.correct_wfss_contamination(infiles)
 
         # Step 2.10: Photometric Calibration
-        self.apply_photometric_calibration()
+        infiles = self.apply_photometric_calibration(infiles)
 
         # Save the final calibrated product
         # Always TSO-style integration products
-        self.save_outputs('_calints.fits')
+        infiles = self.save_outputs('_calints.fits', infiles)
 
         # Step 2.11: Extract 1D (x1dints) after photom
-        x1d_files = self.extract_1d_spectrum()
-        if x1d_files:
-            # Save 1D extracted spectra overriding LAST
-            self.save_outputs('_x1dints.fits', infiles=x1d_files)
+        x1d_files = self.extract_1d_spectrum(infiles)
+        # Save 1D extracted spectra
+        x1d_files = self.save_outputs('_x1dints.fits', x1d_files)
 
 
 class NircamMultistripe(NircamGrism):

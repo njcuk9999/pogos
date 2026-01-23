@@ -87,7 +87,7 @@ class NirspecBotsPrism(ts_default.JWST):
           calwebb_spec2.py (slits processing)
         """
         # Initialize processing
-        self.handle_input_data()
+        infiles = self.handle_input_data()
 
         # =====================================================================
         # LEVEL 1: Detector-Level Processing (calwebb_detector1)
@@ -97,51 +97,51 @@ class NirspecBotsPrism(ts_default.JWST):
         WLOG(self.params, 'info', msg)
 
         # Group Scale Step
-        self.group_scale_step()
+        infiles = self.group_scale_step(infiles)
 
         # DQ Init Step
-        self.dq_init_step()
+        infiles = self.dq_init_step(infiles)
 
         # Saturation Step
-        self.saturation_step()
+        infiles = self.saturation_step(infiles)
 
         # IPC Step
-        self.apply_interpixel_capacitance()
+        infiles = self.apply_interpixel_capacitance(infiles)
 
         # Superbias Step
-        self.subtract_superbias()
+        infiles = self.subtract_superbias(infiles)
 
         # Refpix Step
-        self.apply_reference_pixel_correction()
+        infiles = self.apply_reference_pixel_correction(infiles)
 
         # Linearity Step
-        self.apply_linearity_correction()
+        infiles = self.apply_linearity_correction(infiles)
 
         # Dark Current Step
-        self.subtract_dark_current()
+        infiles = self.subtract_dark_current(infiles)
 
         # Persistence Step (skipped for NIRSpec)
-        # self.correct_persistence()
+        # infiles = self.correct_persistence(infiles)
 
         # Charge Migration Step
-        self.correct_charge_migration()
+        infiles = self.correct_charge_migration(infiles)
 
         # Jump Step
-        self.detect_and_flag_jumps()
+        infiles = self.detect_and_flag_jumps(infiles)
 
         # Picture Frame Step
-        self.picture_frame_step()
+        infiles = self.picture_frame_step(infiles)
 
         # Clean Flicker Noise Step
-        self.remove_flicker_noise()
+        infiles = self.remove_flicker_noise(infiles)
 
-        # NOTE: Ramp Fit and ints_model handling are removed for TSO-only
-        # workflows. We rely on updated LAST from each step.
+        # Ramp Fit Step
+        infiles = self.fit_signal_ramps(infiles)
 
         # Gain Scale Step
-        self.apply_gain_scaling()
+        infiles = self.apply_gain_scaling(infiles)
         # Save TSO-style integration product
-        self.save_outputs('_rateints.fits')
+        infiles = self.save_outputs('_rateints.fits', infiles)
 
         # =====================================================================
         # LEVEL 2: Spectroscopic Processing (calwebb_spec2 - NIRSpec slits)
@@ -151,39 +151,38 @@ class NirspecBotsPrism(ts_default.JWST):
         WLOG(self.params, 'info', msg)
 
         # Step 2.1: Assign WCS
-        self.assign_wcs_solution()
+        infiles = self.assign_wcs_solution(infiles)
 
         # Step 2.2: Extract 2D
-        self.extract_2d_spectrum()
+        infiles = self.extract_2d_spectrum(infiles)
 
         # Step 2.3: Source Type (srctype)
-        self.srctype_determination()
+        infiles = self.srctype_determination(infiles)
 
         # Step 2.4: Master Background MOS (often skipped for BOTS)
-        self.subtract_master_background()
+        infiles = self.subtract_master_background(infiles)
 
         # Step 2.5: Wave Correction
-        self.correct_wavelength()
+        infiles = self.correct_wavelength(infiles)
 
         # Step 2.6: Flat Field
-        self.apply_flat_field()
+        infiles = self.apply_flat_field(infiles)
 
         # Step 2.7: Path Loss Correction
-        self.correct_path_loss()
+        infiles = self.correct_path_loss(infiles)
 
         # Step 2.8: Bar Shadow Correction
-        self.correct_bar_shadow()
+        infiles = self.correct_bar_shadow(infiles)
 
         # Step 2.9: Photometric Calibration
-        self.apply_photometric_calibration()
+        infiles = self.apply_photometric_calibration(infiles)
         # Save TSO-style integration product
-        self.save_outputs('_calints.fits')
+        infiles = self.save_outputs('_calints.fits', infiles)
 
         # Step 2.10: Extract 1D (x1d)
-        x1d_files = self.extract_1d_spectrum()
-        # Save 1D extracted spectrum overriding LAST
-        if x1d_files:
-            self.save_outputs('_x1dints.fits', infiles=x1d_files)
+        x1d_files = self.extract_1d_spectrum(infiles)
+        # Save 1D extracted spectrum
+        x1d_files = self.save_outputs('_x1dints.fits', x1d_files)
 
 
 class NirspecBotsMedium(NirspecBotsPrism):
