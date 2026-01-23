@@ -37,48 +37,62 @@ __release__ = __YAML__['DRS.RELEASE']
 # =============================================================================
 # supported instruments modes
 INSTRUMENTS = ['JWST.NIRISS.SOSS',
+               # 'JWST.NIRISS.SOSS.SUPERSTRIPE',
                'JWST.NIRISS.FGS',
-               'JWST.NIRSPEC.PRISM',
-               'JWST.NIRSPEC.G395',
-               'JWST.NIRSPEC.G253',
-               'JWST.NIRSPEC.G140',
-               'JWST.MIRI.IMAGING']
+               'JWST.NIRSPEC.BOTS.PRISM',
+               'JWST.NIRSPEC.BOTS.G395M',
+               'JWST.NIRSPEC.BOTS.G235M',
+               'JWST.NIRSPEC.BOTS.G140M',
+               'JWST.NIRSPEC.BOTS.G395H',
+               'JWST.NIRSPEC.BOTS.G235H',
+               'JWST.NIRSPEC.BOTS.G140H',
+               'JWST.NIRCAM.IMAGING',
+               'JWST.NIRCAM.WFSS',
+               # 'JWST.NIRCAM.MULTISTRIPE',
+               'JWST.MIRI.IMAGING',
+               'JWST.MIRI.LRS']
 # define the submodules in POGOS
 SUBMODULES = ['TSOVORE', 'SOSSISSE', 'MIRIAM', 'SORBET']
 
 # =============================================================================
-# Define all instruments and their sub-modes (related to our instrument names)
+# Define all instruments and their sub-modes (related to our instrument
+# names)
 # =============================================================================
-INSTRUMENT_MODES = dict()
+INST_MODES = dict()
 
 # JWST NIRISS
-INSTRUMENT_MODES['JWST.NIRISS'] = dict()
-INSTRUMENT_MODES['JWST.NIRISS']['SOSS'] = 'JWST.NIRISS.SOSS'
-INSTRUMENT_MODES['JWST.NIRISS']['FGS'] = 'JWST.NIRISS.FGS'
-INSTRUMENT_MODES['JWST.NIRISS']['AMI'] = None
+INST_MODES['JWST.NIRISS'] = dict()
+INST_MODES['JWST.NIRISS']['SOSS'] = 'JWST.NIRISS.SOSS'
+INST_MODES['JWST.NIRISS']['SOSS.SUPERSTRIPE'] = None
+INST_MODES['JWST.NIRISS']['FGS'] = 'JWST.NIRISS.FGS'
+INST_MODES['JWST.NIRISS']['AMI'] = None
 # JWST NIRSPEC
-INSTRUMENT_MODES['JWST.NIRSPEC'] = dict()
-INSTRUMENT_MODES['JWST.NIRSPEC']['BOTS.PRISM'] = 'JWST.NIRSPEC.PRISM'
-INSTRUMENT_MODES['JWST.NIRSPEC']['BOTS.G395'] = 'JWST.NIRSPEC.G395'
-INSTRUMENT_MODES['JWST.NIRSPEC']['BOTS.G253'] = 'JWST.NIRSPEC.G253'
-INSTRUMENT_MODES['JWST.NIRSPEC']['BOTS.G140'] = 'JWST.NIRSPEC.G140'
-INSTRUMENT_MODES['JWST.NIRSPEC']['FS'] = None
-INSTRUMENT_MODES['JWST.NIRSPEC']['MOSS'] = None
-INSTRUMENT_MODES['JWST.NIRSPEC']['IFU'] = None
+INST_MODES['JWST.NIRSPEC'] = dict()
+INST_MODES['JWST.NIRSPEC']['BOTS.PRISM'] = 'JWST.NIRSPEC.BOTS.PRISM'
+INST_MODES['JWST.NIRSPEC']['BOTS.G395M'] = 'JWST.NIRSPEC.BOTS.G395M'
+INST_MODES['JWST.NIRSPEC']['BOTS.G235M'] = 'JWST.NIRSPEC.BOTS.G235M'
+INST_MODES['JWST.NIRSPEC']['BOTS.G140M'] = 'JWST.NIRSPEC.BOTS.G140M'
+INST_MODES['JWST.NIRSPEC']['BOTS.G395H'] = 'JWST.NIRSPEC.BOTS.G395H'
+INST_MODES['JWST.NIRSPEC']['BOTS.G235H'] = 'JWST.NIRSPEC.BOTS.G235H'
+INST_MODES['JWST.NIRSPEC']['BOTS.G140H'] = 'JWST.NIRSPEC.BOTS.G140H'
+INST_MODES['JWST.NIRSPEC']['FS'] = None
+INST_MODES['JWST.NIRSPEC']['MOSS'] = None
+INST_MODES['JWST.NIRSPEC']['IFU'] = None
 # JWST NIRCam
-INSTRUMENT_MODES['JWST.NIRCAM'] = dict()
-INSTRUMENT_MODES['JWST.NIRCAM']['IMAGING'] = None
-INSTRUMENT_MODES['JWST.NIRCAM']['WFSS'] = None
-INSTRUMENT_MODES['JWST.NIRCAM']['CORON'] = None
-INSTRUMENT_MODES['JWST.NIRCAM']['TSO-IMAGING'] = None
-INSTRUMENT_MODES['JWST.NIRCAM']['TSO-GRISM'] = None
+INST_MODES['JWST.NIRCAM'] = dict()
+INST_MODES['JWST.NIRCAM']['IMAGING'] = 'JWST.NIRCAM.IMAGING'
+INST_MODES['JWST.NIRCAM']['WFSS'] = 'JWST.NIRCAM.WFSS'
+INST_MODES['JWST.NIRCAM']['MULTISTRIPE'] = None
+INST_MODES['JWST.NIRCAM']['CORON'] = None
+INST_MODES['JWST.NIRCAM']['TSO-IMAGING'] = None
+INST_MODES['JWST.NIRCAM']['TSO-GRISM'] = None
 # JWST MIRI
-INSTRUMENT_MODES['JWST.MIRI'] = dict()
-INSTRUMENT_MODES['JWST.MIRI']['IMAGING'] = 'JWST.MIRI.IMAGING'
-INSTRUMENT_MODES['JWST.MIRI']['LRS'] = None
-INSTRUMENT_MODES['JWST.MIRI']['MRS'] = None
-INSTRUMENT_MODES['JWST.MIRI']['CORON'] = None
-INSTRUMENT_MODES['JWST.MIRI']['WFSS'] = None
+INST_MODES['JWST.MIRI'] = dict()
+INST_MODES['JWST.MIRI']['IMAGING'] = 'JWST.MIRI.IMAGING'
+INST_MODES['JWST.MIRI']['LRS'] = 'JWST.MIRI.LRS'
+INST_MODES['JWST.MIRI']['MRS'] = None
+INST_MODES['JWST.MIRI']['CORON'] = None
+INST_MODES['JWST.MIRI']['WFSS'] = None
 
 # =============================================================================
 # Define all reduction steps
@@ -86,7 +100,19 @@ INSTRUMENT_MODES['JWST.MIRI']['WFSS'] = None
 RED_STEPS = dict()
 RED_STEPS['Pre-extraction'] = dict()
 RED_STEPS['Pre-extraction']['IDT:SOSS'] = None
-RED_STEPS['Pre-extraction']['TSOVORE'] = ['JWST.MIRI.IMAGING']
+RED_STEPS['Pre-extraction']['TSOVORE'] = ['JWST.NIRISS.SOSS',
+                                          # 'JWST.NIRISS.SOSS.SUPERSTRIPE',
+                                          'JWST.NIRSPEC.BOTS.PRISM',
+                                          'JWST.NIRSPEC.BOTS.G395M',
+                                          'JWST.NIRSPEC.BOTS.G235M',
+                                          'JWST.NIRSPEC.BOTS.G140M',
+                                          'JWST.NIRSPEC.BOTS.G395H',
+                                          'JWST.NIRSPEC.BOTS.G235H',
+                                          'JWST.NIRSPEC.BOTS.G140H',
+                                          'JWST.NIRCAM.IMAGING',
+                                          'JWST.NIRCAM.WFSS',
+                                          # 'JWST.NIRCAM.MULTISTRIPE',
+                                          'JWST.MIRI.IMAGING']
 RED_STEPS['Pre-extraction']['NAMELESS'] = None
 RED_STEPS['Pre-extraction']['Eureka'] = None
 RED_STEPS['Pre-extraction']['exoTEFRF'] = None

@@ -253,7 +253,7 @@ def core_setup(params: ParamDict, demo_mod: Any, start_from_demo: bool = True):
     # -------------------------------------------------------------------------
     # get instrument modes
     # -------------------------------------------------------------------------
-    instrument_modes = pogos_base.INSTRUMENT_MODES
+    instrument_modes = pogos_base.INST_MODES
     # -------------------------------------------------------------------------
     if params['GLOBAL.INSTRUMENTMODE'] is None:
         WLOG(params, 'info', params['LOG.HEADER'])

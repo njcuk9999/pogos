@@ -12,8 +12,8 @@ DRS.AUTHORS:
 # Version/dates of the individual sub-modules
 # -------------------------------------------------------
 # TSOVORE simulation module
-TSOVORE.VERSION: 0.0.003
-TSOVORE.DATE: 2025-11-20
+TSOVORE.VERSION: 0.0.005
+TSOVORE.DATE: 2026-01-23
 
 # MIRIAM module
 MIRIAM.VERSION: 0.0.005

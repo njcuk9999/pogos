@@ -18,6 +18,9 @@ from pogos.tsovore.core import base as ts_base
 from pogos.tsovore.instruments import default as ts_default
 
 from pogos.tsovore.instruments import miri as ts_miri
+from pogos.tsovore.instruments import niriss as ts_niriss
+from pogos.tsovore.instruments import nirspec as ts_nirspec
+from pogos.tsovore.instruments import nircam as ts_nircam
 
 # =============================================================================
 # Define variables
@@ -36,15 +39,34 @@ INSTRUMENTS = dict()
 # -----------------------------------------------------------------------------
 # add instrument classes here
 # -----------------------------------------------------------------------------
-# JWST MIRI IMAGING
+# JWST NIRISS
+INSTRUMENTS['JWST.NIRISS.SOSS'] = ts_niriss.NirissSoss
+# INSTRUMENTS['JWST.NIRISS.SOSS.SUPERSTRIPE'] = ts_niriss.NirissSossSuperstripe
+
+# JWST NIRSPEC
+INSTRUMENTS['JWST.NIRSPEC.BOTS.PRISM'] = ts_nirspec.NirspecBotsPrism
+INSTRUMENTS['JWST.NIRSPEC.BOTS.G395M'] = ts_nirspec.NirspecBotsMedium
+INSTRUMENTS['JWST.NIRSPEC.BOTS.G235M'] = ts_nirspec.NirspecBotsMedium
+INSTRUMENTS['JWST.NIRSPEC.BOTS.G140M'] = ts_nirspec.NirspecBotsMedium
+INSTRUMENTS['JWST.NIRSPEC.BOTS.G395H'] = ts_nirspec.NirspecBotsHigh
+INSTRUMENTS['JWST.NIRSPEC.BOTS.G235H'] = ts_nirspec.NirspecBotsHigh
+INSTRUMENTS['JWST.NIRSPEC.BOTS.G140H'] = ts_nirspec.NirspecBotsHigh
+
+# JWST NIRCam
+INSTRUMENTS['JWST.NIRCAM.IMAGING'] = ts_nircam.NircamImaging
+INSTRUMENTS['JWST.NIRCAM.WFSS'] = ts_nircam.NircamGrism
+# INSTRUMENTS['JWST.NIRCAM.MULTISTRIPE'] = ts_nircam.NircamMultistripe
+
+# JWST MIRI
 INSTRUMENTS['JWST.MIRI.IMAGING'] = ts_miri.MiriImaging
+INSTRUMENTS['JWST.MIRI.LRS'] = ts_miri.MiriLrs
 
 
 # check that instrument/mode is in base instruments list
 for instrument in INSTRUMENTS.keys():
     if instrument not in pogos_base.INSTRUMENTS:
         emsg = 'Instrument "{}" must be in base.INSTRUMENTS'
-        eargs = ['instruments']
+        eargs = [instrument]
         raise ts_base.TSOvoreException(emsg.format(*eargs))
 
 
