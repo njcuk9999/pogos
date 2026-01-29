@@ -36,7 +36,7 @@ INFO['instrument'] = 'JWST.MIRI.IMAGING'
 INFO['description'] = 'LHS-1140 eclipse observed on 2024-07-07'
 INFO['date'] = '2025-10-16'
 INFO['author'] = 'Etienne Artigau'
-INFO['id'] = 'DEMO-LHS-1140-JWST.MIRI.IM-TSOVORE-MIRIAM-20240707'
+INFO['id'] = 'DEMO_LHS_1140_JWST.MIRI.IM_TSOVORE_MIRIAM_20240707'
 
 INFO['red_steps'] = ['Pre-extraction:TSOVORE', 'Extraction:MIRIAM']
 # url for data download

@@ -281,17 +281,17 @@ SORBET_CDict.add('INPUT_PATH', value=f'slcta{os.sep}inputs',
                              ' it will be set to GLOBAL.DATA_PATH/'
                              'sorbet/{SUBDIRECTORY}/{INPUT_PATH}/')
 # Input data file
-SORBET_CDict.add('INPUT_FILES', value=['spectroscopy_light_curves.fits'],
+SORBET_CDict.add('INPUT_FILE', value=['spectroscopy_light_curves.fits'],
                  dtype=list, source=__NAME__,
                  user=True, active=True, group=cgroup,
                  description='Input data file or path to the data file')
-# Trace orders, must be a list the same length as INPUT_FILES
+# Trace orders, must be a list the same length as INPUT_FILE
 #     (Set each item to 1 if there is only one order) otherwise set each item
 #     to the order number
 SORBET_CDict.add('TRACE_ORDERS', value=[1], dtype=list, dtypei=int,
                  source=__NAME__, user=True, active=True, group=cgroup,
                  description='Trace orders, must be a list the same length as'
-                             'INPUT_FILES '
+                             'INPUT_FILE '
                              '\n\t(Set each item to 1 if there is '
                              'only one order) otherwise set each item '
                              'to the order number')

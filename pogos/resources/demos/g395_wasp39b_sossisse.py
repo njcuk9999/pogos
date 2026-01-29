@@ -29,11 +29,11 @@ Cdict.add_sub_cdict('SOSSISSE', S_Cdict, source=__NAME__)
 INFO = dict()
 INFO['title'] = 'JWST.NIRSPEC.G395 WASP 39b transit [SOSSISSE]'
 INFO['object'] = 'WASP 39b'
-INFO['instrument'] = 'JWST.NIRSPEC.G395'
+INFO['instrument'] = 'JWST.NIRSPEC.BOTS.G395M'
 INFO['description'] = 'WASP 39b transit observed XXX'
 INFO['date'] = '2025-03-25'
 INFO['author'] = 'Loic Albert'
-INFO['id'] = 'DEMO-WASP39b-JWST.NIRSPEC.G395-SOSSISSE-20250325'
+INFO['id'] = 'DEMO_WASP39b_JWST.NIRSPEC.G395_SOSSISSE_20250325'
 INFO['red_steps'] = ['Extraction:SOSSISSE']
 # url for data download
 URL = 'http://206.12.93.77/ari/data/pogos/demos/nirspec/'

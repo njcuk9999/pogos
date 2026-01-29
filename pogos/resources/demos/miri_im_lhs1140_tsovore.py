@@ -34,7 +34,7 @@ INFO['instrument'] = 'JWST.MIRI.IMAGING'
 INFO['description'] = 'LHS-1140 eclipse observed on 2024-07-07'
 INFO['date'] = '2025-10-28'
 INFO['author'] = 'Loic Albert'
-INFO['id'] = 'DEMO-LHS-1140-JWST.MIRI.IM-TSOVORE-20240707'
+INFO['id'] = 'DEMO_LHS_1140_JWST.MIRI.IM_TSOVORE_20240707'
 INFO['red_steps'] = ['Pre-extraction:TSOVORE']
 # url for data download
 URL = 'http://206.12.93.77/ari/data/pogos/demos/miri/'

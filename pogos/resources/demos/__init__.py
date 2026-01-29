@@ -25,8 +25,8 @@ from pogos.resources.demos import miri_im_lhs1140_tsovore_miriam_sorbet as mltms
 # Define instrument short names
 # =============================================================================
 soss = 'JWST.NIRISS.SOSS'
-prism = 'JWST.NIRSPEC.PRISM'
-g395 = 'JWST.NIRSPEC.G395'
+prism = 'JWST.NIRSPEC.BOTS.PRISM'
+g395 = 'JWST.NIRSPEC.BOTS.G395M'
 miri_im = 'JWST.MIRI.IMAGING'
 
 # =============================================================================

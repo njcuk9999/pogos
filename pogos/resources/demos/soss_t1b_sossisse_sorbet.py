@@ -38,7 +38,8 @@ INFO['date'] = '2025-03-25'
 INFO['author'] = 'Etienne Artigau + Charles Cadieux'
 INFO['red_steps'] = ['Extraction:SOSSISSE', 'Post-extraction:SORBET.WLCA',
                      'Post-extraction:SORBET.SLCTA']
-INFO['id'] = 'DEMO-T1b-JWST.NIRISS.SOSS-SOSSISSE-SORBET-20220718'
+INFO['id'] = 'DEMO_T1b_JWST.NIRISS.SOSS_SOSSISSE_SORBET_20220718'
+
 # url for data download
 URL = 'http://206.12.93.77/ari/data/pogos/demos/soss/'
 # download: key = file, value = local path
@@ -317,10 +318,10 @@ Cdict.set('RUN', group=cgroup, source=__NAME__,
 # Definition of inputs related to the data
 # =============================================================================
 # Path to input file relative to GLOBAL data path defined by the user
-Cdict.set('INPUT_FILES', group=cgroup, source=__NAME__,
+Cdict.set('INPUT_FILE', group=cgroup, source=__NAME__,
           value=['spectroscopy_light_curves.fits'])
 
-# Trace orders, must be a list the same length as INPUT_FILES
+# Trace orders, must be a list the same length as INPUT_FILE
 #     (Set each item to 1 if there is only one order) otherwise set each item
 #     to the order number
 Cdict.set('TRACE_ORDERS', group=cgroup, source=__NAME__,

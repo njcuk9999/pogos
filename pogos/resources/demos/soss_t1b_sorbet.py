@@ -33,7 +33,7 @@ INFO['instrument'] = 'JWST.NIRISS.SOSS'
 INFO['description'] = 'Transit spectrum of Trappist 1b observed on 2022-07-18'
 INFO['date'] = '2025-08-28'
 INFO['author'] = 'Charles Cadieux'
-INFO['id'] = 'DEMO-T1b-JWST.NIRISS.SOSS-SORBET-20220718'
+INFO['id'] = 'DEMO_T1b_JWST.NIRISS.SOSS_SORBET_20220718'
 INFO['red_steps'] = ['Post-extraction:SORBET.WLCA',
                      'Post-extraction:SORBET.SLCTA']
 # url for data download
@@ -168,7 +168,7 @@ Cdict.set('RUN', group=cgroup, source=__NAME__,
 # Definition of inputs related to the data
 # =============================================================================
 # Path to input file relative to GLOBAL data path defined by the user
-Cdict.set('INPUT_FILES', group=cgroup, source=__NAME__,
+Cdict.set('INPUT_FILE', group=cgroup, source=__NAME__,
           value=['spectroscopy_light_curves.fits'])
 
 # Trace orders, must be a list the same length as INPUT_FILES

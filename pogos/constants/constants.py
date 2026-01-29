@@ -63,8 +63,6 @@ CDict.add('DATA_PATH', value=None, dtype=str,
           active=True, group=cgroup, not_none=True, cmd_arg='data_path',
           description='the absolute path to where all input and output data '
                       'for POGOS will be stored. '
-                      '\n\nPlease note a /data/ subdirectory will be created '
-                      'for data with the modes in. '
                       '\n\nE.g. /users/albert/pogo-data/'
                       '\nE.g. /home/albert/pogo-data/'
                       '\nE.g. C:\\users\\bob\\pogo-data')
@@ -83,7 +81,7 @@ CDict.add('DEMO_FILE', value=None, dtype=str, source=__NAME__, user=False,
           active=False, cmd_arg='demo_file', group=cgroup,
           description='the absolute path and filename of a demo yaml file to '
                       'use as a template for creating a new yaml file/file '
-                      'strcuture. ')
+                      'structure. ')
 
 # =============================================================================
 # Switches to turn of major features

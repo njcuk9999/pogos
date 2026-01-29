@@ -190,6 +190,13 @@ def setup(params: ParamDict, start_from_demo: bool = True):
     # add to the title
     time_now = Time.now().iso
     cdict.title += '\n Yaml created on {0}'.format(time_now)
+    # deal with adding from demo (if required)
+    # Form demos we do not need to ask the user
+    if 'DEMO_PARAMS' in params:
+        if 'ID' in params['DEMO_PARAMS']:
+            # set yaml file from the DEMO ID
+            demo_id = params['DEMO_PARAMS']['ID']
+            cdict.title += '\n\n Based on demo ID: {0}'.format(demo_id)
     # save the constants dictionary to yaml file
     cdict.save_yaml(params, outpath=yaml_file, log=False)
     # return the constants dictionary class
@@ -239,7 +246,8 @@ def test_yamlfile(params: ParamDict):
         raise pogos_base.PogosException(emsg.format(*eargs))
 
 
-def core_setup(params: ParamDict, demo_mod: Any, start_from_demo: bool = True):
+def core_setup(params: ParamDict, demo_mod: Any,
+               start_from_demo: bool = True) -> (ParamDict, dict):
     """
     Deal with user selecting instrument, mode and reduction steps
 
@@ -319,9 +327,19 @@ def core_setup(params: ParamDict, demo_mod: Any, start_from_demo: bool = True):
     # -------------------------------------------------------------------------
     # deal with no supported steps
     if len(supported_steps) == 0:
-        emsg = 'No supported steps for instrument mode: {0}'
-        eargs = [imode]
-        raise pogos_base.PogosException(emsg.format(*eargs))
+        msg = 'No supported steps for instrument mode: {0}.'
+        margs = [imode]
+        WLOG(params, 'warning', msg.format(*margs))
+
+        # ask user whether they wish to continue or exit
+        question = 'Would you like to continue setting up POGOS? [Y]es or [N]o'
+        if not drs_text.user_input(question, dtype='YN', required=True):
+            # exit program (without traceback)
+            WLOG(params, 'error', 'Exiting POGOS setup as per user request.',
+                 raise_exception=False)
+            raise SystemExit(0)
+        # otherwise return
+        return params, dict()
     # -------------------------------------------------------------------------
     # now ask user to select which steps to use
     demo_modes = []
@@ -402,13 +420,8 @@ def core_setup(params: ParamDict, demo_mod: Any, start_from_demo: bool = True):
             # otherwise we start again with the question
             else:
                 params['GLOBAL.DATA_PATH'] = None
-    # Deal with data path ending in /data/ (we will add this afterwards)
-    #  so for now we remote it
-    if os.path.basename(params['GLOBAL.DATA_PATH']) == 'data':
-        data_path = os.path.dirname(params['GLOBAL.DATA_PATH'])
-        params['GLOBAL.DATA_PATH'] = data_path
     # -------------------------------------------------------------------------
-    return params, demo_dict
+    return params, demo_dict, True
 
 
 
@@ -421,11 +434,8 @@ def core_yaml_setup(params: ParamDict):
     test_yamlfile(params)
     # keep asking until this variable is set
     while params['GLOBAL.YAML_FILE'] is None:
-        # remove data path if preset
-        if os.path.dirname(params['GLOBAL.DATA_PATH']) == 'data':
-            data_path = os.path.dirname(params['GLOBAL.DATA_PATH'])
-        else:
-            data_path = params['GLOBAL.DATA_PATH']
+        # get the data directory
+        data_path = params['GLOBAL.DATA_PATH']
         # get the yaml directory
         yamldir = os.path.join(data_path, 'yamls')
         # create this directory
@@ -476,14 +486,9 @@ def core_yaml_setup(params: ParamDict):
             else:
                 params['GLOBAL.YAML_FILE'] = None
     # -------------------------------------------------------------------------
-    # and finally make sure the data path has /data on the end
-    if not os.path.basename(params['GLOBAL.DATA_PATH']) == 'data':
-        # add data path
-        params['GLOBAL.DATA_PATH'] = os.path.join(params['GLOBAL.DATA_PATH'],
-                                                  'data')
-        # make sure this data path exists
-        if not os.path.exists(params['GLOBAL.DATA_PATH']):
-            os.makedirs(params['GLOBAL.DATA_PATH'])
+    # and finally make sure the data exists
+    if not os.path.exists(params['GLOBAL.DATA_PATH']):
+        os.makedirs(params['GLOBAL.DATA_PATH'])
     # -------------------------------------------------------------------------
     return params
 
