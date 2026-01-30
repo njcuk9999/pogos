@@ -43,6 +43,7 @@ INFO['author'] = 'Etienne Artigau'
 INFO['id'] = 'DEMO_LHS_1140_JWST.MIRI.IM_TSOVORE_MIRIAM_SORBET_20240707'
 INFO['red_steps'] = ['Pre-extraction:TSOVORE', 'Extraction:MIRIAM',
                      'Post-extraction:SORBET']
+INFO['keywords'] = ['eclipse']
 # url for data download
 URL = 'http://206.12.93.77/ari/data/pogos/demos/miri/'
 # download: key = file, value = local path

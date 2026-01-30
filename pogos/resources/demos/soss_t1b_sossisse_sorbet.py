@@ -39,6 +39,7 @@ INFO['author'] = 'Etienne Artigau + Charles Cadieux'
 INFO['red_steps'] = ['Extraction:SOSSISSE', 'Post-extraction:SORBET.WLCA',
                      'Post-extraction:SORBET.SLCTA']
 INFO['id'] = 'DEMO_T1b_JWST.NIRISS.SOSS_SOSSISSE_SORBET_20220718'
+INFO['keywords'] = ['transit']
 
 # url for data download
 URL = 'http://206.12.93.77/ari/data/pogos/demos/soss/'

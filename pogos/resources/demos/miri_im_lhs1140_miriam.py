@@ -35,6 +35,7 @@ INFO['date'] = '2025-10-16'
 INFO['author'] = 'Etienne Artigau'
 INFO['id'] = 'DEMO_LHS_1140_JWST.MIRIM.IM_MIRIAM_20240707'
 INFO['red_steps'] = ['Extraction:MIRIAM']
+INFO['keywords'] = ['eclipse']
 # url for data download
 URL = 'http://206.12.93.77/ari/data/pogos/demos/miri/'
 # download: key = file, value = local path

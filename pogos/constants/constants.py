@@ -75,13 +75,24 @@ CDict.add('INSTRUMENTMODE', value=None, dtype=str, not_none=True,
           description='instrument mode e.g. one of the following: {0}'
                       ''.format('\n\t'.join(base.INSTRUMENTS)))
 
-
 # Only used for copying
 CDict.add('DEMO_FILE', value=None, dtype=str, source=__NAME__, user=False,
           active=False, cmd_arg='demo_file', group=cgroup,
           description='the absolute path and filename of a demo yaml file to '
                       'use as a template for creating a new yaml file/file '
                       'structure. ')
+
+# Only used for downloading data
+CDict.add('LOCAL_DOWNLOAD_DATA', value=None, dtype=str, source=__NAME__,
+          user=False, active=False, cmd_arg='demolocal', group=cgroup,
+          description='the absolute path to where demo data is stored locally'
+                      ' this overrides any downloading of data from online.')
+
+# only used for donwloading data
+CDict.add('DEMO_SYMLINK_DATA', value=False, dtype=bool, source=__NAME__,
+          user=False, active=False, cmd_arg='demosymlink', group=cgroup,
+          description='if downloading demo data, symlink the data from the '
+                      'local download location rather than copying it.')
 
 # =============================================================================
 # Switches to turn of major features

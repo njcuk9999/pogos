@@ -683,8 +683,7 @@ class Instrument:
             # remove the file
             os.remove(filepath)
 
-    def from_step_args(self, func_name: str) -> Tuple[bool, str,
-                                                      Dict[str, Any], str]:
+    def from_step_args(self, func_name: str) -> Tuple[bool, str, Dict[str, Any], str]:
         """
         Get step arguments from params
 
@@ -849,53 +848,6 @@ class JWST(Instrument):
         # raise not implemented error
         nmsg = NOT_IMPLEMENTED_MSG.format(func_name, self.instrument)
         raise NotImplemented(nmsg)
-
-    def initialize_detector_data(self, infiles: list) -> list:
-        """
-        Handles data load and initial detector corrections
-        (scaling, DQ flags, emission correction, saturation map).
-
-        :param infiles: list[str], list of input files
-        :return: list[str], list of output files
-        """
-        # set function name
-        func_name = f"{__NAME__}.JWST.initialize_detector_data"
-        # ---------------------------------------------------------------------
-        # get params from step constant
-        run_step, flavour, kwargs, suffix = self.from_step_args(func_name)
-        # deal with skipping step
-        run_step, infiles = self.skip_step(
-            run_step, 'INITIALIZE_DETECTOR_DATA', suffix, infiles)
-        # deal with not running this step
-        if not run_step:
-            return infiles
-        # ---------------------------------------------------------------------
-        # get parameters from params
-        datadir = self.tparams['PATHS.TEMP_PATH']
-        # storage for output files
-        outfiles = []
-        # loop around infiles
-        for it, filename in enumerate(infiles):
-            # Read input segments files from disk
-            input_data = datamodels.open(filename, output_dir=datadir,
-                                         save_results=False)
-            # Execute the first step
-            result = GroupScaleStep.call(input_data)
-            # Execute the second step
-            result = DQInitStep.call(result, output_dir=datadir,
-                                     save_results=False)
-            # Execute the third step
-            # The EmiCorrStep is by default skipped when executed on these data
-            # result = EmiCorrStep.call(input_data, save_results=False)
-            # Execute the fourth step
-            # this time saving files on disk
-            result = SaturationStep.call(result, output_dir=datadir,
-                                         save_results=True)
-            # get output path
-            outfile = self.get_output_path(it, datadir, result.meta.filename)
-            outfiles.append(outfile)
-
-        return outfiles
 
     def apply_interpixel_capacitance(self, infiles: list) -> list:
         """

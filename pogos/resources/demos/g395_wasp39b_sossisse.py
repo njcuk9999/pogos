@@ -35,6 +35,7 @@ INFO['date'] = '2025-03-25'
 INFO['author'] = 'Loic Albert'
 INFO['id'] = 'DEMO_WASP39b_JWST.NIRSPEC.G395_SOSSISSE_20250325'
 INFO['red_steps'] = ['Extraction:SOSSISSE']
+INFO['keywords'] = ['transit']
 # url for data download
 URL = 'http://206.12.93.77/ari/data/pogos/demos/nirspec/'
 # download: key = file, value = local path

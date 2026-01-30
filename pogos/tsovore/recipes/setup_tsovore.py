@@ -51,8 +51,12 @@ def main(**kwargs):
     # setup individual modules
     params = tsovore.setup_tsovore_module(params)
     # -------------------------------------------------------------------------
+    # get the demo local value
+    demolocal = params.get('GLOBAL.LOCAL_DOWNLOAD_DATA', None)
+    demosymlink = params.get('GLOBAL.DEMO_SYMLINK_DATA', False)
     # ask for data download
-    load_functions.download_data(params)
+    load_functions.download_data(params, demolocal=demolocal,
+                                 demosymlink=demosymlink)
     # -------------------------------------------------------------------------
     # print splash
     general.end_splash()

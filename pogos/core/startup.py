@@ -257,7 +257,33 @@ def core_setup(params: ParamDict, demo_mod: Any,
     # -------------------------------------------------------------------------
     # define function name
     func_name = f'{__NAME__}.core_setup()'
+    # -------------------------------------------------------------------------
+    # Ask for the global data path
+    # -------------------------------------------------------------------------
+    if params['GLOBAL.DATA_PATH'] is None:
+        WLOG(params, 'info', params['LOG.HEADER'])
+        WLOG(params, 'info', 'Checking GLOBAL.DATA_PATH')
+        WLOG(params, 'info', params['LOG.HEADER'])
+    # keep asking until this variable is set
+    while params['GLOBAL.DATA_PATH'] is None:
+        # get the desription of the data path from the constant instance
+        description = params.instances['GLOBAL.DATA_PATH'].description
+        # ask user for data path
+        question = '\nPlease enter {0}\n'.format(description)
+        data_path = drs_text.user_input(question, dtype=str, required=True)
+        params['GLOBAL.DATA_PATH'] = data_path
+        params.set_source('GLOBAL.DATA_PATH', func_name)
 
+        # If directory does not exist ask the user if they want to create it
+        if not os.path.exists(data_path):
+            question = '\nPath does not exist: {0}\nWould you like to create it?'
+            question = question.format(data_path)
+            # ask user
+            if drs_text.user_input(question, dtype='YN', required=True):
+                os.makedirs(data_path)
+            # otherwise we start again with the question
+            else:
+                params['GLOBAL.DATA_PATH'] = None
     # -------------------------------------------------------------------------
     # get instrument modes
     # -------------------------------------------------------------------------
@@ -394,34 +420,7 @@ def core_setup(params: ParamDict, demo_mod: Any,
                 # add mode
                 demo_dict[inst_key][demo_name] = demo
     # -------------------------------------------------------------------------
-    # Ask for the global data path
-    # -------------------------------------------------------------------------
-    if params['GLOBAL.DATA_PATH'] is None:
-        WLOG(params, 'info', params['LOG.HEADER'])
-        WLOG(params, 'info', 'Checking GLOBAL.DATA_PATH')
-        WLOG(params, 'info', params['LOG.HEADER'])
-    # keep asking until this variable is set
-    while params['GLOBAL.DATA_PATH'] is None:
-        # get the desription of the data path from the constant instance
-        description = params.instances['GLOBAL.DATA_PATH'].description
-        # ask user for data path
-        question = '\nPlease enter {0}\n'.format(description)
-        data_path = drs_text.user_input(question, dtype=str, required=True)
-        params['GLOBAL.DATA_PATH'] = data_path
-        params.set_source('GLOBAL.DATA_PATH', func_name)
-
-        # If directory does not exist ask the user if they want to create it
-        if not os.path.exists(data_path):
-            question = '\nPath does not exist: {0}\nWould you like to create it?'
-            question = question.format(data_path)
-            # ask user
-            if drs_text.user_input(question, dtype='YN', required=True):
-                os.makedirs(data_path)
-            # otherwise we start again with the question
-            else:
-                params['GLOBAL.DATA_PATH'] = None
-    # -------------------------------------------------------------------------
-    return params, demo_dict, True
+    return params, demo_dict
 
 
 
@@ -444,17 +443,18 @@ def core_yaml_setup(params: ParamDict):
         # Form demos we do not need to ask the user
         if 'DEMO_PARAMS' in params:
             if 'ID' in params['DEMO_PARAMS']:
-                # set yaml file from the DEMO ID
-                yamlfile = params['DEMO_PARAMS']['ID'] + '.yaml'
-                # get the full path
-                yaml_path = os.path.join(yamldir, yamlfile)
-                # push into params
-                params['GLOBAL.YAML_FILE'] = yaml_path
-                # tell the user what we have done
-                msg = 'Using demo ID to set yaml file to: {0}'
-                WLOG(params, '', msg.format(yaml_path))
-                # break the loop
-                break
+                if params['DEMO_PARAMS']['ID'] is not None:
+                    # set yaml file from the DEMO ID
+                    yamlfile = params['DEMO_PARAMS']['ID'] + '.yaml'
+                    # get the full path
+                    yaml_path = os.path.join(yamldir, yamlfile)
+                    # push into params
+                    params['GLOBAL.YAML_FILE'] = yaml_path
+                    # tell the user what we have done
+                    msg = 'Using demo ID to set yaml file to: {0}'
+                    WLOG(params, '', msg.format(yaml_path))
+                    # break the loop
+                    break
         # get the desription of the yaml file from the constant instance
         description = params.instances['GLOBAL.YAML_FILE'].description
         # ask user for yaml file

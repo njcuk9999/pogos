@@ -39,6 +39,7 @@ from aperocore.constants import param_functions
 from aperocore.core import drs_log
 from pogos.core import base as pogos_base
 from pogos.tsovore.instruments import default as ts_default
+from pogos.tsovore.dev import loic_niriss
 
 # =============================================================================
 # Define variables
@@ -91,6 +92,8 @@ class NirissSoss(ts_default.JWST):
 
         # Group Scale Step
         infiles = self.group_scale_step(infiles)
+        # This is an example for Loic
+        # infiles = loic_niriss.loic_group_scale_step(self, infiles)
 
         # DQ Init Step
         infiles = self.dq_init_step(infiles)
@@ -129,7 +132,7 @@ class NirissSoss(ts_default.JWST):
         infiles = self.fit_signal_ramps(infiles)
 
         # Gain Scale Step → save _rateints.fits
-        infiles = self.apply_gain_scaling(infiles)
+        # infiles = self.apply_gain_scaling(infiles)
         infiles = self.save_outputs('_rateints.fits', infiles)
 
         # =====================================================================

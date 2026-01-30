@@ -36,6 +36,7 @@ INFO['date'] = '2025-03-25'
 INFO['author'] = 'Etienne Artigau'
 INFO['red_steps'] = ['Extraction:SOSSISSE']
 INFO['id'] = 'DEMO_T1b_JWST.NIRISS.SOSS_SOSSISSE_20220718'
+INFO['keywords'] = ['transit']
 # url for data download
 URL = 'http://206.12.93.77/ari/data/pogos/demos/soss/'
 # download: key = file, value = local path

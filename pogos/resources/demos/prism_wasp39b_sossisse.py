@@ -36,6 +36,7 @@ INFO['date'] = '2025-12-08'
 INFO['author'] = 'Neil Cook'
 INFO['red_steps'] = ['Extraction:SOSSISSE']
 INFO['id'] = 'DEMO_WASP39b_JWST.NIRSPEC.PRISM_SOSSISSE_20220710'
+INFO['keywords'] = ['transit']
 # url for data download
 URL = 'http://206.12.93.77/ari/data/pogos/demos/nirspec/'
 # download: key = file, value = local path

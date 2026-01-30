@@ -36,7 +36,8 @@ WLOG = drs_log.wlog
 # set description
 __description__ = ('Setup the POGOS recipes starting from a demo.'
                    'Creates a configuration (yaml) file and a file structure')
-__inputs__ = ['GLOBAL.YAML_FILE', 'GLOBAL.DATA_PATH']
+__inputs__ = ['GLOBAL.YAML_FILE', 'GLOBAL.DATA_PATH',
+              'GLOBAL.LOCAL_DOWNLOAD_DATA','GLOBAL.DEMO_SYMLINK_DATA']
 
 # =============================================================================
 # Define functions
@@ -64,8 +65,12 @@ def main(**kwargs):
     params = miriam.setup_miriam_module(params)
     params = sorbet.setup_sorbet_module(params)
     # -------------------------------------------------------------------------
+    # get the demo local value
+    demolocal = params.get('GLOBAL.LOCAL_DOWNLOAD_DATA', None)
+    demosymlink = params.get('GLOBAL.DEMO_SYMLINK_DATA', False)
     # ask for data download
-    load_functions.download_data(params)
+    load_functions.download_data(params, demolocal=demolocal,
+                                 demosymlink=demosymlink)
     # -------------------------------------------------------------------------
     # Tell user to look at the yaml file created
     msg = 'Please review the yaml file created at:'

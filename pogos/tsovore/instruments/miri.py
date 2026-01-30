@@ -177,7 +177,7 @@ class MiriImaging(ts_default.JWST):
 
         # Gain Scale Step
         # Apply gain scaling to convert DN to electrons
-        infiles = self.apply_gain_scaling(infiles)
+        # infiles = self.apply_gain_scaling(infiles)
         # Save TSO-style integration product
         infiles = self.save_outputs('_rateints.fits', infiles)
 
@@ -301,7 +301,7 @@ class MiriLrs(ts_default.JWST):
         infiles = self.fit_signal_ramps(infiles)
 
         # Gain Scale Step
-        infiles = self.apply_gain_scaling(infiles)
+        # infiles = self.apply_gain_scaling(infiles)
         # Save TSO-style integration product
         infiles = self.save_outputs('_rateints.fits', infiles)
 

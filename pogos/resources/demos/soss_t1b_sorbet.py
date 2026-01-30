@@ -36,6 +36,7 @@ INFO['author'] = 'Charles Cadieux'
 INFO['id'] = 'DEMO_T1b_JWST.NIRISS.SOSS_SORBET_20220718'
 INFO['red_steps'] = ['Post-extraction:SORBET.WLCA',
                      'Post-extraction:SORBET.SLCTA']
+INFO['keywords'] = ['transit']
 # url for data download
 URL = 'http://206.12.93.77/ari/data/pogos/demos/soss/'
 # download: key = file, value = local path

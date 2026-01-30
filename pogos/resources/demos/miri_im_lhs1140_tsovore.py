@@ -36,6 +36,7 @@ INFO['date'] = '2025-10-28'
 INFO['author'] = 'Loic Albert'
 INFO['id'] = 'DEMO_LHS_1140_JWST.MIRI.IM_TSOVORE_20240707'
 INFO['red_steps'] = ['Pre-extraction:TSOVORE']
+INFO['keywords'] = ['eclipse']
 # url for data download
 URL = 'http://206.12.93.77/ari/data/pogos/demos/miri/'
 # download: key = file, value = local path

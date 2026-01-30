@@ -144,7 +144,7 @@ class NircamImaging(ts_default.JWST):
         infiles = self.fit_signal_ramps(infiles)
 
         # Gain Scale Step
-        infiles = self.apply_gain_scaling(infiles)
+        # infiles = self.apply_gain_scaling(infiles)
         # Save TSO-style integration product
         infiles = self.save_outputs('_rateints.fits', infiles)
 
@@ -251,7 +251,7 @@ class NircamGrism(ts_default.JWST):
         infiles = self.fit_signal_ramps(infiles)
 
         # Gain Scale Step
-        infiles = self.apply_gain_scaling(infiles)
+        # infiles = self.apply_gain_scaling(infiles)
         # Save TSO-style integration product
         infiles = self.save_outputs('_rateints.fits', infiles)
 

@@ -62,7 +62,7 @@ WLOG = drs_log.wlog
 # =============================================================================
 # Define functions
 # =============================================================================
-class NirspecBotsPrism(ts_default.JWST):
+class NirspecBots(ts_default.JWST):
     """
     NIRSpec BOTS Prism detector and spectroscopic processing following official
     JWST pipeline structure.
@@ -71,7 +71,7 @@ class NirspecBotsPrism(ts_default.JWST):
     approaches.
     """
     def __init__(self, params):
-        super().__init__(params, instrument='JWST.NIRSPEC.BOTS.PRISM')
+        super().__init__(params, instrument='JWST.NIRSPEC.BOTS')
 
     def process(self):
         """
@@ -185,7 +185,20 @@ class NirspecBotsPrism(ts_default.JWST):
         x1d_files = self.save_outputs('_x1dints.fits', x1d_files)
 
 
-class NirspecBotsMedium(NirspecBotsPrism):
+class NirspecBotsPrism(NirspecBots):
+    """
+    NIRSpec BOTS Prism detector and spectroscopic processing following official
+    JWST pipeline structure.
+
+    This is a benchmark implementation for comparing against standard
+    approaches.
+    """
+    def __init__(self, params):
+        super().__init__(params)
+        self.instrument = 'JWST.NIRSPEC.BOTS.PRISM'
+
+
+class NirspecBotsMedium(NirspecBots):
     """
     NIRSpec BOTS Medium grating detector and spectroscopic processing.
 
@@ -196,7 +209,7 @@ class NirspecBotsMedium(NirspecBotsPrism):
         self.instrument = 'JWST.NIRSPEC.BOTS.MEDIUM'
 
 
-class NirspecBotsHigh(NirspecBotsPrism):
+class NirspecBotsHigh(NirspecBots):
     """
     NIRSpec BOTS High grating detector and spectroscopic processing.
 
