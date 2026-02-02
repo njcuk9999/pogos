@@ -10,17 +10,18 @@ Created on 2025-02-19 at 13:43
 
 No imports from sorbet.general.general
 """
+from pogos.core.external_imports import juliet, StellarLimbDarkening
+from pogos.core.external_imports import JULIET_IMPORT_MESSAGES
+from pogos.core.external_imports import EXOTIC_LD_IMPORT_MESSAGES
 
 import os
 import pickle as pkl
 import warnings
 from typing import Any, Dict, Literal, List, Optional
-
-import juliet
 import numpy as np
 from astropy.table import Table
 from astropy.io import fits
-from exotic_ld import StellarLimbDarkening
+
 from scipy.signal import medfilt
 
 from aperocore import math as mp
@@ -30,6 +31,7 @@ from pogos.core import base
 from pogos.sorbet.core import base as sorbet_base
 from pogos.sorbet.core import core
 from sossisse.core import io
+
 
 # =============================================================================
 # Define variables
@@ -405,6 +407,12 @@ def prepare_dataset(params: ParamDict, data_table: Table,
     """
     # get function name
     func_name = __NAME__ + '.prepare_dataset()'
+    # -------------------------------------------------------------------------
+    # Juliet is about to be used - print any warnings
+    if len(JULIET_IMPORT_MESSAGES) > 0:
+        for msg in JULIET_IMPORT_MESSAGES:
+            WLOG(params, 'warning', msg, func_name=func_name)
+    # -------------------------------------------------------------------------
     # deal with no bin params
     if bin_params is None:
         bin_params = dict(CHANNEL=None, BINNUMBER=None,
@@ -539,6 +547,10 @@ def prepare_dataset(params: ParamDict, data_table: Table,
     if method == 'SLCTA':
         # check if ExoTiC-LD is enabled
         if slcta_params['EXOTIC-LD.ENABLE']:
+            # log exotic ld import warnings
+            if len(EXOTIC_LD_IMPORT_MESSAGES) > 0:
+                for msg in EXOTIC_LD_IMPORT_MESSAGES:
+                    WLOG(params, 'warning', msg, func_name=func_name)
             # check if LD law are defined
             ld_law = slcta_params['EXOTIC-LD.LD_LAW']
             if ld_law is None:

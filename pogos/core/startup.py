@@ -9,10 +9,12 @@ Created on 2024-10-29 at 10:16
 
 @author: cook
 """
+import glob
 import os
 import string
 import time
-from typing import Any
+import sys
+from typing import Any, List
 
 from astropy.time import Time
 
@@ -20,6 +22,7 @@ from aperocore.constants import load_functions
 from aperocore.constants import param_functions
 from aperocore.core import drs_log
 from aperocore.core import drs_text
+from aperocore.base import base as aperocore_base
 from pogos import constants
 from pogos.constants import constants as pogo_constants
 from pogos.core import base as pogos_base
@@ -514,7 +517,175 @@ def initial_setup():
     return const_list
 
 
+# =============================================================================
+# Quick argument functionality
+# =============================================================================
+def quick_args(cmd_args: List[str], listing: bool = True):
+    """
+    Check for quick arguments
+    :param cmd_args: list of args from sys.argv
+    :return: bool, True if we want to exit, False if not
+    """
+    # set quick arg flags
+    do_return = False
+    do_listing = False
+    # deal with no - or -- at start of first argument
+    set_yaml_file(cmd_args)
+    # loop around all arguments and look for --list
+    for cmd_arg in cmd_args[1:]:
+        if listing and '--list' in cmd_arg:
+            do_listing = True
+            break
+    # deal with listing
+    if do_listing:
+        do_return = list_yamls()
+    # print the modules
+    return do_return
 
+
+def set_yaml_file(cmd_args):
+    # if we have no arguments skip this
+    if len(cmd_args) == 0:
+        return
+    # if we have only options skip this
+    if cmd_args[1].startswith('-'):
+        return
+    # if we have only options skip this
+    if cmd_args[1].startswith('--'):
+        return
+    # if the argument is a file that exists set sys.argv[1]
+    if os.path.exists(cmd_args[1]):
+        # make sure we are not overwriting an existing --yamlfile
+        for cmd_arg in cmd_args:
+            if '--yamlfile' in cmd_arg:
+                return
+        # update sys.argv[1]
+        sys.argv[1] = '--yamlfile={0}'.format(cmd_args[1])
+
+
+def _find_subdirs(obj, key: str='SUBDIRECTORY'):
+    """
+    Recursively search for any "key" keys
+    anywhere inside the module dictionary. This will
+    :param obj:
+    :return:
+    """
+    found = []
+    if isinstance(obj, dict):
+        for k, v in obj.items():
+            if k == key:
+                found.append(v)
+            else:
+                found.extend(_find_subdirs(v))
+    elif isinstance(obj, list):
+        for item in obj:
+            found.extend(_find_subdirs(item))
+    return found
+
+
+def list_yamls():
+
+    """
+    List all available POGOS demo yamls
+    :return: bool, True if we want to exit, False if not
+    """
+    # get all yamls in the current working directory
+    all_yaml_files = glob.glob('*.yaml')
+    # -------------------------------------------------------------------------
+    # try to read each yaml file and see if it is a POGOS yaml
+    pogo_yamls = []
+    for yaml_file in all_yaml_files:
+        try:
+
+            # -----------------------------------------------------------------
+            # load as text file
+            idict = dict(red=aperocore_base.COLOURS['RED1'],
+                         blue=aperocore_base.COLOURS['BLUE1'],
+                         green=aperocore_base.COLOURS['GREEN1'],
+                         end=aperocore_base.COLOURS['ENDC'],
+                         POGOS=False)
+            with open(yaml_file, 'r') as f:
+                yaml_text = f.readlines()
+            # loop around first 10 lines looking for version info
+            for line in yaml_text[:10]:
+                if 'POGOS' in line:
+                    idict['POGOS'] = True
+                elif 'Version = ' in line:
+                    idict['Version'] = line.split('=')[-1].strip()
+                elif 'Version Date' in line:
+                    idict['Version Date'] = line.split('=')[-1].strip()
+            # skip if no POGOS found this is not a valid yaml
+            if not idict['POGOS']:
+                continue
+            # construct version string
+            vstr = ('POGOS {red}v{Version}{green} '
+                    '({blue}{Version Date}{green})').format(**idict)
+            # -----------------------------------------------------------------
+            # load the yaml file
+            ydict = load_functions.base.load_yaml(yaml_file)
+            # check if it is a POGOS yaml
+            if 'GLOBAL' in ydict:
+                # get instrument mode
+                instmode = ydict['GLOBAL'].get('INSTRUMENTMODE', None)
+                if instmode is None:
+                    continue
+                # make sure run is in the yaml
+                if 'RUN' not in ydict:
+                    continue
+                # make sure data dict exists
+                datadict = ydict['GLOBAL'].get('DATA_PATH', None)
+                if datadict is None:
+                    continue
+                # start summary
+                summary = '='*70
+                summary += f'\n{os.path.basename(yaml_file)}'
+                summary += '\n' + '='*70
+                summary += f'\n - {vstr}'
+                summary += f'\n - Inst Mode: {instmode}'
+                # loop around modules a
+                for module in pogos_base.SUBMODULES:
+                    run_mod = ydict['RUN'].get(module, False)
+                    if not run_mod:
+                        continue
+
+                    if module in ydict and run_mod:
+                        # Recursively search for any 'SUBDIRECTORY' keys
+                        # anywhere inside the module dictionary. This will
+                        # handle dicts or lists nested to any depth.
+                        subdirs = _find_subdirs(ydict[module])
+                        if len(subdirs) > 0:
+                            dpath = os.path.join(datadict, module.lower(),
+                                                 subdirs[0])
+                            summary += '\n - {0}: {1}'.format(module, dpath)
+                pogo_yamls.append(summary)
+        except Exception:
+            continue
+    # -------------------------------------------------------------------------
+    # deal with no yaml files found
+    if len(pogo_yamls) == 0:
+        drs_text.cprint('*'*70, colour='yellow')
+        drs_text.cprint('No valid POGOS yaml files found in current directory.',
+                        colour='yellow')
+        drs_text.cprint('*'*70, colour='yellow')
+        # return True to exit program
+        return True
+    # -------------------------------------------------------------------------
+    # print splash
+    drs_text.cprint('*'*70, colour='blue')
+    drs_text.cprint('Available, valid POGOS yaml files:', colour='blue')
+    drs_text.cprint('*'*70, colour='blue')
+    # get all demo yamls
+    # loop around and print
+    for pogo_yaml in pogo_yamls:
+        drs_text.cprint(pogo_yaml, colour='green')
+    drs_text.cprint('*'*70, colour='blue')
+    # return True to exit program
+    return True
+
+
+# =============================================================================
+# Copy functionality
+# =============================================================================
 def copy_ask_description(params: ParamDict):
     # print process
     WLOG(params, 'info', '*'*50)

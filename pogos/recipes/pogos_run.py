@@ -10,6 +10,7 @@ Created on 2024-10-29 at 09:32
 @author: cook
 """
 import os
+import sys
 
 from aperocore.core import drs_log
 from aperocore.constants import load_functions
@@ -36,7 +37,7 @@ __description__ = ('Run the POGOS recipe using a configuration (yaml) file.'
                    ' All input data needs to be placed according to the yaml '
                    'file given and all data and plots will be saved in the '
                    'outpaths given in the input yaml file.')
-__inputs__ = ['GLOBAL.YAML_FILE']
+__inputs__ = ['GLOBAL.YAML_FILE', 'GLOBAL.LIST_YAMLS']
 # get the logger
 WLOG = drs_log.wlog
 
@@ -47,6 +48,8 @@ WLOG = drs_log.wlog
 def main(**kwargs):
     # print splash
     general.start_splash('POGOS')
+    # quick_args functionality
+    if startup.quick_args(sys.argv): return
     # get other configs (either internal like SORBET or external like SOSSISSE)
     other_const = startup.initial_setup()
     # get parameters

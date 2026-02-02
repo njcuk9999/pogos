@@ -9,7 +9,7 @@ Created on 2024-10-29 at 09:32
 
 @author: cook
 """
-import string
+import sys
 
 from aperocore.constants import load_functions
 from aperocore.constants import param_functions
@@ -38,7 +38,7 @@ __release__ = pogos_base.__release__
 # set description
 __description__ = ('Copy a POGOS demo yaml file to walk the user through '
                    'setting up a new yaml file and matching file structure.')
-__inputs__ = ['GLOBAL.DEMO_FILE']
+__inputs__ = ['GLOBAL.DEMO_FILE', 'GLOBAL.LIST_YAMLS']
 # get parameter dictionary
 ParamDict = param_functions.ParamDict
 # get constant dictionary
@@ -52,6 +52,8 @@ WLOG = drs_log.wlog
 def main(**kwargs):
     # print splash
     general.start_splash('POGOS Copy')
+    # listing functionality
+    if startup.quick_args(sys.argv): return
     # get other configs (either internal like SORBET or external like SOSSISSE)
     other_const = startup.initial_setup()
     # get parameters

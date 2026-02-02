@@ -82,6 +82,12 @@ CDict.add('DEMO_FILE', value=None, dtype=str, source=__NAME__, user=False,
                       'use as a template for creating a new yaml file/file '
                       'structure. ')
 
+# Used when user wishes to list the available yaml files
+CDict.add('LIST_YAMLS', value=False, dtype=bool, source=__NAME__, user=False,
+          active=False, cmd_arg='list', group=cgroup,
+          description='lists the available yaml files '
+                      '(in the current directory) and exits.')
+
 # Only used for downloading data
 CDict.add('LOCAL_DOWNLOAD_DATA', value=None, dtype=str, source=__NAME__,
           user=False, active=False, cmd_arg='demolocal', group=cgroup,
