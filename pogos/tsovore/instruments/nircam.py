@@ -170,6 +170,10 @@ class NircamImaging(ts_default.JWST):
         x1d_files = self.extract_1d_spectrum(infiles)
         # Save 1D extracted spectra
         x1d_files = self.save_outputs('_x1dints.fits', x1d_files)
+        # ---------------------------------------------------------------------
+        # Last step is to save the outputs for return, do not remove this
+        self.add_output(infiles)
+        self.add_calib('X1D', x1d_files)
 
 
 class NircamGrism(ts_default.JWST):
@@ -289,6 +293,10 @@ class NircamGrism(ts_default.JWST):
         x1d_files = self.extract_1d_spectrum(infiles)
         # Save 1D extracted spectra
         x1d_files = self.save_outputs('_x1dints.fits', x1d_files)
+        # ---------------------------------------------------------------------
+        # Last step is to save the outputs for return, do not remove this
+        self.add_output(infiles)
+        self.add_calib('X1D', x1d_files)
 
 
 class NircamMultistripe(NircamGrism):

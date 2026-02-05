@@ -9,7 +9,7 @@ Created on 2025-10-27 at 11:39
 """
 import os
 import shutil
-from typing import Any, Dict, Tuple
+from typing import Any, Dict, List, Tuple
 
 import numpy as np
 from jwst import datamodels
@@ -90,6 +90,9 @@ class Instrument:
         self.variables.set('ABSFILES', [], source=func_name)
         self.variables.set('PREFIXES', [], source=func_name)
         self.variables.set('NSEGMENTS', 0, source=func_name)
+        # variable to return tsovore output files to other modules
+        self.variables.set('OUT', [], source=func_name)
+        self.variables.set('CALIBS', dict(), source=func_name)
         # lock variables to avoid misuse
         self.variables.lock()
 
@@ -652,18 +655,36 @@ class Instrument:
             # construct new filename
             new_base_name = prefixes[it] + suffix
             new_filename = str(os.path.join(datadir, new_base_name))
+            # deal with input file and output file being the same
+            if filename == new_filename:
+                out_files.append(new_filename)
+                continue
             # deal with files not existing (not allowed)
             if not os.path.exists(filename):
                 wmsg = ('File {0} does not exist on disk. Cannot add to out. '
-                        'This may crash future steps.').format(filename)
+                        'This may crash next steps.').format(filename)
                 WLOG(self.params, 'warning', wmsg)
                 return out_files
             else:
+                # Check if target file exists and is identical
+                if os.path.exists(new_filename):
+                    # Compare file modification times and sizes first (fast check)
+                    src_stat = os.stat(filename)
+                    dst_stat = os.stat(new_filename)
+                    if (src_stat.st_size == dst_stat.st_size and
+                        src_stat.st_mtime <= dst_stat.st_mtime):
+                        # Files appear identical, skip copying
+                        msg = ('File {0} already exists and appears up to date, '
+                               'skipping copy').format(new_filename)
+                        WLOG(self.params, 'info', msg)
+                        out_files.append(new_filename)
+                        continue
+                # File doesn't exist or is different, proceed with copy
                 msg = ('Copying file {0} to {1}').format(filename,
                                                          new_filename)
                 WLOG(self.params, 'info', msg)
-            # copy the file
-            shutil.copy(filename, new_filename)
+                # copy the file
+                shutil.copy(filename, new_filename)
             # save files to list
             out_files.append(new_filename)
 
@@ -679,6 +700,9 @@ class Instrument:
         func_name = f"{__NAME__}.Instrument.remove_intermediate_files"
         # get parameters from params
         remove_intermediates = self.tparams['INPUTS.REMOVE_INTERMEDIATES']
+        # do not remove the initial input files
+        if filepath in self.variables['ABSFILES']:
+            return
         # check if we need to remove intermediate files
         if remove_intermediates and os.path.exists(filepath):
             # remove the file
@@ -730,7 +754,7 @@ class Instrument:
         return run_step, flavour, kwargs, suffix
 
     def skip_step(self, run_step: bool, step_name: str,
-                  suffix: str, infiles: list):
+                  suffix: str | List[str], infiles: list):
         """
         Decide whether to skip a step based on existing files and parameters
 
@@ -776,8 +800,9 @@ class Instrument:
             # print message to user
             msg = ('\tINPUTS.SKIP_PROCESSED_FILES=True\n\tAll expected '
                    'output files found with suffix "{0}".'
-                   '\n\tSkipping step "{1}".').format(suffix, step_name)
-            WLOG(self.params, '', msg)
+                   '\n\tSkipping step "{1}".')
+            margs = [suffix, step_name]
+            WLOG(self.params, '', msg.format(*margs))
             return run_step, expected_files
 
         return run_step, infiles
@@ -815,6 +840,39 @@ class Instrument:
         # raise not implemented error (implemented in JWST)
         nmsg = NOT_IMPLEMENTED_MSG.format(func_name, self.instrument)
         raise NotImplemented(nmsg)
+
+    def add_output(self, outfiles: List[str] | str):
+        """
+        Add output files to OUT variable - this is used for steps after
+        TSOVORE to know what the "inputs" to the next module should be
+        (from TSOVORE)
+
+        :param outfiles: str or list[str], the output file(s)
+        :return: None, updates self.variables['OUT"]
+        """
+        # deal with a single string
+        if isinstance(outfiles, str):
+            outfiles = [outfiles]
+        # set OUT in variables
+        self.variables.set('OUT', outfiles)
+
+    def add_calib(self, key: str, calfile: str):
+        """
+        Add calibration file to CALIBS variable - this is used for steps after
+        TSOVORE to know what calibration files should be used in the next
+        module (from TSOVORE)
+
+        :param key: str, the calibration key
+        :param calfile: str, the calibration file path
+
+        :return: None, updates self.variables['CALIBS']
+        """
+        # get current calibs
+        calibs = self.variables['CALIBS']
+        # add new calfile
+        calibs[key] = calfile
+        # set CALIBS in variables
+        self.variables.set('CALIBS', calibs)
 
 
 class JWST(Instrument):
@@ -915,9 +973,10 @@ class JWST(Instrument):
         for it, filename in enumerate(infiles):
             # Read input segments files from disk
             input_data = datamodels.open(filename)
-            # Execute the bundled steps in sequence
             # Step 1: Group Scale (even if skipped converts ints --> floats)
             result = GroupScaleStep.call(input_data, save_results=False)
+            # Execute the bundled steps in sequence
+            result = self._force_float(result)
             # Step 2: DQ Init
             result = DQInitStep.call(result, save_results=False)
             # Step 3: EMI Correction
@@ -1565,12 +1624,12 @@ class JWST(Instrument):
         # get params from step constant
         run_step, flavour, kwargs, suffix = self.from_step_args(func_name)
         # deal with skipping step
-        run_step, infiles = self.skip_step(
-            run_step, 'APPLY_FLAT_FIELD', suffix, infiles)
+        run_step, infiles = self.skip_step(run_step, 'APPLY_FLAT_FIELD',
+                                           suffix, infiles)
         # deal with not running this step
         if not run_step:
             # save output files to {PREFIX}_rateints.fits
-            return self.save_outputs('_rateints.fits', infiles)
+            return infiles
         # ---------------------------------------------------------------------
         # get parameters from params
         datadir = self.tparams['PATHS.TEMP_PATH']
@@ -1607,8 +1666,8 @@ class JWST(Instrument):
             run_step, 'APPLY_PHOTOMETRIC_CALIBRATION', suffix, infiles)
         # deal with not running this step
         if not run_step:
-            # save output files to {PREFIX}_calints.fits
-            return self.save_outputs('_calints.fits', infiles)
+            # if we don't run this step return the infiles
+            return infiles
         # ---------------------------------------------------------------------
         # get parameters from params
         datadir = self.tparams['PATHS.TEMP_PATH']

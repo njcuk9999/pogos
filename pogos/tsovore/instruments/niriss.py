@@ -171,6 +171,10 @@ class NirissSoss(ts_default.JWST):
         # Step 2.11: Photometric Calibration on infiles → save _calints.fits
         infiles = self.apply_photometric_calibration(infiles)
         infiles = self.save_outputs('_calints.fits', infiles)
+        # ---------------------------------------------------------------------
+        # Last step is to save the outputs for return, do not remove this
+        self.add_output(infiles)
+        self.add_calib('X1D', x1d_files)
 
 
 class NirissSossSuperstripe(NirissSoss):

@@ -197,8 +197,12 @@ class MiriImaging(ts_default.JWST):
         # Step 2.4: Photometric Calibration
         # Apply photometric calibration and convert DN/s to physical units
         infiles = self.apply_photometric_calibration(infiles)
+
         # Save TSO-style calibrated product
         infiles = self.save_outputs('_calints.fits', infiles)
+        # ---------------------------------------------------------------------
+        # Last step is to save the outputs for return, do not remove this
+        self.add_output(infiles)
 
 
 class MiriLrs(ts_default.JWST):
@@ -341,7 +345,10 @@ class MiriLrs(ts_default.JWST):
         x1d_files = self.extract_1d_spectrum(infiles)
         # Save 1D extracted spectra
         x1d_files = self.save_outputs('_x1dints.fits', x1d_files)
-
+        # ---------------------------------------------------------------------
+        # Last step is to save the outputs for return, do not remove this
+        self.add_output(infiles)
+        self.add_calib('X1D', x1d_files)
 
 # =============================================================================
 # Start of code

@@ -331,7 +331,7 @@ STEP_SUFFIX['CORRECT_CHARGE_MIGRATION'] = '_chargemigrationstep.fits'
 STEP_SUFFIX['DETECT_AND_FLAG_JUMPS'] = '_jump.fits'
 STEP_SUFFIX['PICTURE_FRAME_STEP'] = '_pictureframestep.fits'
 STEP_SUFFIX['REMOVE_FLICKER_NOISE'] = '_cleanflickernoisestep.fits'
-STEP_SUFFIX['FIT_SIGNAL_RAMPS'] = '_rampfitstep.fits'
+STEP_SUFFIX['FIT_SIGNAL_RAMPS'] = '_1_rampfitstep.fits'
 STEP_SUFFIX['APPLY_GAIN_SCALING'] = '_gainscalestep.fits'
 # Image2/Spec2 level steps (calwebb_image2.py / calwebb_spec2.py)
 STEP_SUFFIX['SUBTRACT_BACKGROUND'] = '_backgroundstep.fits'

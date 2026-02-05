@@ -71,7 +71,7 @@ def run_sossisse_module(params: ParamDict,
     # Deal with input from TSOVORE if available
     # ----------------------------------------------------------------------
     if tsovore_inst is not None:
-        _ = tsovore_input(params, tsovore_inst)
+        sparams = tsovore_input(params, tsovore_inst)
         # ---------------------------------------------------------------------
         # SOSSISSE requires raw data to be copied to a specific location
         # check here if that exists and if not prompt the user
@@ -163,7 +163,9 @@ def tsovore_input(params: ParamDict,
     sparams = sossisse_params.as_param_dict()
     # -------------------------------------------------------------------------
     # get tsovore files to copy
-    tsovore_outputs = tsovore_inst.variables['LAST']
+    tsovore_outputs = tsovore_inst.variables['OUT']
+    # set the output files as input to SOSSISSE
+    sossisse_params['INPUTS']['FILES'] = tsovore_outputs
     # ---------------------------------------------------------------------
     # prepare input directory
     sparams = const_funcs.run_time_params(sparams, only_create=True)
@@ -182,9 +184,29 @@ def tsovore_input(params: ParamDict,
         WLOG(params, '', msg)
         # copy file
         shutil.copy(source, dest)
-
+    # ---------------------------------------------------------------------
+    # copy calibration files
+    if 'X1D' in tsovore_inst.variables['CALIBS']:
+        # get the calibration file
+        calib_file = tsovore_inst.variables['CALIBS']['X1D']
+        # get the sossisse calibration directory
+        calib_dir = sparams['PATHS.CALIBPATH']
+        # define source and destination
+        source = str(calib_file)
+        dest = str(os.path.join(calib_dir, os.path.basename(calib_file)))
+        # log the copy
+        msg = (f'Copying TSOVORE calibration file to SOSSISSE calib dir: '
+               f'{os.path.basename(calib_file)}')
+        WLOG(params, '', msg)
+        # copy file
+        shutil.copy(source, dest)
+        # update the SOSSISSE wavelength solution file
+        sossisse_params['INPUTS.WAVEFILE'] = os.path.basename(calib_file)
+        # update the SOSSISSE wavelength solution file type
+        sossisse_params['INPUTS.WAVE_FILE_TYPE'] = 'ext_1d'
+    # ---------------------------------------------------------------------
     # return params
-    return params
+    return sossisse_params
 
 
 # =============================================================================
