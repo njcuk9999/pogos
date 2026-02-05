@@ -779,8 +779,6 @@ def fit_cube_psf(params: ParamDict, cube: np.ndarray,
             d2s[iframe] = lfit[3]
             # error in the 2nd order gradient
             d2s_err[iframe] = lsig[3]
-
-        print(iframe, 'model_psf: ', np.nansum(model_psf), 'amps: ', np.nansum(amps[iframe]))
     # -------------------------------------------------------------------------
     # normalize the amplitude by the median
     median_amp = np.nanmedian(amps)
