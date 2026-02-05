@@ -180,10 +180,7 @@ cgroup = 'STEP'
 TSOVORE_CDict.add_group(cgroup, source=__NAME__, user=True, active=True,
                        description='Settings for the science steps')
 # -----------------------------------------------------------------------------
-STEPS = ['GROUP_SCALE_STEP',
-         'DQ_INIT_STEP',
-         'EMICORR_STEP',
-         'SATURATION_STEP',
+STEPS = ['INITIALIZE_DETECTOR_DATA',
          'APPLY_INTERPIXEL_CAPACITANCE',
          'SUBTRACT_SUPERBIAS',
          'APPLY_REFERENCE_PIXEL_CORRECTION',
@@ -220,10 +217,7 @@ STEPS = ['GROUP_SCALE_STEP',
 
 # default flavour for each step
 DEFAULT_FLAVOURS = dict()
-DEFAULT_FLAVOURS['GROUP_SCALE_STEP'] = 'jwst'
-DEFAULT_FLAVOURS['DQ_INIT_STEP'] = 'jwst'
-DEFAULT_FLAVOURS['EMICORR_STEP'] = 'jwst'
-DEFAULT_FLAVOURS['SATURATION_STEP'] = 'jwst'
+DEFAULT_FLAVOURS['INITIALIZE_DETECTOR_DATA'] = 'jwst'
 DEFAULT_FLAVOURS['APPLY_INTERPIXEL_CAPACITANCE'] = 'jwst'
 DEFAULT_FLAVOURS['SUBTRACT_SUPERBIAS'] = 'jwst'
 DEFAULT_FLAVOURS['APPLY_REFERENCE_PIXEL_CORRECTION'] = 'jwst'
@@ -260,10 +254,7 @@ DEFAULT_FLAVOURS['RESAMPLE_IMAGES'] = 'jwst'
 
 # Default run state for each step (based on JWST pipeline defaults)
 DEFAULT_RUN = dict()
-DEFAULT_RUN['GROUP_SCALE_STEP'] = True
-DEFAULT_RUN['DQ_INIT_STEP'] = True
-DEFAULT_RUN['EMICORR_STEP'] = True
-DEFAULT_RUN['SATURATION_STEP'] = True
+DEFAULT_RUN['INITIALIZE_DETECTOR_DATA'] = True
 DEFAULT_RUN['APPLY_INTERPIXEL_CAPACITANCE'] = True
 DEFAULT_RUN['SUBTRACT_SUPERBIAS'] = True
 DEFAULT_RUN['APPLY_REFERENCE_PIXEL_CORRECTION'] = True
@@ -325,10 +316,7 @@ Kwargs for jump detection:
 # Step output filenames (for skipping)
 STEP_SUFFIX = dict()
 # Detector1 level steps (calwebb_detector1.py)
-STEP_SUFFIX['GROUP_SCALE_STEP'] = '_groupscalestep.fits'
-STEP_SUFFIX['DQ_INIT_STEP'] = '_dqinitstep.fits'
-STEP_SUFFIX['EMICORR_STEP'] = '_emicorrstep.fits'
-STEP_SUFFIX['SATURATION_STEP'] = '_saturationstep.fits'
+STEP_SUFFIX['INITIALIZE_DETECTOR_DATA'] = '_saturationstep.fits'
 STEP_SUFFIX['APPLY_INTERPIXEL_CAPACITANCE'] = '_ipcstep.fits'
 STEP_SUFFIX['SUBTRACT_SUPERBIAS'] = '_superbiasstep.fits'
 STEP_SUFFIX['APPLY_REFERENCE_PIXEL_CORRECTION'] = '_refpixstep.fits'

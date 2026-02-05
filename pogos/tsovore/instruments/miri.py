@@ -92,21 +92,10 @@ class MiriImaging(ts_default.JWST):
         msg = ('Applying Level 1 calibration steps to MIRI Imaging data')
         WLOG(self.params, 'info', msg)
 
-        # Group Scale Step (1.1)
-        # Scales group data to account for on-chip amplifier effects
-        infiles = self.group_scale_step(infiles)
-
-        # DQ Init Step (1.2)
-        # Initialize the data quality flags
-        infiles = self.dq_init_step(infiles)
-
-        # Emi Corr Step (1.3)
-        # Apply EMI (electro-magnetic interference) corrections
-        infiles = self.emicorr_step(infiles)
-
-        # Saturation Step (1.4)
-        # Flag saturated pixels
-        infiles = self.saturation_step(infiles)
+        # Initialize Detector Data (1.1-1.4 bundled)
+        # Bundles: group_scale + dq_init + emicorr + saturation
+        # This avoids dtype conversion issues between steps
+        infiles = self.initialize_detector_data(infiles)
 
         # IPC Step (1.5)
         # Correct for interpixel capacitance
@@ -247,17 +236,9 @@ class MiriLrs(ts_default.JWST):
                'LRS data')
         WLOG(self.params, 'info', msg)
 
-        # Group Scale Step (1.1)
-        infiles = self.group_scale_step(infiles)
-
-        # DQ Init Step (1.2)
-        infiles = self.dq_init_step(infiles)
-
-        # Emi Corr Step (1.3)
-        infiles = self.emicorr_step(infiles)
-
-        # Saturation Step (1.4)
-        infiles = self.saturation_step(infiles)
+        # Initialize Detector Data (1.1-1.4 bundled)
+        # Bundles: group_scale + dq_init + emicorr + saturation
+        infiles = self.initialize_detector_data(infiles)
 
         # IPC Step (1.5)
         infiles = self.apply_interpixel_capacitance(infiles)

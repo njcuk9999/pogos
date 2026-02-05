@@ -11,6 +11,7 @@ import os
 import shutil
 from typing import Any, Dict, Tuple
 
+import numpy as np
 from jwst import datamodels
 from jwst.assign_wcs import AssignWcsStep
 from jwst.background import BackgroundStep
@@ -50,7 +51,7 @@ from aperocore.constants import param_functions
 from aperocore.core import drs_log
 from pogos.core import base as pogos_base
 from pogos.tsovore.core import base as ts_base
-from jwst import pipeline
+
 # =============================================================================
 # Define variables
 # =============================================================================
@@ -781,12 +782,45 @@ class Instrument:
 
         return run_step, infiles
 
+    def save_model_with_suffix(self, model, output_dir: str, suffix: str,
+                               iteration: int) -> str:
+        """
+        Save a datamodel to disk with the given suffix.
+
+        Must be implemented in subclasses for specific data formats.
+
+        :param model: datamodel object to save
+        :param output_dir: str, directory to save file to
+        :param suffix: str, the suffix to add to the filename
+        :param iteration: int, the iteration number
+        :return: str, the path to the saved file
+        """
+        # set function name
+        func_name = f"{__NAME__}.Instrument.save_model_with_suffix"
+        # raise not implemented error (implemented in JWST)
+        nmsg = NOT_IMPLEMENTED_MSG.format(func_name, self.instrument)
+        raise NotImplemented(nmsg)
+
+    def _force_float(self, result):
+        """
+        Force all uint16 arrays in datamodel to float32.
+
+        Must be implemented in subclasses for specific data formats.
+
+        :param result: datamodel with uint16 arrays
+        :return: datamodel with float32 arrays
+        """
+        # set function name
+        func_name = f"{__NAME__}.Instrument._force_float"
+        # raise not implemented error (implemented in JWST)
+        nmsg = NOT_IMPLEMENTED_MSG.format(func_name, self.instrument)
+        raise NotImplemented(nmsg)
+
 
 class JWST(Instrument):
     """
     JWST Instrument class
     """
-
     def __init__(self, params: ParamDict, instrument: str = 'JWST.NONE'):
         super().__init__(params, instrument)
 
@@ -848,6 +882,116 @@ class JWST(Instrument):
         # raise not implemented error
         nmsg = NOT_IMPLEMENTED_MSG.format(func_name, self.instrument)
         raise NotImplemented(nmsg)
+
+    # =========================================================================
+    # Level 1 detector processing steps (individual step callers)
+    # =========================================================================
+    def initialize_detector_data(self, infiles: list) -> list:
+        """
+        Initialize detector data models.
+        (group scale step + dq init step + emicorr step + saturation step)
+
+        These are bundled to avoid problems with steps that are skipped
+        (and going between int arrays to float arrays).
+
+        :param infiles: list[str], list of input files
+        :return: list[str], list of output files
+        """
+        # set function name
+        func_name = f"{__NAME__}.JWST.initialize_detector_data"
+        # get params from step constant
+        run_step, flavour, kwargs, suffix = self.from_step_args(func_name)
+        # deal with skipping step
+        run_step, infiles = self.skip_step(run_step, 'INITIALIZE_DETECTOR_DATA',
+                                           suffix, infiles)
+        # deal with not running this step
+        if not run_step:
+            return infiles
+        # get parameters from params
+        datadir = self.tparams['PATHS.TEMP_PATH']
+        # storage for output files
+        outfiles = []
+        # loop around infiles
+        for it, filename in enumerate(infiles):
+            # Read input segments files from disk
+            input_data = datamodels.open(filename)
+            # Execute the bundled steps in sequence
+            # Step 1: Group Scale (even if skipped converts ints --> floats)
+            result = GroupScaleStep.call(input_data, save_results=False)
+            # Step 2: DQ Init
+            result = DQInitStep.call(result, save_results=False)
+            # Step 3: EMI Correction
+            result = EmiCorrStep.call(result, save_results=False)
+            # Step 4: Saturation (save to disk)
+            result = SaturationStep.call(result, output_dir=datadir,
+                                         save_results=True)
+            # To limit disk usage, erase the file from the previous step
+            self.remove_intermediate_files(filename)
+            # get output path
+            outfile = self.get_output_path(it, datadir, result.meta.filename)
+            outfiles.append(outfile)
+
+        return outfiles
+
+    def group_scale_step(self, infiles: list) -> list:
+        """
+        Scale group data to account for on-chip amplifier effects.
+
+        DEPRECATED: This step is now bundled in initialize_detector_data()
+        along with dq_init_step, emicorr_step, and saturation_step.
+
+        :param infiles: list[str], list of input files
+        :return: list[str], list of output files
+        """
+        # Raise error - this step should not be called directly anymore
+        emsg = ('group_scale_step is deprecated. Use initialize_detector_data() '
+                'instead, which bundles group_scale + dq_init + emicorr + saturation.')
+        raise ts_base.TSOvoreException(emsg)
+
+    def dq_init_step(self, infiles: list) -> list:
+        """
+        Initialize data quality flags.
+
+        DEPRECATED: This step is now bundled in initialize_detector_data()
+        along with group_scale_step, emicorr_step, and saturation_step.
+
+        :param infiles: list[str], list of input files
+        :return: list[str], list of output files
+        """
+        # Raise error - this step should not be called directly anymore
+        emsg = ('dq_init_step is deprecated. Use initialize_detector_data() '
+                'instead, which bundles group_scale + dq_init + emicorr + saturation.')
+        raise ts_base.TSOvoreException(emsg)
+
+    def emicorr_step(self, infiles: list) -> list:
+        """
+        Apply EMI (electro-magnetic interference) corrections.
+
+        DEPRECATED: This step is now bundled in initialize_detector_data()
+        along with group_scale_step, dq_init_step, and saturation_step.
+
+        :param infiles: list[str], list of input files
+        :return: list[str], list of output files
+        """
+        # Raise error - this step should not be called directly anymore
+        emsg = ('emicorr_step is deprecated. Use initialize_detector_data() '
+                'instead, which bundles group_scale + dq_init + emicorr + saturation.')
+        raise ts_base.TSOvoreException(emsg)
+
+    def saturation_step(self, infiles: list) -> list:
+        """
+        Flag saturated pixels.
+
+        DEPRECATED: This step is now bundled in initialize_detector_data()
+        along with group_scale_step, dq_init_step, and emicorr_step.
+
+        :param infiles: list[str], list of input files
+        :return: list[str], list of output files
+        """
+        # Raise error - this step should not be called directly anymore
+        emsg = ('saturation_step is deprecated. Use initialize_detector_data() '
+                'instead, which bundles group_scale + dq_init + emicorr + saturation.')
+        raise ts_base.TSOvoreException(emsg)
 
     def apply_interpixel_capacitance(self, infiles: list) -> list:
         """
@@ -1484,152 +1628,6 @@ class JWST(Instrument):
 
         return outfiles
 
-    # =========================================================================
-    # Additional Level 1 detector processing steps (individual step callers)
-    # =========================================================================
-    # These methods are called by benchmark implementations to run individual
-    # steps rather than bundled into initialize_detector_data()
-
-    def group_scale_step(self, infiles: list) -> list:
-        """
-        Scale group data to account for on-chip amplifier effects.
-
-        :param infiles: list[str], list of input files
-        :return: list[str], list of output files
-        """
-        # set function name
-        func_name = f"{__NAME__}.JWST.group_scale_step"
-        # get params from step constant
-        run_step, flavour, kwargs, suffix = self.from_step_args(func_name)
-        # deal with skipping step
-        run_step, infiles = self.skip_step(
-            run_step, 'GROUP_SCALE_STEP', suffix, infiles)
-        # deal with not running this step
-        if not run_step:
-            return infiles
-        # get parameters from params
-        datadir = self.tparams['PATHS.TEMP_PATH']
-        # storage for output files
-        outfiles = []
-        # loop around infiles
-        for it, filename in enumerate(infiles):
-            # Read input segments files from disk
-            input_data = datamodels.open(filename)
-            result = GroupScaleStep.call(input_data, output_dir=datadir,
-                                         save_results=True, **kwargs)
-            # To limit disk usage, erase the file from the previously saved step
-            self.remove_intermediate_files(filename)
-            # get output path
-            outfile = self.get_output_path(it, datadir, result.meta.filename)
-            outfiles.append(outfile)
-
-        return outfiles
-
-    def dq_init_step(self, infiles: list) -> list:
-        """
-        Initialize data quality flags.
-
-        :param infiles: list[str], list of input files
-        :return: list[str], list of output files
-        """
-        # set function name
-        func_name = f"{__NAME__}.JWST.dq_init_step"
-        # get params from step constant
-        run_step, flavour, kwargs, suffix = self.from_step_args(func_name)
-        # deal with skipping step
-        run_step, infiles = self.skip_step(
-            run_step, 'DQ_INIT_STEP', suffix, infiles)
-        # deal with not running this step
-        if not run_step:
-            return infiles
-        # get parameters from params
-        datadir = self.tparams['PATHS.TEMP_PATH']
-        # storage for output files
-        outfiles = []
-        # loop around infiles
-        for it, filename in enumerate(infiles):
-            # Read input segments files from disk
-            input_data = datamodels.open(filename)
-            result = DQInitStep.call(input_data, output_dir=datadir,
-                                     save_results=True, **kwargs)
-            # To limit disk usage, erase the file from the previously saved step
-            self.remove_intermediate_files(filename)
-            # get output path
-            outfile = self.get_output_path(it, datadir, result.meta.filename)
-            outfiles.append(outfile)
-
-        return outfiles
-
-    def emicorr_step(self, infiles: list) -> list:
-        """
-        Apply EMI (electro-magnetic interference) corrections.
-
-        :param infiles: list[str], list of input files
-        :return: list[str], list of output files
-        """
-        # set function name
-        func_name = f"{__NAME__}.JWST.emicorr_step"
-        # get params from step constant
-        run_step, flavour, kwargs, suffix = self.from_step_args(func_name)
-        # deal with skipping step
-        run_step, infiles = self.skip_step(
-            run_step, 'EMICORR_STEP', suffix, infiles)
-        # deal with not running this step
-        if not run_step:
-            return infiles
-        # get parameters from params
-        datadir = self.tparams['PATHS.TEMP_PATH']
-        # storage for output files
-        outfiles = []
-        # loop around infiles
-        for it, filename in enumerate(infiles):
-            # Read input segments files from disk
-            input_data = datamodels.open(filename)
-            result = EmiCorrStep.call(input_data, output_dir=datadir,
-                                      save_results=True, **kwargs)
-            # To limit disk usage, erase the file from the previously saved step
-            self.remove_intermediate_files(filename)
-            # get output path
-            outfile = self.get_output_path(it, datadir, result.meta.filename)
-            outfiles.append(outfile)
-
-        return outfiles
-
-    def saturation_step(self, infiles: list) -> list:
-        """
-        Flag saturated pixels.
-
-        :param infiles: list[str], list of input files
-        :return: list[str], list of output files
-        """
-        # set function name
-        func_name = f"{__NAME__}.JWST.saturation_step"
-        # get params from step constant
-        run_step, flavour, kwargs, suffix = self.from_step_args(func_name)
-        # deal with skipping step
-        run_step, infiles = self.skip_step(
-            run_step, 'SATURATION_STEP', suffix, infiles)
-        # deal with not running this step
-        if not run_step:
-            return infiles
-        # get parameters from params
-        datadir = self.tparams['PATHS.TEMP_PATH']
-        # storage for output files
-        outfiles = []
-        # loop around infiles
-        for it, filename in enumerate(infiles):
-            # Read input segments files from disk
-            input_data = datamodels.open(filename)
-            result = SaturationStep.call(input_data, output_dir=datadir,
-                                         save_results=True, **kwargs)
-            # To limit disk usage, erase the file from the previously saved step
-            self.remove_intermediate_files(filename)
-            # get output path
-            outfile = self.get_output_path(it, datadir, result.meta.filename)
-            outfiles.append(outfile)
-
-        return outfiles
-
     def subtract_superbias(self, infiles: list) -> list:
         """
         Subtract superbias reference for NIR instruments.
@@ -1706,7 +1704,6 @@ class JWST(Instrument):
     # =========================================================================
     # Level 2 spectroscopic and imaging processing steps
     # =========================================================================
-
     def extract_2d_spectrum(self, infiles: list) -> list:
         """
         Extract 2D spectrum from detector image.
@@ -2118,6 +2115,62 @@ class JWST(Instrument):
             outfiles.append(outfile)
 
         return outfiles
+
+    # =========================================================================
+    # JWST specific helper functions
+    # =========================================================================
+    def save_model_with_suffix(self, model, output_dir: str, suffix: str,
+                               iteration: int) -> str:
+        """
+        Save a JWST datamodel to disk with the given suffix.
+
+        Uses the prefix + suffix naming convention.
+
+        :param model: JWST datamodel object to save
+        :param output_dir: str, directory to save file to
+        :param suffix: str, the suffix to add to the filename
+        :param iteration: int, the iteration number
+        :return: str, the path to the saved file
+        """
+        # Get the prefix for this iteration
+        prefixes = self.variables['PREFIXES']
+        prefix = prefixes[iteration]
+        # Construct the output filename
+        new_base_name = prefix + suffix
+        outfile = os.path.join(output_dir, new_base_name)
+        # Save the model
+        model.save(outfile)
+        return outfile
+
+    def _force_float(self, result):
+        """
+        Force all uint16 arrays in JWST data model to float32.
+
+        Group scale should do this, but if skipped it might not convert
+        all arrays. This ensures data, err, refout, zeroframe, etc.
+        are all float32.
+
+        :param result: JWST datamodel
+        :return: JWST datamodel with float32 arrays
+        """
+        # Convert data array
+        if result.data.dtype != np.float32:
+            result.data = result.data.astype(np.float32, copy=True)
+        # Convert err array
+        if hasattr(result, 'err') and result.err is not None:
+            if result.err.dtype != np.float32:
+                result.err = result.err.astype(np.float32, copy=True)
+        # Convert refout array (MIRI specific)
+        if hasattr(result, 'refout') and result.refout is not None:
+            if result.refout.dtype != np.float32:
+                result.refout = result.refout.astype(np.float32,
+                                                     copy=True)
+        # Convert zeroframe array if present
+        if hasattr(result, 'zeroframe') and result.zeroframe is not None:
+            if result.zeroframe.dtype != np.float32:
+                result.zeroframe = result.zeroframe.astype(np.float32,
+                                                            copy=True)
+        return result
 
 
 # =============================================================================

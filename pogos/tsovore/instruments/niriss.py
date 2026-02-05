@@ -90,16 +90,10 @@ class NirissSoss(ts_default.JWST):
                'SOSS data')
         WLOG(self.params, 'info', msg)
 
-        # Group Scale Step
-        infiles = self.group_scale_step(infiles)
+        # Initialize Detector Data (bundled: group_scale + dq_init + saturation)
+        infiles = self.initialize_detector_data(infiles)
         # This is an example for Loic
         # infiles = loic_niriss.loic_group_scale_step(self, infiles)
-
-        # DQ Init Step
-        infiles = self.dq_init_step(infiles)
-
-        # Saturation Step
-        infiles = self.saturation_step(infiles)
 
         # IPC Step
         infiles = self.apply_interpixel_capacitance(infiles)

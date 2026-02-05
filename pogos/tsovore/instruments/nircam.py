@@ -101,14 +101,9 @@ class NircamImaging(ts_default.JWST):
                'imaging data')
         WLOG(self.params, 'info', msg)
 
-        # Group Scale Step
-        infiles = self.group_scale_step(infiles)
-
-        # DQ Init Step
-        infiles = self.dq_init_step(infiles)
-
-        # Saturation Step
-        infiles = self.saturation_step(infiles)
+        # Initialize Detector Data (bundled: group_scale + dq_init + saturation)
+        # Note: NIRCam doesn't use emicorr_step
+        infiles = self.initialize_detector_data(infiles)
 
         # IPC Step
         infiles = self.apply_interpixel_capacitance(infiles)
@@ -211,14 +206,8 @@ class NircamGrism(ts_default.JWST):
                'Grism data')
         WLOG(self.params, 'info', msg)
 
-        # Group Scale Step
-        infiles = self.group_scale_step(infiles)
-
-        # DQ Init Step
-        infiles = self.dq_init_step(infiles)
-
-        # Saturation Step
-        infiles = self.saturation_step(infiles)
+        # Initialize Detector Data (bundled: group_scale + dq_init + saturation)
+        infiles = self.initialize_detector_data(infiles)
 
         # IPC Step
         infiles = self.apply_interpixel_capacitance(infiles)
