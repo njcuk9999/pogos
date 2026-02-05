@@ -411,7 +411,7 @@ def prepare_dataset(params: ParamDict, data_table: Table,
     # Juliet is about to be used - print any warnings
     if len(JULIET_IMPORT_MESSAGES) > 0:
         for msg in JULIET_IMPORT_MESSAGES:
-            WLOG(params, 'warning', msg, func_name=func_name)
+            WLOG(params, 'warning', msg)
     # -------------------------------------------------------------------------
     # deal with no bin params
     if bin_params is None:
