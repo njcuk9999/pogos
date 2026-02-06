@@ -129,6 +129,18 @@ SORBET_CDict.add('OUTPUT_PATH', value=f'wlcta{os.sep}outputs', dtype=str,
                             'GLOBAL.DATA_PATH/sorbet/'
                             '{SUBDIRECTORY}/wlcta/{OUTPUT_PATH}/')
 
+# Whether to use previous juliet files (warning this will mean juliet ignores
+# any updates to parameters set here)
+# Setting this to True will make Juliet run much
+# faster but use at your own risk!
+SORBET_CDict.add('USE_PREV_JULIET', value=False, dtype=bool, source=__NAME__,
+                 user=True, active=True, group=cgroup,
+                 description='Whether to use previous juliet temporary files '
+                             '(warning this will mean juliet ignores any '
+                             'updates to parameters set here). '
+                             '\nSetting this to True will make Juliet run much '
+                             'faster but use at your own risk!')
+
 # Plot path
 SORBET_CDict.add('PLOT_PATH', value=f'wlcta{os.sep}plots', dtype=str,
                 source=__NAME__,
@@ -331,6 +343,18 @@ SORBET_CDict.add('OUTPUT_PATH', value=f'slcta{os.sep}outputs',
                             '\n otherwise it will be relative to '
                             'GLOBAL.DATA_PATH/sorbet/'
                             '{SUBDIRECTORY}/slcta/{OUTPUT_PATH}/')
+
+# Whether to use previous juliet files (warning this will mean juliet ignores
+# any updates to parameters set here)
+# Setting this to True will make Juliet run much
+# faster but use at your own risk!
+SORBET_CDict.add('USE_PREV_JULIET', value=False, dtype=bool, source=__NAME__,
+                 user=True, active=True, group=cgroup,
+                 description='Whether to use previous juliet temporary files '
+                             '(warning this will mean juliet ignores any '
+                             'updates to parameters set here). '
+                             '\nSetting this to True will make Juliet run much '
+                             'faster but use at your own risk!')
 
 # Plot path
 SORBET_CDict.add('PLOT_PATH', value=f'slcta{os.sep}plots',  dtype=str,

@@ -633,7 +633,8 @@ def prepare_dataset(params: ParamDict, data_table: Table,
         # update the output path
         sparams['OUTPUT_SUBPATH'] = out_folder
 
-
+    # Deal with having temporary files
+    deal_with_previous_juilet_files(params, sparams, out_folder)
 
     # Load and fit dataset with juliet:
     dataset = juliet.load(priors=priors,
@@ -643,6 +644,82 @@ def prepare_dataset(params: ParamDict, data_table: Table,
                           out_folder=out_folder)
 
     return dataset
+
+
+def deal_with_previous_juilet_files(params: ParamDict, sparams: ParamDict,
+                                    out_folder: str):
+
+    # if user has flagged they want to use previous juliet files, do not delete
+    if sparams['USE_PREV_JULIET']:
+        # print progress
+        msg = (f'User has flagged to use previous Juliet files '
+               f'in "{out_folder}". '
+               f'\nProceeding without deleting previous Juliet files.')
+        WLOG(params, 'warning', msg, sublevel=2)
+        return
+    # -------------------------------------------------------------------------
+    # get the yaml file
+    yaml_file = params['GLOBAL.YAML_FILE']
+    # -------------------------------------------------------------------------
+    # list files in the output folder
+    prev_files = os.listdir(out_folder)
+    # remove the yaml file from this list
+    if os.path.basename(yaml_file) in prev_files:
+        prev_files.remove(os.path.basename(yaml_file))
+    # -------------------------------------------------------------------------
+    # if directory is empty we save a copy of the yaml file and move on
+    if len(prev_files) == 0:
+        # copy the yaml file to the output folder
+        dest_yaml_file = os.path.join(out_folder, os.path.basename(yaml_file))
+        io.copy_file(yaml_file, dest_yaml_file)
+        # print progress
+        msg = (f'No previous juliet files found in "{out_folder}". '
+               f'Copying yaml file to output folder.')
+        WLOG(params, '', msg)
+        return
+    # -------------------------------------------------------------------------
+    # otherwise we have to compare previous yaml file with current one
+    dest_yaml_file = os.path.join(out_folder, os.path.basename(yaml_file))
+    # if the file does not exist we remove everything in the output folder
+    if not os.path.isfile(dest_yaml_file):
+        pass
+    else:
+        # compare the two yaml files
+        files_match = io.compare_yaml_files(yaml_file, dest_yaml_file)
+        # if they match we do not remove the previous juliet files
+        if files_match:
+            # print progress
+            msg = (f'Previous juliet files found in "{out_folder}" but '
+                   f'yaml files match. '
+                   f'\nProceeding with fit without deleting previous '
+                   f'Juliet files.')
+            WLOG(params, '', msg)
+            return
+    # -------------------------------------------------------------------------
+    # print progress
+    msg = (f'Previous juliet files found in "{out_folder}" but yaml '
+           f'files do not match. '
+           f'\nRemoving previous Juliet files.')
+    WLOG(params, '', msg)
+    # remove everything in the output folder
+    for filename in prev_files:
+        file_path = os.path.join(out_folder, filename)
+        try:
+            if os.path.isfile(file_path):
+                # print removal progress
+                msg = f'Removing file "{file_path}"'
+                WLOG(params, '', msg)
+                # remove file
+                os.remove(file_path)
+            elif os.path.isdir(file_path):
+                # print removal progress
+                msg = f'Removing directory "{file_path}"'
+                WLOG(params, '', msg)
+                # remove directory
+                os.rmdir(file_path)
+        except Exception as e:
+            msg = (f'Failed to delete file "{file_path}": {e}')
+            raise sorbet_base.SorbetException(msg)
 
 
 def fit_transit(params: ParamDict, dataset: juliet.load,
