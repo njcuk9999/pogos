@@ -171,7 +171,7 @@ JULIET_PARAMETERS:
  
 Note those parameters that need an instrument should have _{INST_MODE} instead
 of instrument name. Please do not remove or change _{INST_MODE} as this is 
-used internally to replace with the instrument name
+used internally to replace with the instrument name.
 """
 
 SORBET_CDict.add('JULIET_PARAMETERS', value=None, dtype=list, dtypei=str,
@@ -266,13 +266,13 @@ SORBET_CDict.add('LINEAR_DETRENDING', value=None, dtype=str, source=__NAME__,
                  '\n\tdetrend linearly in each column.'
                  '\nIf using a file LINEAR_DETRENDING_TYPE should be set to '
                  '\n\tthe type of file provided e.g. '
-                 '\n\tfile:fits, file:ecsv, file:csv, file:txt'
+                 '\n\tfile:fits, file:ecsv, file:csv, file:ascii'
                  '\nNote the file should contain N columns, each column will '
                  '\n\tbe used as a detrending variable.')
 # Linear detrending type
 SORBET_CDict.add('LINEAR_DETRENDING_TYPE', value='null', dtype=str,
                  options=['null', 'file:fits', 'file:ecsv', 'file:csv',
-                          'file:txt'],
+                          'file:ascii'],
                  source=__NAME__, user=True, active=True, group=cgroup,
                  description='Define the type of linear detrending to apply. '
                              '\nSet this to "null" if no linear detrending '
@@ -337,12 +337,12 @@ SORBET_CDict.add('OUTPUT_SUBPATH', value=None, dtype=str, source=__NAME__,
 # Output results folder
 SORBET_CDict.add('OUTPUT_PATH', value=f'slcta{os.sep}outputs',
                  dtype=str, source=__NAME__,
-                user=True, active=True, group=cgroup,
-                description='Output result folder or path to the output folder.'
-                            '\nIf this is an aboslute path it will be used as is'
-                            '\n otherwise it will be relative to '
-                            'GLOBAL.DATA_PATH/sorbet/'
-                            '{SUBDIRECTORY}/slcta/{OUTPUT_PATH}/')
+                 user=True, active=True, group=cgroup,
+                 description='Output result folder or path to the output folder.'
+                             '\nIf this is an aboslute path it will be used as is'
+                             '\n otherwise it will be relative to '
+                             'GLOBAL.DATA_PATH/sorbet/'
+                             '{SUBDIRECTORY}/slcta/{OUTPUT_PATH}/')
 
 # Whether to use previous juliet files (warning this will mean juliet ignores
 # any updates to parameters set here)
