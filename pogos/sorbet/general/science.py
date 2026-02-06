@@ -252,11 +252,17 @@ def find_outliers(params: ParamDict, data_table: Table,
     # load the dataset
     bjd = np.array(data_table['Time']).astype(np.float64)
     flux = np.array(data_table['RelFlux']).astype(np.float64)
+    # get the outlier kernel size
+    outlier_kernel_size = params[f'SORBET.{method}.OUTLIER_KERNEL_SIZE']
 
     # apply median filter to remove outliers
     # transits are roughly the same duration so number of integration may be a 
     # good proxy of exposure time (inverserly proportional)
-    kernel_size = int(0.05 * len(bjd))
+    if outlier_kernel_size is not None:
+        kernel_size = int(outlier_kernel_size)
+    else:
+        kernel_size = int(0.05 * len(bjd))
+    # it must be odd for medfilt
     if kernel_size % 2 == 0:
         kernel_size += 1 # make sure it's odd
     medfilt_model = medfilt(flux, kernel_size) # model including the transit
@@ -499,15 +505,15 @@ def prepare_dataset(params: ParamDict, data_table: Table,
     elif sparams['LINEAR_DETRENDING'] not in [None, 'None', 'none']:
         # check if file exists
         input_file = sparams['LINEAR_DETRENDING']
+        input_type = sparams['LINEAR_DETRENDING_TYPE']
         if os.path.isfile(input_file):
             filename = input_file
         else:
             filename = os.path.join(params['GLOBAL.DATA_PATH'], input_file)
         # load the linear detrending data
         try:
-            lm_tbl = io.load_table(filename)
-            bad = sparams['OUTLIER_MASK']
-            lm_tbl = lm_tbl[~bad]
+            lm_tbl = io.load_table(filename, fmt=input_type)
+            lm_tbl = lm_tbl[~outlier_mask]
         except Exception as e:
             msg = (f'Failed to load data from file "{filename}": {e}'
                    f'\n\tFunction = {func_name}')

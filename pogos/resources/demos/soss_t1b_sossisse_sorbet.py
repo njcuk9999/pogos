@@ -36,7 +36,8 @@ INFO['instrument'] = 'JWST.NIRISS.SOSS'
 INFO['description'] = 'Trappist 1b transit observed on 2022-07-18'
 INFO['date'] = '2025-03-25'
 INFO['author'] = 'Etienne Artigau + Charles Cadieux'
-INFO['red_steps'] = ['Extraction:SOSSISSE', 'Post-extraction:SORBET.WLCA',
+INFO['red_steps'] = ['Extraction:SOSSISSE',
+                     'Post-extraction:SORBET.WLCA',
                      'Post-extraction:SORBET.SLCTA']
 INFO['id'] = 'DEMO_T1b_JWST.NIRISS.SOSS_SOSSISSE_SORBET_20220718'
 INFO['keywords'] = ['transit']

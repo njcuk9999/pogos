@@ -593,7 +593,8 @@ def list_yamls():
     all_yaml_files = glob.glob('*.yaml')
     # -------------------------------------------------------------------------
     # try to read each yaml file and see if it is a POGOS yaml
-    pogo_yamls = []
+    pogos_summaries = []
+    pogos_yamls = []
     for yaml_file in all_yaml_files:
         try:
 
@@ -637,8 +638,7 @@ def list_yamls():
                 if datadict is None:
                     continue
                 # start summary
-                summary = '='*70
-                summary += f'\n{os.path.basename(yaml_file)}'
+                summary = f'{os.path.basename(yaml_file)}'
                 summary += '\n' + '='*70
                 summary += f'\n - {vstr}'
                 summary += f'\n - Inst Mode: {instmode}'
@@ -657,12 +657,13 @@ def list_yamls():
                             dpath = os.path.join(datadict, module.lower(),
                                                  subdirs[0])
                             summary += '\n - {0}: {1}'.format(module, dpath)
-                pogo_yamls.append(summary)
+                pogos_summaries.append(summary)
+                pogos_yamls.append(yaml_file)
         except Exception:
             continue
     # -------------------------------------------------------------------------
     # deal with no yaml files found
-    if len(pogo_yamls) == 0:
+    if len(pogos_yamls) == 0:
         drs_text.cprint('*'*70, colour='yellow')
         drs_text.cprint('No valid POGOS yaml files found in current directory.',
                         colour='yellow')
@@ -676,11 +677,38 @@ def list_yamls():
     drs_text.cprint('*'*70, colour='blue')
     # get all demo yamls
     # loop around and print
-    for pogo_yaml in pogo_yamls:
-        drs_text.cprint(pogo_yaml, colour='green')
+    for p_it, pogo_yaml in enumerate(pogos_summaries):
+        # add header and number
+        pogo_printout = '='*70 + '\n'
+        pogo_printout += '{0}: {1}\n'.format(p_it + 1, pogo_yaml)
+        # print this yaml summary
+        drs_text.cprint(pogo_printout, colour='green')
     drs_text.cprint('*'*70, colour='blue')
+
+    # --------------------------------------------------------------------------
+    # ask user if they want to use one of these yamls
+    question = 'Select a demo yaml to use (enter number) or blank to exit:\t'
+    # loop around until we have a valid selection or blank to exit
+    while True:
+        uinput = input(question)
+        if uinput == '':
+            # return True to exit program
+            return True
+        try:
+            uinput = int(uinput)
+            if 1 <= uinput <= len(pogos_yamls):
+                break
+            else:
+                drs_text.cprint('Invalid selection, please try again.',
+                                colour='yellow')
+        except ValueError:
+            drs_text.cprint('Invalid input, please enter a number.',
+                            colour='yellow')
+    # update the sys.argv to use the selected yaml file
+    sys.argv = [sys.argv[0]]
+    sys.argv += ['--yamlfile', pogos_yamls[uinput - 1]]
     # return True to exit program
-    return True
+    return False
 
 
 # =============================================================================

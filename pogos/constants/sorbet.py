@@ -158,7 +158,8 @@ JULIET_PARAMETERS:
  - sigma_w_{INST_MODE}
  
 Note those parameters that need an instrument should have _{INST_MODE} instead
-of instrument name.
+of instrument name. Please do not remove or change _{INST_MODE} as this is 
+used internally to replace with the instrument name
 """
 
 SORBET_CDict.add('JULIET_PARAMETERS', value=None, dtype=list, dtypei=str,
@@ -246,15 +247,36 @@ SORBET_CDict.add('JULIET_PRIOR_VALS', value=None, dtype=dict, source=__NAME__,
 
 # Linear detrending
 SORBET_CDict.add('LINEAR_DETRENDING', value=None, dtype=str, source=__NAME__,
-                user=True, active=True, group=cgroup,
-                description='Enable linear detrending of the flux. '
-                '\nTemporal slope is accepted (value=time) or provide the path '
-                '\nto a file with the variable to detrend linearly '
-                'in each column.')
+                 user=True, active=True, group=cgroup,
+                 description='Enable linear detrending of the flux. '
+                 '\nSet this value to "time" for temporal slope or '
+                 '\n\tprovide the path to a file with the variable to '
+                 '\n\tdetrend linearly in each column.'
+                 '\nIf using a file LINEAR_DETRENDING_TYPE should be set to '
+                 '\n\tthe type of file provided e.g. '
+                 '\n\tfile:fits, file:ecsv, file:csv, file:txt'
+                 '\nNote the file should contain N columns, each column will '
+                 '\n\tbe used as a detrending variable.')
+# Linear detrending type
+SORBET_CDict.add('LINEAR_DETRENDING_TYPE', value='null', dtype=str,
+                 options=['null', 'file:fits', 'file:ecsv', 'file:csv',
+                          'file:txt'],
+                 source=__NAME__, user=True, active=True, group=cgroup,
+                 description='Define the type of linear detrending to apply. '
+                             '\nSet this to "null" if no linear detrending '
+                             '\n or if the variable to detrend is "time". ')
 # Sampling options
 SORBET_CDict.add('SAMPLING_OPTIONS', value='dynesty', dtype=str, source=__NAME__,
                 user=True, active=True, group=cgroup,
                 description='Sampling options in juliet')
+
+# Outlier kernel size
+SORBET_CDict.add('OUTLIER_KERNEL_SIZE', value=None, dtype=int, source=__NAME__,
+                 user=True, active=True, group=cgroup,
+                 description='Define the kernel size (number of time steps '
+                             '\nto consider) when running on median filter on '
+                             '\nthe time-series to flag outliers. If not set'
+                             '\n5% the length of the vector will be used.')
 # Debug parameter
 SORBET_CDict.add('DEBUG', value=False, dtype=bool, source=__NAME__,
                 user=True, active=True, group=cgroup,
@@ -351,12 +373,20 @@ SORBET_CDict.add('LINEAR_DETRENDING', value=None, dtype=str, source=__NAME__,
 SORBET_CDict.add('SAMPLING_OPTIONS', value='dynesty', dtype=str, source=__NAME__,
                 user=True, active=True, group=cgroup,
                 description='Sampling options in juliet')
+
+# Outlier kernel size
+SORBET_CDict.add('OUTLIER_KERNEL_SIZE', value=None, dtype=int, source=__NAME__,
+                 user=True, active=True, group=cgroup,
+                 description='Define the kernel size (number of time steps '
+                             '\nto consider) when running on median filter on '
+                             '\nthe time-series to flag outliers. If not set'
+                             '\n5% the length of the vector will be used.')
 # -----------------------------------------------------------------------------
 # ExoTiC-LD
 cgroup = 'SLCTA.EXOTIC-LD'
 SORBET_CDict.add_group(cgroup,
-                description='Limb-darkening modeling using the ExoTiC-LD package '
-                            '(for transit fitting)',
+                description='Limb-darkening modeling using the ExoTiC-LD '
+                            'package (for transit fitting)',
                 source=__NAME__, user=True, active=True)
 # Use ExoTiC-LD
 SORBET_CDict.add('ENABLE', value=False, dtype=bool, source=__NAME__,

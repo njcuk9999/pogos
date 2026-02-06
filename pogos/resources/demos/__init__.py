@@ -19,7 +19,7 @@ from pogos.resources.demos import miri_im_lhs1140_tsovore
 from pogos.resources.demos import miri_im_lhs1140_miriam
 from pogos.resources.demos import miri_im_lhs1140_tsovore_miriam as mltm
 from pogos.resources.demos import miri_im_lhs1140_tsovore_miriam_sorbet as mltms
-
+from pogos.resources.demos import miri_im_lhs1140_sorbet
 
 # =============================================================================
 # Define instrument short names
@@ -54,6 +54,7 @@ DEMOS[miri_im]['miri.im.lhs1140.miriam'] = miri_im_lhs1140_miriam
 DEMOS[miri_im]['miri.im.lhs1140.tsovore'] = miri_im_lhs1140_tsovore
 DEMOS[miri_im]['miri.im.lhs1140.tsovore+miriam'] = mltm
 DEMOS[miri_im]['miri.im.lhs1140.tsovore+miriam.sorbet'] = mltms
+DEMOS[miri_im]['miri.im.lhs1140.sorbet'] = miri_im_lhs1140_sorbet
 
 
 # =============================================================================

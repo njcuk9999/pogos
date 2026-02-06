@@ -875,6 +875,15 @@ class Instrument:
         self.variables.set('CALIBS', calibs)
 
 
+class Custom():
+    """
+    Custom class for passing non-JWST functions to all instruments
+    Note that we should not have methods that are in JWST or Instrument to
+    avoid ambiguity in which method is called.
+    """
+    pass
+
+
 class JWST(Instrument):
     """
     JWST Instrument class

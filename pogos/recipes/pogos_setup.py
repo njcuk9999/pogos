@@ -43,6 +43,16 @@ __inputs__ = ['GLOBAL.YAML_FILE', 'GLOBAL.DATA_PATH',
 # Define functions
 # =============================================================================
 def main(**kwargs):
+    try:
+        __main__(**kwargs)
+    except KeyboardInterrupt:
+        msg = 'POGOS setup interrupted by user. Exiting.'
+        print()
+        WLOG(None, 'warning', msg, colour='red')
+        WLOG(None, '', '')
+        general.end_splash()
+
+def __main__(**kwargs):
     # print splash
     general.start_splash('POGOS Setup')
     # get other configs (either internal like SORBET or external like SOSSISSE)
