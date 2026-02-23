@@ -338,10 +338,49 @@ def core_setup(params: ParamDict, demo_mod: Any,
     # --------------------------------------------------------------------------
     # now ask about reduction steps
     # -------------------------------------------------------------------------
+    # now ask user to select which steps to use
+    demo_modes = ask_reduction_steps(params, imode)
+    # deal with no demo modes selected
+    if len(demo_modes) == 0:
+        return params, dict()
+    # -------------------------------------------------------------------------
+    # now we want to cut down demo_mod.DEMOS to only those selected
+    demo_dict = dict()
+    # loop around demo_mod demos to find those that match our criteria
+    for inst_key in demo_mod.DEMOS:
+        for demo_name in demo_mod.DEMOS[inst_key]:
+            # get this specific demo and construct
+            demo_inst = demo_mod.DEMOS[inst_key][demo_name]()
+            # get the reduction steps for this demo
+            red_steps = demo_inst.redsteps
+            # assume this demo passes our criteria below
+            passed = False
+            # loop around demo_modes
+            for demo_mode in demo_modes:
+                if demo_mode in red_steps:
+                    passed = True
+                # add demo mode to tmodes
+                if demo_mode not in demo_inst.tmodes:
+                    # we use a shortname for these as they get a bit long
+                    dsplit = demo_mode.split(':')
+                    red_short = pogos_base.RED_SHORT[dsplit[0]]
+                    demo_inst.tmodes.append(f'{red_short}:{dsplit[1]}')
+            # if passed we add this demo to the demo_dict
+            if passed:
+                # deal with first time we hit this instrument mode
+                if inst_key not in demo_dict:
+                    demo_dict[inst_key] = dict()
+                # add the demo
+                demo_dict[inst_key][demo_name] = demo_inst
+    # -------------------------------------------------------------------------
+    return params, demo_dict
+
+
+def ask_reduction_steps(params: ParamDict, imode: str) -> List[str]:
     # get the list of reduction steps
     red_steps = pogos_base.RED_STEPS
     # loop around red steps until we have all that are supported by this imode
-    supported_steps = []
+    supported_steps = dict()
     # loop around reduction dictionary
     for core_step in red_steps:
         for mod_step in red_steps[core_step]:
@@ -352,7 +391,10 @@ def core_setup(params: ParamDict, demo_mod: Any,
             if imode not in red_steps[core_step][mod_step]:
                 continue
             # add to supported steps
-            supported_steps.append(f'{core_step}:{mod_step}')
+            if core_step in supported_steps:
+                supported_steps[core_step].append(mod_step)
+            else:
+                supported_steps[core_step] = [mod_step]
     # -------------------------------------------------------------------------
     # deal with no supported steps
     if len(supported_steps) == 0:
@@ -368,63 +410,96 @@ def core_setup(params: ParamDict, demo_mod: Any,
                  raise_exception=False)
             raise SystemExit(0)
         # otherwise return
-        return params, dict()
+        return []
     # -------------------------------------------------------------------------
-    # now ask user to select which steps to use
+    # storage for output
     demo_modes = []
-    # set up options
-    optiondescs = ['All'] + supported_steps
-    # set up question
-    question = ('Select all reductions steps')
-    for oit, option in enumerate(optiondescs):
-        question += '\n\t{0}: {1}'.format(oit, option)
-    # loop around until all choices made
-    drs_text.cprint(question, colour='magenta')
-    # add input
-    while True:
-        uinput = input('Enter all numbers (comma separated):\t\t')
+    # loop around supported steps and ask user which they want to use
+    for step in supported_steps:
+        # deal with no supported steps for this step
+        if len(supported_steps[step]) == 0:
+            msg = 'No supported steps for {0} for instrument mode: {1}.'
+            margs = [imode, step]
+            drs_text.cprint(msg.format(*margs), colour='yellow')
+        # ---------------------------------------------------------------------
+        # Deal with allowing multiple options for this step
+        # (e.g. for SORBET WLCTA and SLCTA)
+        if pogos_base.RED_STEPS_MULTI[step]:
+            # set the question for this step
+            question = 'Please choose flavour(s) of {0} for {1} or skip it.'
+            question = question.format(step, imode)
 
-        if '0' in uinput:
-            demo_modes = list(supported_steps)
-            break
-        # see it valid number were given as input
-        for it in range(len(supported_steps)):
-            if str(it + 1) in uinput:
-                demo_modes.append(supported_steps[it])
-        # if we have some modes we break
-        if len(demo_modes) > 0:
-            break
-        # otherwise we ask again
-        drs_text.cprint('No valid selection made, please try again.',
-                        colour='yellow')
-    # -------------------------------------------------------------------------
-    # now we want to cut down demo_mod.DEMOS to only those selected
-    demo_dict = dict()
-    # loop around demo_mod demos to find those that match our criteria
-    for inst_key in demo_mod.DEMOS:
-        for demo_name in demo_mod.DEMOS[inst_key]:
-            # get this specific demo
-            demo = demo_mod.DEMOS[inst_key][demo_name]
-            # get the INFO criteria
-            info = demo.INFO
-            # get the red steps
-            red_steps = info.get('red_steps', [])
-            # assume this demo passes our criteria below
-            passed = False
-            # loop around demo_modes
-            for demo_mode in demo_modes:
-                if demo_mode in red_steps:
-                    passed = True
-            # if passed we add this demo to the demo_dict
-            if passed:
-                # make sure instrument is in the demo_dict
-                if inst_key not in demo_dict:
-                    demo_dict[inst_key] = dict()
-                # add mode
-                demo_dict[inst_key][demo_name] = demo
-    # -------------------------------------------------------------------------
-    return params, demo_dict
+            # set up options
+            optiondescs = ['Skip'] + supported_steps[step]
 
+            for oit, option in enumerate(optiondescs):
+                question += '\n\t{0}: {1}'.format(oit, option)
+            # add input
+            while True:
+                uinput = input(question +
+                               '\n\nEnter all numbers (comma separated):\t\t')
+                # zero means skip
+                if '0' in uinput:
+                    break
+                # otherwise we test what the user has given us
+                valid = True
+                _demo_modes = []
+                # see it valid number were given as input
+                uinputs = uinput.split(',')
+                for _uinput in uinputs:
+                    # anything that is not a digit is bad
+                    try:
+                        unum = int(_uinput.strip())
+                    except ValueError:
+                        emsg = 'Invalid input: {0}, please try again.'
+                        drs_text.cprint(emsg.format(_uinput), colour='yellow')
+                        valid = False
+                        break
+                    # at this point anything less than 1 or greater than
+                    # the number of options is a bad input
+                    if unum < 1 or unum >= len(optiondescs):
+                        emsg = 'Option {0} not valid, please try again.'
+                        drs_text.cprint(emsg.format(_uinput), colour='yellow')
+                        valid = False
+                        break
+                    # add demo mode if it isn't already present
+                    demo_mode = '{0}:{1}'.format(step, optiondescs[unum])
+                    if demo_mode not in _demo_modes:
+                        _demo_modes.append(demo_mode)
+                # ask the question again
+                if not valid:
+                    continue
+                else:
+                    demo_modes += _demo_modes
+                # if we have some modes we break
+                if len(demo_modes) > 0:
+                    break
+                # otherwise we ask again
+                drs_text.cprint('No valid selection made, please try again.',
+                                colour='yellow')
+        # ---------------------------------------------------------------------
+        # Otherwise we only allow one option for this step
+        else:
+            # set the question for this step
+            question = 'Please choose a flavour of {0} for {1} or skip it.'
+            question = question.format(step, imode)
+            # set up options and option descriptions (add skip as first option)
+            optiondescs = ['Skip'] + supported_steps[step]
+            options = list(range(len(optiondescs)))
+            # ask user question about this reduction step
+            uinput = drs_text.user_input(question, dtype='options',
+                                         options=options,
+                                         optiondescs=optiondescs)
+            # deal with skipping and adding to available demo modes
+            if uinput.strip() == '0':
+                continue
+            else:
+                # add demo mode if it isn't already present
+                demo_mode = '{0}:{1}'.format(step, optiondescs[int(uinput)])
+                if demo_mode not in demo_modes:
+                    demo_modes.append(demo_mode)
+    # return the demo modes
+    return demo_modes
 
 
 def core_yaml_setup(params: ParamDict):

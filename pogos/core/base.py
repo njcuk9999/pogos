@@ -144,6 +144,21 @@ RED_STEPS['Post-extraction']['SORBET.SPCA'] = ['JWST.NIRISS.SOSS',
 RED_STEPS['Post-extraction']['SORBET.TransitFit'] = None
 RED_STEPS['Post-extraction']['SORBET.RVA'] = None
 
+# Define whether the user is allowed to run multiple flavours of these
+# steps (e.g. multiple extraction methods) - if False, then only one method
+# can be run for that step
+RED_STEPS_MULTI = dict()
+RED_STEPS_MULTI['Pre-extraction'] = False
+RED_STEPS_MULTI['Extraction'] = False
+RED_STEPS_MULTI['Post-extraction'] = True
+
+# Define the shortnames for Pre/Extract/Post
+RED_SHORT = dict()
+RED_SHORT['Pre-extraction'] = 'Pre'
+RED_SHORT['Extraction'] = 'Ext'
+RED_SHORT['Post-extraction'] = 'Pst'
+
+
 # =============================================================================
 # Define sub module functionality
 # =============================================================================
