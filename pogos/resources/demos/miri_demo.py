@@ -36,10 +36,13 @@ class MiriImagingDemo_LHS1140(demos.PogoDemo):
     author = 'Etienne Artigau'
 
     def __init__(self):
-        self.title = 'JWST.MIRI.IMAGING LHS-1140 eclipse [{tmodes}]'
-        self.id = 'DEMO_LHS_1140_JWST.MIRI.IM_20240707.{tmodes}'
-        # define the
-        self.tmodes = []
+        self.title = 'JWST.MIRI.IMAGING LHS-1140 eclipse [{tflavours}]'
+        self.id = 'DEMO_LHS_1140_JWST.MIRI.IM_20240707.{tflavours}'
+        # define the flavours selected by the user
+        self.flavours = []
+        # define the string flavours (shortened versions of flavours for
+        #  title and id)
+        self.tflavours = []
         # url for data download
         self.url = 'http://206.12.93.77/ari/data/pogos/demos/miri/'
         self.download = dict()
@@ -51,8 +54,10 @@ class MiriImagingDemo_LHS1140(demos.PogoDemo):
         self.redsteps['Extraction:MIRIAM'] = [self.miriam]
         self.redsteps['Post-extraction:SORBET.WLCA'] = [self.sorbet,
                                                         self.sorbet_wlca]
-        # start cdict
+        # start cdict as a copy of the main POGOS constants dictionary
         self.cdict = pconst.CDict.copy(source=__NAME__)
+        # the startup method fills the cdict with the global settings
+        # and sets default values
         self.startup()
 
     def startup(self):
@@ -98,7 +103,7 @@ class MiriImagingDemo_LHS1140(demos.PogoDemo):
         # All tsovore data will be stored in
         #      {GLOBAL.DATA_PATH}/tsovore/{SUBDIRECTORY}/
         self.cdict.set('SUBDIRECTORY', group=cgroup, source=__NAME__,
-                       value=self.id)
+                       value=self.get_prop('id'))
 
         # Description of the TSOVORE run e.g. object name, date of observation,
         # is it a transit or an eclipse etc.
@@ -157,7 +162,7 @@ class MiriImagingDemo_LHS1140(demos.PogoDemo):
         # All miriam data will be stored in
         # {GLOBAL.DATA_PATH}/miriam/{SUBDIRECTORY}/
         self.cdict.set('SUBDIRECTORY', group=cgroup, source=__NAME__,
-                  value=self.id)
+                  value=self.get_prop('id'))
 
         # Description of the MIRIAM run e.g. object name, date of observation,
         # is it a transit or an eclipse etc.
@@ -207,7 +212,7 @@ class MiriImagingDemo_LHS1140(demos.PogoDemo):
         # All sorbet data will be stored in
         # {GLOBAL.DATA_PATH}/sorbet/{SUBDIRECTORY}/
         self.cdict.set('SUBDIRECTORY', group=cgroup, source=__NAME__,
-                  value=self.id)
+                  value=self.get_prop('id'))
         # Description of the SORBET run e.g. object name, date of observation,
         # is it a transit or an eclipse etc.
         self.cdict.set('DESCRIPTION', group=cgroup, source=__NAME__,

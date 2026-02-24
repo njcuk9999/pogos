@@ -360,11 +360,14 @@ def core_setup(params: ParamDict, demo_mod: Any,
                 if demo_mode in red_steps:
                     passed = True
                 # add demo mode to tmodes
-                if demo_mode not in demo_inst.tmodes:
+                if demo_mode not in demo_inst.flavours:
+                    # add to flavours
+                    demo_inst.flavours.append(demo_mode)
+                    # add to tflavours
                     # we use a shortname for these as they get a bit long
                     dsplit = demo_mode.split(':')
                     red_short = pogos_base.RED_SHORT[dsplit[0]]
-                    demo_inst.tmodes.append(f'{red_short}:{dsplit[1]}')
+                    demo_inst.tflavours.append(f'{red_short}:{dsplit[1]}')
             # if passed we add this demo to the demo_dict
             if passed:
                 # deal with first time we hit this instrument mode
