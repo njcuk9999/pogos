@@ -10,9 +10,9 @@ Created on 2024-10-29 at 09:35
 @author: cook
 """
 from pathlib import Path
-
 import yaml
-import sossisse
+
+from sossisse.core.constants import CDict as SCdict
 
 # =============================================================================
 # Define variables
@@ -177,7 +177,7 @@ SORBET_DATE = __YAML__['SORBET.DATE']
 
 # set up external modules (still using apero-core)
 EXTERNAL_CONST = dict()
-EXTERNAL_CONST['SOSSISSE'] = sossisse.CDict
+EXTERNAL_CONST['SOSSISSE'] = SCdict
 
 
 # =============================================================================

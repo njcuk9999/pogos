@@ -10,6 +10,12 @@ Created on 2024-10-29 at 09:32
 @author: cook
 """
 import sys
+# Ensure we're importing the installed packages, not a local directory
+# Remove current directory from sys.path if present to avoid import confusion
+if '' in sys.path:
+    sys.path.remove('')
+if '.' in sys.path:
+    sys.path.remove('.')
 
 from aperocore.constants import load_functions
 from aperocore.constants import param_functions
