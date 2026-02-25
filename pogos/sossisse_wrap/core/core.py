@@ -11,7 +11,7 @@ Created on 2025-02-18 at 14:13
 """
 import os
 import shutil
-from typing import Optional
+from typing import Any, Dict, Optional
 
 import sossisse
 from aperocore.constants.param_functions import ParamDict
@@ -44,8 +44,7 @@ WLOG = drs_log.wlog
 # =============================================================================
 # Define functions
 # =============================================================================
-def run_sossisse_module(params: ParamDict,
-                        tsovore_inst: ts_default.JWST = None):
+def run_sossisse_module(params: ParamDict, pre_inst: Dict[str, Any]):
     """
     Run the sossisse run recipe
 
@@ -53,6 +52,12 @@ def run_sossisse_module(params: ParamDict,
 
     :return: None, runs sossisse run
     """
+    # set the function name
+    func_name = f'{__NAME__}.run_sossisse_module'
+    # -------------------------------------------------------------------------
+    # get the instances from the pre-extraction step
+    tsovore_inst = pre_inst.get('tsovore', None)
+    # -------------------------------------------------------------------------
     # if RUN.SOSSISSE is False skip
     if not params['RUN.SOSSISSE']:
         return

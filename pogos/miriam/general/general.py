@@ -12,7 +12,7 @@ Created on 2025-10-16 at 14:10
 import os
 import shutil
 import time
-from typing import Optional
+from typing import Any, Dict, Optional
 
 import numpy as np
 
@@ -44,7 +44,7 @@ WLOG = drs_log.wlog
 # =============================================================================
 # Define functions
 # =============================================================================
-def run_miriam(params: ParamDict, tsovore_inst: Optional = None) -> ParamDict:
+def run_miriam(params: ParamDict, pre_inst: Dict[str, Any]) -> ParamDict:
     """
     Run the MIRIAM processing
 
@@ -54,6 +54,10 @@ def run_miriam(params: ParamDict, tsovore_inst: Optional = None) -> ParamDict:
     """
     # set the function name
     func_name = f'{__NAME__}.run_miriam'
+    # -------------------------------------------------------------------------
+    # get the instances from the pre-extraction step
+    tsovore_inst = pre_inst.get('tsovore', None)
+    # -------------------------------------------------------------------------
     # print the white light curve splash
     print(misc.art('MIRIAM', 'yellow', 'CYAN'))
     time.sleep(0.1)

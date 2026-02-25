@@ -12,7 +12,7 @@ Created on 2025-10-16 at 13:39
 import shutil
 import string
 import os
-from typing import Optional
+from typing import Any, Dict, Optional
 
 import numpy as np
 
@@ -79,9 +79,7 @@ def setup_sorbet_module(params: ParamDict):
     return params
 
 
-def run_sorbet_module(params: ParamDict,
-                      sossisse_inst: Optional[sdefault.Instrument] = None,
-                      miriam_params: ParamDict = None):
+def run_sorbet_module(params: ParamDict, ext_inst: Dict[str, Any]):
     """
     Run the sorbet recipes
 
@@ -89,6 +87,13 @@ def run_sorbet_module(params: ParamDict,
 
     :return: Updated params, runs sorbet recipes
     """
+    # set the function name
+    func_name = f'{__NAME__}.run_sorbet_module'
+    # -------------------------------------------------------------------------
+    # get the instances from the pre-extraction step
+    sossisse_inst = ext_inst.get('tsovore', None)
+    miriam_params = ext_inst.get('miriam', None)
+    # -------------------------------------------------------------------------
     # Check at least one recipe is set to run
     run_any = False
     for key in RUN_CONSTANTS:

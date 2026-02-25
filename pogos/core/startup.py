@@ -595,6 +595,50 @@ def initial_setup():
     return const_list
 
 
+def check_red_steps(params: ParamDict):
+    """
+    Check that only one reduction step is being run for each step (if we have
+    more than one step for this step we raise an error)
+
+    :param params: ParamDict, the parameters dictionary of constants
+
+    :return: None, raises an error if more than one reduction step
+             is being run for any
+    """
+    # get red steps and flags from pogos base code
+    red_steps_multi = pogos_base.RED_STEPS_MULTI
+    red_steps = pogos_base.RED_STEPS
+
+    # loop around all reduction steps and check that only one is being run f
+    # or each step (if we have more than one step for this step we
+    # raise an error)
+    for step in red_steps:
+        # start a counter
+        counter = 0
+        # do not check steps that are not in our multi flag list
+        if step not in red_steps_multi:
+            continue
+        # do not check steps that are True in our multi flag list
+        if not red_steps_multi[step]:
+            continue
+        # get the red steps
+        red_step_names = list(red_steps[step].keys())
+        # otherwise we check which steps are being run for this step
+        for mod_step in red_step_names:
+            if params[f'RUN.{mod_step.upper()}']:
+                counter += 1
+        # if we have more than one step for this step we raise an error
+        if counter > 1:
+            emsg = ('Multiple reduction steps selected for {0}, but only one '
+                    'is allowed. Please set only one of the following to True'
+                    ' in the yaml file')
+            for mod_step in red_step_names:
+                emsg += f'\n - RUN.{mod_step.upper()}'
+
+            margs = [step]
+            raise pogos_base.PogosException(emsg.format(*margs))
+
+
 # =============================================================================
 # Quick argument functionality
 # =============================================================================

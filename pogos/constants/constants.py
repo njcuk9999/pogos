@@ -107,23 +107,67 @@ group = 'RUN'
 CDict.add_group(group, description='Switches to turn on major features',
                 source=__NAME__, user=True, active=True)
 
+# -----------------------------------------------------------------------------
+# Pre-extraction flavours
+# -----------------------------------------------------------------------------
 # Run TSOVORE
-CDict.add('TSOVORE', value=None, dtype=bool, source=__NAME__,
+CDict.add('TSOVORE', value=False, dtype=bool, source=__NAME__,
           user=True, active=True, group=group, not_none=True,
           description='Run TSOVORE')
 
+# Run Eureka pre-extraction steps
+CDict.add('PRE_EUREKA', value=False, dtype=bool, source=__NAME__,
+          user=True, active=True, group=group, not_none=True,
+            description='Run Eureka pre-extraction steps')
+
+# Run default JWST pre-extraction steps
+CDict.add('PRE_JWST', value=False, dtype=bool, source=__NAME__,
+          user=True, active=True, group=group, not_none=True,
+          description='Run default JWST pre-extraction steps')
+
+# Run NAMELESS pre-extraction steps
+CDict.add('PRE_NAMELESS', value=False, dtype=bool, source=__NAME__,
+          user=True, active=True, group=group, not_none=True,
+          description='Run NAMELESS pre-extraction steps')
+
+# -----------------------------------------------------------------------------
+# Extraction flavours
+# -----------------------------------------------------------------------------
+# Run simple box extraction step
+CDict.add('EXT_BOX', value=False, dtype=bool, source=__NAME__,
+          user=True, active=True, group=group, not_none=True,
+          description='Run simple box extraction step')
+
+# Run Eureka extraction steps
+CDict.add('EXT_EUREKA', value=False, dtype=bool, source=__NAME__,
+          user=True, active=True, group=group, not_none=True,
+          description='Run Eureka extraction steps')
+
+# Run default JWST extraction step
+CDict.add('EXT_JWST', value=False, dtype=bool, source=__NAME__,
+          user=True, active=True, group=group, not_none=True,
+          description='Run default JWST extraction step')
+
+# Run NAMELESS extraction steps
+CDict.add('EXT_NAMELESS', value=False, dtype=bool, source=__NAME__,
+          user=True, active=True, group=group, not_none=True,
+          description='Run NAMELESS extraction steps')
+
 # Run SOSSISSE
-CDict.add('SOSSISSE', value=None, dtype=bool, source=__NAME__,
+CDict.add('SOSSISSE', value=False, dtype=bool, source=__NAME__,
           user=True, active=True, group=group, not_none=True,
           description='Run SOSSISSE')
 
 # Run MIRIAM
-CDict.add('MIRIAM', value=None, dtype=bool, source=__NAME__,
+CDict.add('MIRIAM', value=False, dtype=bool, source=__NAME__,
           user=True, active=True, group=group, not_none=True,
           description='Run MIRIAM')
 
+# -----------------------------------------------------------------------------
+# Post-extraction flavours
+# -----------------------------------------------------------------------------
 # Run SORBET
-CDict.add('SORBET', value=None, dtype=bool, source=__NAME__,
+CDict.add('SORBET', value=False, dtype=bool, source=__NAME__,
           user=True, active=True, group=group, not_none=True,
           description='Run SORBET')
 

@@ -79,27 +79,95 @@ def main(**kwargs):
             emsg = f'Parameter "{run_key}" is None - check yaml file!'
             raise drs_log.AperoCodedException(emsg)
     # -------------------------------------------------------------------------
+    # Check that user is not trying to run multiple reduction steps from
+    # the same level (unless this is allowed)
+    startup.check_red_steps(params)
+    # =========================================================================
+    # Pre-extraction steps
+    # =========================================================================
+    # Need to store all the pre-extraction instances in a dictionary so that
+    # they can be passed to the extraction steps and used to determine inputs
+    pre_inst = dict()
     # run tsovore
     if params['RUN.TSOVORE']:
-        tsovore_inst = tsovore.run_tsovore(params)
+        pre_inst['tsovore'] = tsovore.run_tsovore(params)
     else:
-        tsovore_inst = None
+        pre_inst['tsovore'] = None
+    # -------------------------------------------------------------------------
+    # run pre-eureka
+    if params['RUN.PRE_EUREKA']:
+        # pre_inst['pre_eureka'] = eureka.run_pre_eureka(params)
+        pre_inst['pre_eureka'] = None
+    else:
+        pre_inst['pre_eureka'] = None
+    # -------------------------------------------------------------------------
+    # run pre jwst
+    if params['RUN.PRE_JWST']:
+        # pre_inst['v'] = jwst.run_pre_jwst(params)
+        pre_inst['pre_jwst'] = None
+    else:
+        pre_inst['pre_jwst'] = None
+    # -------------------------------------------------------------------------
+    # run NAMELESS
+    if params['RUN.PRE_NAMELESS']:
+        # pre_inst['pre_nameless'] = nameless.run_pre_nameless(params)
+        pre_inst['pre_nameless'] = None
+    else:
+        pre_inst['pre_nameless'] = None
+
+    # =========================================================================
+    # Extraction steps
+    # =========================================================================
+    # Need to store all the extraction instances in a dictionary so that
+    # they can be passed to the post-extraction steps and used to
+    # determine inputs
+    ext_inst = dict()
+    # run simple box extract
+    if params['RUN.EXT_BOX']:
+        # ext_inst['EXT_BOX'] = tools.extract.run_box(params, **pre_inst)
+        ext_inst['ext_box'] = None
+    else:
+        ext_inst['ext_box'] = None
+    # -------------------------------------------------------------------------
+    # run eureka
+    if params['RUN.EXT_EUREKA']:
+        # ext_inst['ext_eureka'] = eureka_wrap.extract(params, **pre_inst)
+        ext_inst['ext_eureka'] = None
+    else:
+        ext_inst['ext_eureka'] = None
+    # -------------------------------------------------------------------------
+    # run jwst
+    if params['RUN.EXT_JWST']:
+        # ext_inst['ext_jwst'] = jwst_wrap.extract(params, **pre_inst)
+        ext_inst['ext_jwst']  = None
+    else:
+        ext_inst['ext_jwst']  = None
+    # -------------------------------------------------------------------------
+    # run nameless
+    if params['RUN.EXT_NAMELESS']:
+        # ext_inst['ext_nameless'] = nameless_wrap.extract(params, **pre_inst)
+        ext_inst['ext_nameless']  = None
+    else:
+        ext_inst['ext_nameless']  = None
     # -------------------------------------------------------------------------
     # run sossisse_wrap
     if params['RUN.SOSSISSE']:
-        sossisse_inst = sossisse_wrap.run_sossisse(params, tsovore_inst)
+        ext_inst['sossisse'] = sossisse_wrap.run_sossisse(params, pre_inst)
     else:
-        sossisse_inst = None
+        ext_inst['sossisse'] = None
     # -------------------------------------------------------------------------
     # run miriam
     if params['RUN.MIRIAM']:
-        mout_params = miriam.run_miriam(params, tsovore_inst)
+        ext_inst['miriam'] = miriam.run_miriam(params, pre_inst)
     else:
-        mout_params = None
-    # -------------------------------------------------------------------------
+        ext_inst['miriam'] = None
+
+    # =========================================================================
+    # Post-extraction steps
+    # =========================================================================
     # run sorbet
     if params['RUN.SORBET']:
-        sorbet.run_sorbet(params, sossisse_inst, mout_params)
+        sorbet.run_sorbet(params, ext_inst)
     # -------------------------------------------------------------------------
     # print splash
     general.end_splash()
