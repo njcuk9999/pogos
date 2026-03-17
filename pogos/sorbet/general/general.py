@@ -46,7 +46,7 @@ display_func = drs_misc.display_func
 # Get Logging function
 WLOG = drs_log.wlog
 # Define the SORBET run constants
-RUN_CONSTANTS = ['SORBET.WLCA.RUN', 'SORBET.SLCA.RUN']  # , 'SORBET.TFIT.RUN', 'SORBET.RV.RUN']
+RUN_CONSTANTS = ['RUN.SORBET.WLCA', 'RUN.SORBET.SLCA']  # , 'SORBET.TFIT.RUN', 'SORBET.RV.RUN']
 # get all chars
 CHARS = string.ascii_uppercase + string.digits
 
@@ -67,12 +67,12 @@ def setup_sorbet_module(params: ParamDict):
         return params
     # ----------------------------------------------------------------------
     # setup the wlcta  input and output directories
-    if params['SORBET.WLCA.RUN']:
+    if params['RUN.SORBET.WLCA']:
         # prepare directories
         prepare_directories(params, method='WLCA')
     # ----------------------------------------------------------------------
     # setup the slcta  input and output directories
-    if params['SORBET.SLCA.RUN']:
+    if params['RUN.SORBET.SLCA']:
         # prepare directories
         prepare_directories(params, method='SLCA')
 
@@ -136,13 +136,13 @@ def run_sorbet_module(params: ParamDict, ext_inst: Dict[str, Any]):
     # ----------------------------------------------------------------------
     # White Light Curve Transit Analysis
     # ----------------------------------------------------------------------
-    if params['SORBET.WLCA.RUN']:
+    if params['RUN.SORBET.WLCA']:
         params = run_sorbet_wlcta(params)
 
     # ----------------------------------------------------------------------
     # Spectral Light Curve Transit Analysis
     # ----------------------------------------------------------------------
-    if params['SORBET.SLCA.RUN']:
+    if params['RUN.SORBET.SLCA']:
         params = run_sorbet_slcta(params)
 
     # ----------------------------------------------------------------------

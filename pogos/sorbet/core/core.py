@@ -35,7 +35,7 @@ display_func = drs_misc.display_func
 # Get Logging function
 WLOG = drs_log.wlog
 # Define the SORBET run constants
-RUN_CONSTANTS = ['SORBET.WLCA.RUN', 'SORBET.SLCA.RUN']  # , 'SORBET.TFIT.RUN', 'SORBET.RV.RUN']
+RUN_CONSTANTS = ['RUN.SORBET.WLCA', 'RUN.SORBET.SLCA']  # , 'SORBET.TFIT.RUN', 'SORBET.RV.RUN']
 
 
 # =============================================================================

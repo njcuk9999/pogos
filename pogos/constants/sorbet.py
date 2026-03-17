@@ -99,10 +99,6 @@ cgroup = 'WLCA'
 SORBET_CDict.add_group(cgroup, description='Configs for SORBET.WLCA: White '
                                           'light curve transit analysis',
                 source=__NAME__, user=True, active=True)
-# Run switch parameter
-SORBET_CDict.add('RUN', value=False, dtype=bool, source=__NAME__,
-                user=True, active=True, group=cgroup,
-                description='Run SORBET.WLCA')
 # Input data path
 SORBET_CDict.add('INPUT_PATH', value=f'wlcta{os.sep}inputs',
                  dtype=str, source=__NAME__,
@@ -303,10 +299,6 @@ SORBET_CDict.add_group(cgroup, description='Configs for SORBET.SLCA: '
                                           'Spectral light curve transit '
                                           'analysis',
                 source=__NAME__, user=True, active=True)
-# Run switch parameter
-SORBET_CDict.add('RUN', value=False, dtype=bool, source=__NAME__,
-                user=True, active=True, group=cgroup,
-                description='Run SORBET.SLCA')
 # Input data path
 SORBET_CDict.add('INPUT_PATH', value=f'slcta{os.sep}inputs',
                  dtype=str, source=__NAME__,

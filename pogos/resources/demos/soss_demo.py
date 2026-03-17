@@ -15,6 +15,7 @@ import pogos.core.base as pogos_base
 from pogos.resources.demos import demos
 from sossisse.core import constants as sconst
 from pogos.constants import constants as pconst
+from pogos.constants import tsovore as tconst
 from pogos.constants import sorbet as sbconst
 
 # =============================================================================
@@ -50,6 +51,7 @@ class SossTrappist1bDemo(demos.PogoDemo):
 
         # define the reduction steps (and methods to be run) if these steps
         # are being run
+        self.redsteps['Pre-extraction:TSOVORE'] = [self.tsovore]
         self.redsteps['Extraction:SOSSISSE'] = [self.sossisse]
         self.redsteps['Post-extraction:SORBET.WLCA'] = [self.sorbet,
                                                         self.sorbet_wlca]
@@ -79,7 +81,60 @@ class SossTrappist1bDemo(demos.PogoDemo):
 
     # TODO: Add tsovore
     def tsovore(self):
-        raise NotImplemented()
+        # Add the sub-constants-dictionary for TSOVORE
+        TSOvore_CDict = tconst.TSOVORE_CDict.copy(source=__NAME__)
+        self.cdict.add_sub_cdict('TSOVORE', TSOvore_CDict, source=__NAME__)
+        # =====================================================================
+        # Add to the downloads
+        # =====================================================================
+        self.download['TSOVORE.INPUTS.FILES'] = 'TSOVORE.PATHS.INPUT_PATH'
+
+        # =====================================================================
+        # Switches to turn of major features
+        # =====================================================================
+        cgroup = 'RUN'
+        # Run TSOVORE
+        self.cdict.set('TSOVORE', group=cgroup, source=__NAME__, value=True)
+        # =====================================================================
+        # General settings
+        # =====================================================================
+        cgroup = 'TSOVORE.GENERAL'
+
+        # The sub-directory to use for this TSOVORE run.
+        # This should be descriptive and unique.
+        # It should contain no whitespaces or special
+        # characters other than underscoes
+        # All tsovore data will be stored in
+        #      {GLOBAL.DATA_PATH}/tsovore/{SUBDIRECTORY}/
+        self.cdict.set('SUBDIRECTORY', group=cgroup, source=__NAME__,
+                       value=self.get_prop('id'))
+
+        # Description of the TSOVORE run e.g. object name, date of observation,
+        # is it a transit or an eclipse etc.
+        self.cdict.set('DESCRIPTION', group=cgroup, source=__NAME__,
+                       value=self.description)
+
+        # =====================================================================
+        # Input settings
+        # =====================================================================
+        cgroup = 'TSOVORE.INPUTS'
+
+        # Instrument mode i.e. JWST.NIRISS.SOSS or JWST.NIRISS.PRISM
+        self.cdict.set('INSTRUMENTMODE', group=cgroup, source=__NAME__,
+                       value='JWST.NIRISS.SOSS')
+
+        # List of files to be processed in form:
+        # FILES:
+        #  - file1
+        #  - file2
+        #  - file3
+        files = ['jw02589001001_04101_00001-seg001_nis_uncal.fits',
+                 'jw02589001001_04101_00001-seg002_nis_uncal.fits']
+        self.cdict.set('FILES', group=cgroup, source=__NAME__, value=files)
+
+        # Whether to remove intermediate files
+        self.cdict.set('REMOVE_INTERMEDIATES', group=cgroup, source=__NAME__,
+                  value=True)
 
     def sossisse(self):
         # Add the sub-constants-dictionary for SOSSISSE
