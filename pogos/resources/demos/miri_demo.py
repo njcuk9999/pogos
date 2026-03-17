@@ -194,13 +194,6 @@ class MiriImagingDemo_LHS1140(demos.PogoDemo):
         self.cdict.add_sub_cdict('SORBET', SORBET_CDict, source=__NAME__)
 
         # =====================================================================
-        # Switches to turn of major features
-        # =====================================================================
-        cgroup = 'RUN'
-        # Run TSOVORE
-        self.cdict.set('SORBET', group=cgroup, source=__NAME__, value=True)
-
-        # =====================================================================
         # Constants for SORBET: Suite Of Reduction tools for Both Eclipse
         # and Transit
         # =====================================================================
