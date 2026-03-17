@@ -55,37 +55,6 @@ INPUTARGS['pogos.recipes.test_setup'] = ['GLOBAL.YAML_FILE', 'DATA_PATH',
                                          'PLOT_PATH']
 INPUTARGS['pogos.recipes.test_run'] = ['GLOBAL.YAML_FILE']
 
-# deal with switching off sections (for yaml file)
-RUN_KEYS = dict()
-RUN_KEYS['RUN.TSOVORE'] = 'TSOVORE'
-RUN_KEYS['RUN.SOSSISSE'] = 'SOSSISSE'
-RUN_KEYS['RUN.MIRIAM'] = 'MIRIAM'
-RUN_KEYS['RUN.SORBET'] = 'SORBET'
-# deal with settings initial directories from pogos data directory
-RUN_DIRS = dict()
-RUN_DIRS['RUN.TSOVORE'] = 'TSOVORE.INPUTS.PATH'
-RUN_DIRS['RUN.SOSSISSE'] = 'SOSSISSE.INPUTS.SOSSIOPATH'
-RUN_DIRS['RUN.MIRIAM'] = 'MIRIAM.INPUTS.PATH'
-RUN_DIRS['RUN.SORBET'] = 'SORBET.INPUTS.PATH'
-
-
-# list all file paths that may need clearing on copying a yaml
-# should be in format: FILE_PATHS[<constant name>] = <path to directory constant>
-FILE_PATHS = dict()
-FILE_PATHS['MIRIAM.INPUTS.FILES'] = 'MIRIAM.PATHS.INPUT_PATH'
-FILE_PATHS['SOSSISSE.GENERAL.FILES'] = 'SOSSISSE.PATHS.RAWPATH'
-FILE_PATHS['SOSSISSE.GENERAL.WAVE_FILE'] = 'SOSSISSE.PATHS.CALIBPATH'
-FILE_PATHS['TSOVORE.INPUTS.FILES'] = 'TSOVORE.PATHS.INPUT_PATH'
-FILE_PATHS['SORBET.WLCTA.INPUT_FILE'] = 'SORBET.WLCTA.INPUT_PATH'
-FILE_PATHS['SORBET.SLCTA.INPUT_FILE'] = 'SORBET.SLCTA.INPUT_PATH'
-
-# list all the required parameters for each module when copying a yaml
-REQ_MODULE_PARAMS = dict()
-REQ_MODULE_PARAMS['TSOVORE'] = []
-REQ_MODULE_PARAMS['SOSSISSE'] = ['SOSSISSE.INPUTS.OBJECTNAME']
-REQ_MODULE_PARAMS['MIRIAM'] = []
-REQ_MODULE_PARAMS['SORBET'] = []
-
 # Define allowed punctuation for sub-directory names
 VALID_PUNC = ['-', '+', '.', '_']
 
@@ -118,7 +87,7 @@ def setup(params: ParamDict, start_from_demo: bool = True):
     WLOG(params, 'info', params['LOG.HEADER'])
     # -------------------------------------------------------------------------
     # ask user for run arguments
-    run_keys = list(RUN_KEYS.keys())
+    run_keys = list(pogos_base.RUN_KEYS.keys())
     params = load_functions.ask_for_missing_args(params, include_keys=run_keys)
     # -------------------------------------------------------------------------
     # Deal with disabling sections we don't need in the yaml
@@ -126,7 +95,7 @@ def setup(params: ParamDict, start_from_demo: bool = True):
         # if False turn off the section
         if not params[run_key]:
             for key in params.keys():
-                if key.startswith(RUN_KEYS[run_key]):
+                if key.startswith(pogos_base.RUN_KEYS[run_key]):
                     # TODO: remove this if statement
                     # skip keys that are None (shouldn't be here so this is
                     # just for debugging)
@@ -138,9 +107,15 @@ def setup(params: ParamDict, start_from_demo: bool = True):
                     params.instances[key].not_none = False
     # -------------------------------------------------------------------------
     # create paths to sub modules
-    for run_key in RUN_KEYS:
+    for run_key in pogos_base.RUN_KEYS:
+        # don't create if we don't have the run key in params
+        if run_key not in params:
+            continue
+        # don't create if RUN = False
+        if not params[run_key]:
+            continue
         # get run value
-        run_value = RUN_KEYS[run_key]
+        run_value = pogos_base.RUN_KEYS[run_key]
         # get path to directory
         run_path = os.path.join(params['GLOBAL.DATA_PATH'], run_value.lower())
         # make directory if it doesn't already exist
@@ -150,8 +125,8 @@ def setup(params: ParamDict, start_from_demo: bool = True):
             # make directory
             os.makedirs(run_path)
         # update parameters
-        if run_key in RUN_DIRS:
-            params[RUN_DIRS[run_key]] = run_path
+        if run_key in pogos_base.RUN_DIRS:
+            params[pogos_base.RUN_DIRS[run_key]] = run_path
     # -------------------------------------------------------------------------
     # ask user for any missing arguments
     params = load_functions.ask_for_missing_args(params)
@@ -366,8 +341,7 @@ def core_setup(params: ParamDict, demo_mod: Any,
                     # add to tflavours
                     # we use a shortname for these as they get a bit long
                     dsplit = demo_mode.split(':')
-                    red_short = pogos_base.RED_SHORT[dsplit[0]]
-                    demo_inst.tflavours.append(f'{red_short}:{dsplit[1]}')
+                    demo_inst.tflavours.append(f'{dsplit[1]}')
             # if passed we add this demo to the demo_dict
             if passed:
                 # deal with first time we hit this instrument mode
@@ -426,7 +400,7 @@ def ask_reduction_steps(params: ParamDict, imode: str) -> List[str]:
             drs_text.cprint(msg.format(*margs), colour='yellow')
         # ---------------------------------------------------------------------
         # Deal with allowing multiple options for this step
-        # (e.g. for SORBET WLCTA and SLCTA)
+        # (e.g. for SORBET WLCA and SLCA)
         if pogos_base.RED_STEPS_MULTI[step]:
             # set the question for this step
             question = 'Please choose flavour(s) of {0} for {1} or skip it.'
@@ -619,14 +593,26 @@ def check_red_steps(params: ParamDict):
         if step not in red_steps_multi:
             continue
         # do not check steps that are True in our multi flag list
-        if not red_steps_multi[step]:
+        if red_steps_multi[step]:
             continue
         # get the red steps
         red_step_names = list(red_steps[step].keys())
         # otherwise we check which steps are being run for this step
         for mod_step in red_step_names:
-            if params[f'RUN.{mod_step.upper()}']:
-                counter += 1
+            # first check for standard RUN.XXX = False (or True)
+            run_step_str = f'RUN.{mod_step.upper()}'
+            # we should check that the run step is defined
+            if run_step_str in params:
+                if params[f'RUN.{mod_step.upper()}']:
+                    counter += 1
+                    continue
+            # if it isn't raise an error
+            else:
+                emsg = (f'{run_step_str} [{step}] not defined in params. '
+                        f'This is a developer error and a mismatch '
+                        f'between parameters and pogos_base.RED_STEPS and/or'
+                        f'pogos_base.RED_STEPS_MULTI.')
+                raise pogos_base.PogosException(emsg)
         # if we have more than one step for this step we raise an error
         if counter > 1:
             emsg = ('Multiple reduction steps selected for {0}, but only one '
@@ -1007,7 +993,7 @@ def copy_clear_files(params: ParamDict):
     # storage for found sets (used later to inform user)
     found_sets = dict()
     # list of files
-    for fileset in list(FILE_PATHS.keys()):
+    for fileset in list(pogos_base.FILE_PATHS.keys()):
         # skip if we don't have this fileset
         if fileset not in params:
             continue
@@ -1035,7 +1021,7 @@ def copy_clear_files(params: ParamDict):
                 continue
 
         # save path for later
-        found_sets[fileset] = FILE_PATHS[fileset]
+        found_sets[fileset] = pogos_base.FILE_PATHS[fileset]
         # update params
         params.set(key=fileset, value=[], source=func_name)
     # return the found sets (used to inform user later on where to
@@ -1049,7 +1035,7 @@ def copy_ask_req_module_params(params: ParamDict):
     func_name = f'{__NAME__}.copy_ask_req_module_params()'
     # -------------------------------------------------------------------------
     # loop around sub-modules
-    for submodule in REQ_MODULE_PARAMS:
+    for submodule in pogos_base.REQ_MODULE_PARAMS:
         # skip question if we don't have this sub-module
         if 'RUN.{0}'.format(submodule) not in params:
             continue
@@ -1057,7 +1043,7 @@ def copy_ask_req_module_params(params: ParamDict):
         if not params['RUN.{0}'.format(submodule)]:
             continue
         # loop around required parameters
-        for req_param in REQ_MODULE_PARAMS[submodule]:
+        for req_param in pogos_base.REQ_MODULE_PARAMS[submodule]:
             # skip if we don't have this required parameter
             if req_param not in params:
                 continue

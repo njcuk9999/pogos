@@ -22,7 +22,7 @@ from aperocore.core import drs_log
 from aperocore.constants import load_functions
 
 from pogos.constants.constants import CDict
-from pogos.core import base
+from pogos.core import base as pogos_base
 from pogos.core import general
 from pogos import tsovore
 from pogos import sossisse_wrap
@@ -33,11 +33,11 @@ from pogos.core import startup
 # =============================================================================
 # Define variables
 __NAME__ = 'pogos.recipes.pogos_run'
-__PACKAGE__ = base.__PACKAGE__
-__version__ = base.__version__
-__authors__ = base.__authors__
-__date__ = base.__date__
-__release__ = base.__release__
+__PACKAGE__ = pogos_base.__PACKAGE__
+__version__ = pogos_base.__version__
+__authors__ = pogos_base.__authors__
+__date__ = pogos_base.__date__
+__release__ = pogos_base.__release__
 # set description
 __description__ = ('Run the POGOS recipe using a configuration (yaml) file.'
                    ' All input data needs to be placed according to the yaml '
@@ -73,11 +73,15 @@ def main(**kwargs):
     # -------------------------------------------------------------------------
     # Make sure runs are not None - this means something is very wrong with
     # the yaml file
-    run_keys = ['RUN.TSOVORE', 'RUN.SOSSISSE', 'RUN.MIRIAM', 'RUN.SORBET']
-    for run_key in run_keys:
+    for run_key in list(pogos_base.RUN_KEYS.keys()):
         if params.get(run_key) is None:
-            emsg = f'Parameter "{run_key}" is None - check yaml file!'
-            raise drs_log.AperoCodedException(emsg)
+            # construct warning message
+            wmsg = ('{0} is None - this means the yaml is out-of-date. '
+                    'Please update the yaml file with pogos_setup')
+            wargs = [run_key]
+            # print a warning
+            WLOG(params, 'warning', wmsg.format(*wargs))
+            params[run_key] = False
     # -------------------------------------------------------------------------
     # Check that user is not trying to run multiple reduction steps from
     # the same level (unless this is allowed)
@@ -166,7 +170,7 @@ def main(**kwargs):
     # Post-extraction steps
     # =========================================================================
     # run sorbet
-    if params['RUN.SORBET']:
+    if sorbet.any_sorbet_run(params):
         sorbet.run_sorbet(params, ext_inst)
     # -------------------------------------------------------------------------
     # print splash

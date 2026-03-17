@@ -51,8 +51,6 @@ INSTRUMENTS = ['JWST.NIRISS.SOSS',
                # 'JWST.NIRCAM.MULTISTRIPE',
                'JWST.MIRI.IMAGING',
                'JWST.MIRI.LRS']
-# define the submodules in POGOS
-SUBMODULES = ['TSOVORE', 'SOSSISSE', 'MIRIAM', 'SORBET']
 
 # =============================================================================
 # Define all instruments and their sub-modes (related to our instrument
@@ -97,9 +95,16 @@ INST_MODES['JWST.MIRI']['WFSS'] = None
 # =============================================================================
 # Define all reduction steps
 # =============================================================================
+# define the submodules in POGOS
+SUBMODULES = ['TSOVORE', 'PRE_NAMELESS', 'PRE_EUREKA', 'PRE_JWST',
+              'SOSSISSE', 'MIRIAM', 'EXT_NAMELESS', 'EXT_EUREKA', 'EXT_JWST', 'EXT_BOX',
+              'SORBET.WLCA', 'SORBET.SLCA']
+
+# define the reduction steps (pre-extraction, extraction, post extraction)
+#  then which sub module and a list of instruments supported per sub-module
 RED_STEPS = dict()
 RED_STEPS['Pre-extraction'] = dict()
-RED_STEPS['Pre-extraction']['IDT:SOSS'] = None
+# RED_STEPS['Pre-extraction']['IDT:SOSS'] = None
 RED_STEPS['Pre-extraction']['TSOVORE'] = ['JWST.NIRISS.SOSS',
                                           # 'JWST.NIRISS.SOSS.SUPERSTRIPE',
                                           'JWST.NIRSPEC.BOTS.PRISM',
@@ -113,9 +118,10 @@ RED_STEPS['Pre-extraction']['TSOVORE'] = ['JWST.NIRISS.SOSS',
                                           'JWST.NIRCAM.WFSS',
                                           # 'JWST.NIRCAM.MULTISTRIPE',
                                           'JWST.MIRI.IMAGING']
-RED_STEPS['Pre-extraction']['NAMELESS'] = None
-RED_STEPS['Pre-extraction']['Eureka'] = None
-RED_STEPS['Pre-extraction']['exoTEFRF'] = None
+RED_STEPS['Pre-extraction']['PRE_NAMELESS'] = None
+RED_STEPS['Pre-extraction']['PRE_EUREKA'] = None
+# RED_STEPS['Pre-extraction']['exoTEFRF'] = None
+RED_STEPS['Pre-extraction']['PRE_JWST'] = None
 
 RED_STEPS['Extraction'] = dict()
 RED_STEPS['Extraction']['SOSSISSE'] = ['JWST.NIRISS.SOSS',
@@ -124,10 +130,11 @@ RED_STEPS['Extraction']['SOSSISSE'] = ['JWST.NIRISS.SOSS',
                                        'JWST.NIRSPEC.G253',
                                        'JWST.NIRSPEC.G140']
 RED_STEPS['Extraction']['MIRIAM'] = ['JWST.MIRI.IMAGING']
-RED_STEPS['Extraction']['NAMELESS'] = None
-RED_STEPS['Extraction']['Eureka'] = None
-RED_STEPS['Extraction']['exoTEFRF'] = None
-RED_STEPS['Extraction']['SimpleBox'] = None
+RED_STEPS['Extraction']['EXT_NAMELESS'] = None
+RED_STEPS['Extraction']['EXT_EUREKA'] = None
+# RED_STEPS['Extraction']['exoTEFRF'] = None
+RED_STEPS['Extraction']['EXT_BOX'] = None
+RED_STEPS['Extraction']['EXT_JWST'] = None
 
 RED_STEPS['Post-extraction'] = dict()
 RED_STEPS['Post-extraction']['SORBET.WLCA'] = ['JWST.NIRISS.SOSS',
@@ -136,13 +143,14 @@ RED_STEPS['Post-extraction']['SORBET.WLCA'] = ['JWST.NIRISS.SOSS',
                                                'JWST.NIRSPEC.G253',
                                                'JWST.NIRSPEC.G140',
                                                'JWST.MIRI.IMAGING']
-RED_STEPS['Post-extraction']['SORBET.SPCA'] = ['JWST.NIRISS.SOSS',
+RED_STEPS['Post-extraction']['SORBET.SLCA'] = ['JWST.NIRISS.SOSS',
                                                'JWST.NIRSPEC.PRISM',
                                                'JWST.NIRSPEC.G395',
                                                'JWST.NIRSPEC.G253',
                                                'JWST.NIRSPEC.G140']
-RED_STEPS['Post-extraction']['SORBET.TransitFit'] = None
-RED_STEPS['Post-extraction']['SORBET.RVA'] = None
+# RED_STEPS['Post-extraction']['SORBET.TransitFit'] = None
+# RED_STEPS['Post-extraction']['SORBET.RVA'] = None
+
 
 # Define whether the user is allowed to run multiple flavours of these
 # steps (e.g. multiple extraction methods) - if False, then only one method
@@ -152,12 +160,65 @@ RED_STEPS_MULTI['Pre-extraction'] = False
 RED_STEPS_MULTI['Extraction'] = False
 RED_STEPS_MULTI['Post-extraction'] = True
 
-# Define the shortnames for Pre/Extract/Post
-RED_SHORT = dict()
-RED_SHORT['Pre-extraction'] = 'Pre'
-RED_SHORT['Extraction'] = 'Ext'
-RED_SHORT['Post-extraction'] = 'Pst'
+# Define the prefix for constants from each module
+#   in form RUN.XXXX = PREFIX    (usually prefix is TSOVORE)
+RUN_KEYS = dict()
+RUN_KEYS['RUN.TSOVORE'] = 'TSOVORE'
+RUN_KEYS['RUN.PRE_NAMELESS'] = 'PRE_NAMELESS'
+RUN_KEYS['RUN.PRE_EUREKA'] = 'PRE_EUREKA'
+RUN_KEYS['RUN.PRE_JWST'] = 'PRE_JWST'
+RUN_KEYS['RUN.SOSSISSE'] = 'SOSSISSE'
+RUN_KEYS['RUN.MIRIAM'] = 'MIRIAM'
+RUN_KEYS['RUN.EXT_NAMELESS'] = 'EXT_NAMELESS'
+RUN_KEYS['RUN.EXT_EUREKA'] = 'EXT_EUREKA'
+RUN_KEYS['RUN.EXT_JWST'] = 'EXT_JWST'
+RUN_KEYS['RUN.EXT_BOX'] = 'EXT_BOX'
+RUN_KEYS['RUN.SORBET.WLCA'] = 'SORBET.WLCA'
+RUN_KEYS['RUN.SORBET.SLCA'] = 'SORBET.SLCA'
 
+# Define the first path to create (in setup) for each module
+#   (this is usually the input path)
+#   in form RUN.XXXX = CONST.PATH.NAME
+RUN_DIRS = dict()
+RUN_DIRS['RUN.TSOVORE'] = 'TSOVORE.PATHS.INPUT_PATH'
+RUN_DIRS['RUN.PRE_NAMELESS'] = 'PRE_NAMELESS.INPUTS.PATH'
+RUN_DIRS['RUN.PRE_EUREKA'] = 'PRE_EUREKA.INPUTS.PATH'
+RUN_DIRS['RUN.PRE_JWST'] = 'PRE_JWST.INPUTS.PATH'
+RUN_DIRS['RUN.SOSSISSE'] = 'SOSSISSE.INPUTS.SOSSIOPATH'
+RUN_DIRS['RUN.MIRIAM'] = 'MIRIAM.PATHS.INPUT_PATH'
+RUN_DIRS['RUN.EXT_NAMELESS'] = 'EXT_NAMELESS.INPUTS.PATH'
+RUN_DIRS['RUN.EXT_EUREKA'] = 'EXT_EUREKA.INPUTS.PATH'
+RUN_DIRS['RUN.EXT_JWST'] = 'EXT_JWST.INPUTS.PATH'
+RUN_DIRS['RUN.EXT_BOX'] = 'EXT_BOX.INPUTS.PATH'
+RUN_DIRS['RUN.SORBET.WLCA'] = 'SORBET.WLCA.INPUT_PATH'
+RUN_DIRS['RUN.SORBET.SLCA'] = 'SORBET.SLCA.INPUT_PATH'
+
+# Define the file paths for each module that may need clearing on copying a yaml
+# should be in format: FILE_PATHS[<constant name>] = <path to directory constant>
+FILE_PATHS = dict()
+FILE_PATHS['TSOVORE.INPUTS.FILES'] = 'TSOVORE.PATHS.INPUT_PATH'
+FILE_PATHS['MIRIAM.INPUTS.FILES'] = 'MIRIAM.PATHS.INPUT_PATH'
+FILE_PATHS['SOSSISSE.GENERAL.FILES'] = 'SOSSISSE.PATHS.RAWPATH'
+FILE_PATHS['SOSSISSE.GENERAL.WAVE_FILE'] = 'SOSSISSE.PATHS.CALIBPATH'
+FILE_PATHS['SORBET.WLCA.INPUT_FILE'] = 'SORBET.WLCA.INPUT_PATH'
+FILE_PATHS['SORBET.SLCA.INPUT_FILE'] = 'SORBET.SLCA.INPUT_PATH'
+
+# list all the required parameters for each module when copying a yaml
+REQ_MODULE_PARAMS = dict()
+REQ_MODULE_PARAMS['TSOVORE'] = []
+REQ_MODULE_PARAMS['PRE_NAMELESS'] = []
+REQ_MODULE_PARAMS['PRE_EUREKA'] = []
+REQ_MODULE_PARAMS['PRE_JWST'] = []
+REQ_MODULE_PARAMS['SOSSISSE'] = ['SOSSISSE.INPUTS.OBJECTNAME']
+REQ_MODULE_PARAMS['MIRIAM'] = []
+REQ_MODULE_PARAMS['EXT_NAMELESS'] = []
+REQ_MODULE_PARAMS['EXT_EUREKA'] = []
+REQ_MODULE_PARAMS['EXT_JWST'] = []
+REQ_MODULE_PARAMS['EXT_BOX'] = []
+REQ_MODULE_PARAMS['SORBET'] = []
+
+# list of sorbet sub-modules
+SORBET_SUB_MODS = ['SORBET.WLCA', 'SORBET.SLCA']
 
 # =============================================================================
 # Define sub module functionality

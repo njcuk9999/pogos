@@ -110,6 +110,7 @@ CDict.add_group(group, description='Switches to turn on major features',
 # -----------------------------------------------------------------------------
 # Pre-extraction flavours
 # -----------------------------------------------------------------------------
+# Run
 # Run TSOVORE
 CDict.add('TSOVORE', value=False, dtype=bool, source=__NAME__,
           user=True, active=True, group=group, not_none=True,
@@ -118,7 +119,7 @@ CDict.add('TSOVORE', value=False, dtype=bool, source=__NAME__,
 # Run Eureka pre-extraction steps
 CDict.add('PRE_EUREKA', value=False, dtype=bool, source=__NAME__,
           user=True, active=True, group=group, not_none=True,
-            description='Run Eureka pre-extraction steps')
+          description='Run Eureka pre-extraction steps')
 
 # Run default JWST pre-extraction steps
 CDict.add('PRE_JWST', value=False, dtype=bool, source=__NAME__,
@@ -166,10 +167,16 @@ CDict.add('MIRIAM', value=False, dtype=bool, source=__NAME__,
 # -----------------------------------------------------------------------------
 # Post-extraction flavours
 # -----------------------------------------------------------------------------
-# Run SORBET
-CDict.add('SORBET', value=False, dtype=bool, source=__NAME__,
+# Run SORBET WLCA
+CDict.add('SORBET.WLCA', value=False, dtype=bool, source=__NAME__,
           user=True, active=True, group=group, not_none=True,
-          description='Run SORBET')
+          description='Run SORBET white light curve analysis')
+
+# Run SORBET WLCA
+CDict.add('SORBET.SLCA', value=False, dtype=bool, source=__NAME__,
+          user=True, active=True, group=group, not_none=True,
+          description='Run SORBET Spectral light curve analysis')
+
 
 # =============================================================================
 # Start of code

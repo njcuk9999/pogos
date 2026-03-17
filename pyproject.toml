@@ -25,7 +25,6 @@ dependencies = [
         "scipy==1.17.1",
         "matplotlib==3.10.8",
         "notebook==7.5.4",
-        "pastasoss==1.2.2",
         "prompt_toolkit==3.0.50",
         "tqdm==4.67.3",
         "h5py==3.15.1",
@@ -48,5 +47,7 @@ pogos_copy = "pogos:recipes.pogos_copy.run"
 
 [project.optional-dependencies]
 full = ["aperocore @ git+https://github.com/njcuk9999/apero-drs.git@v0.8.running#subdirectory=apero-core",
+        "pastasoss @ git+https://github.com/njcuk9999/pastasoss.git",
         "sossisse @ git+https://github.com/njcuk9999/sossisse.git@developer"]
-dev = ["aperocore", "sossisse"]
+
+dev = ["aperocore", "sossisse", "pastasoss"]

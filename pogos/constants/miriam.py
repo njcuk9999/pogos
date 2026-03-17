@@ -43,7 +43,7 @@ MIRIAM_CDict.title = MIRIAM_CDict.yaml_title('MIRIAM: MIRI Image Analysis '
 # =============================================================================
 # General settings (generally don't touch these)
 # =============================================================================
-# set the group for all WLCTA constants
+# set the group for general constants
 cgroup = 'GENERAL'
 MIRIAM_CDict.add_group(cgroup, description='General configs for MIRIAM',
                        source=__NAME__, user=True, active=True)

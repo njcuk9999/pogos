@@ -42,7 +42,7 @@ SORBET_CDict.title = SORBET_CDict.yaml_title('SORBET: Suite Of Reduction tools '
                                      version=base.SORBET_VERSION,
                                      date=base.SORBET_DATE)
 
-# set the group for all WLCTA constants
+# set the group for all general constants
 cgroup = 'GENERAL'
 SORBET_CDict.add_group(cgroup, description='General configs for SORBET',
                 source=__NAME__, user=True, active=True)
@@ -94,15 +94,15 @@ SORBET_CDict.add('FIGURE_TYPES', value=['png', 'pdf'], dtype=list, dtypei=str,
 # =============================================================================
 # Constants for SORBET white light curve transit analysis
 # =============================================================================
-# set the group for all WLCTA constants
-cgroup = 'WLCTA'
-SORBET_CDict.add_group(cgroup, description='Configs for SORBET.WLCTA: White '
+# set the group for all WLCA constants
+cgroup = 'WLCA'
+SORBET_CDict.add_group(cgroup, description='Configs for SORBET.WLCA: White '
                                           'light curve transit analysis',
                 source=__NAME__, user=True, active=True)
 # Run switch parameter
 SORBET_CDict.add('RUN', value=False, dtype=bool, source=__NAME__,
                 user=True, active=True, group=cgroup,
-                description='Run SORBET.WLCTA')
+                description='Run SORBET.WLCA')
 # Input data path
 SORBET_CDict.add('INPUT_PATH', value=f'wlcta{os.sep}inputs',
                  dtype=str, source=__NAME__,
@@ -297,16 +297,16 @@ SORBET_CDict.add('DEBUG', value=False, dtype=bool, source=__NAME__,
 # =============================================================================
 # Constants for SORBET spectral light curve transit analysis
 # =============================================================================
-# set the group for all SLCTA constants
-cgroup = 'SLCTA'
-SORBET_CDict.add_group(cgroup, description='Configs for SORBET.SLCTA: '
+# set the group for all SLCA constants
+cgroup = 'SLCA'
+SORBET_CDict.add_group(cgroup, description='Configs for SORBET.SLCA: '
                                           'Spectral light curve transit '
                                           'analysis',
                 source=__NAME__, user=True, active=True)
 # Run switch parameter
 SORBET_CDict.add('RUN', value=False, dtype=bool, source=__NAME__,
                 user=True, active=True, group=cgroup,
-                description='Run SORBET.SLCTA')
+                description='Run SORBET.SLCA')
 # Input data path
 SORBET_CDict.add('INPUT_PATH', value=f'slcta{os.sep}inputs',
                  dtype=str, source=__NAME__,
@@ -407,7 +407,7 @@ SORBET_CDict.add('OUTLIER_KERNEL_SIZE', value=None, dtype=int, source=__NAME__,
                              '\n5% the length of the vector will be used.')
 # -----------------------------------------------------------------------------
 # ExoTiC-LD
-cgroup = 'SLCTA.EXOTIC-LD'
+cgroup = 'SLCA.EXOTIC-LD'
 SORBET_CDict.add_group(cgroup,
                 description='Limb-darkening modeling using the ExoTiC-LD '
                             'package (for transit fitting)',

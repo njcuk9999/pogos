@@ -44,7 +44,7 @@ TSOVORE_CDict.title = TSOVORE_CDict.yaml_title('TSOVORE',
 # =============================================================================
 # General settings (generally don't touch these)
 # =============================================================================
-# set the group for all WLCTA constants
+# set the group for all general constants
 cgroup = 'GENERAL'
 TSOVORE_CDict.add_group(cgroup, description='General configs for TSOVORE',
                         source=__NAME__, user=True, active=True)

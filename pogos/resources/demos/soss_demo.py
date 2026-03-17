@@ -36,7 +36,8 @@ class SossTrappist1bDemo(demos.PogoDemo):
 
     def __init__(self):
         self.title = 'JWST.NIRISS.SOSS Trappist 1b transit [{tflavours}]'
-        self.id = 'DEMO_T1b_JWST.NIRISS.SOSS_SOSSISSE_SORBET_20220718.{tflavours}'
+        # in form DEMO_{OBJNAME}.{date}.{telescope}.{inst}.{mode}.{flavours}
+        self.id = 'DEMO_T1b.20220718.JWST.NIRISS.SOSS.{tflavours}'
         # define the flavours selected by the user
         self.flavours = []
         # define the string flavours (shortened versions of flavours for
@@ -246,13 +247,6 @@ class SossTrappist1bDemo(demos.PogoDemo):
         self.cdict.add_sub_cdict('SORBET', SORBET_CDict, source=__NAME__)
 
         # =====================================================================
-        # Switches to turn of major features
-        # =====================================================================
-        cgroup = 'RUN'
-        # Run SORBET
-        self.cdict.set('SORBET', group=cgroup, source=__NAME__, value=True)
-
-        # =====================================================================
         # Constants for SORBET: Suite Of Reduction tools for Both Eclipse
         # and Transit
         # =====================================================================
@@ -275,11 +269,12 @@ class SossTrappist1bDemo(demos.PogoDemo):
         # =====================================================================
         # Switches to turn large parts of the code on/off
         # =====================================================================
-        cgroup = 'SORBET.WLCTA'
-
         # Switch for turning on/off the white light curve transit fit
-        self.cdict.set('RUN', group=cgroup, source=__NAME__, value=True)
+        self.cdict.set('SORBET.WLCA', group='RUN', source=__NAME__,
+                       value=True)
 
+        # set the group
+        cgroup = 'SORBET.WLCA'
         # =====================================================================
         # Definition of inputs related to the data
         # =====================================================================
@@ -288,7 +283,7 @@ class SossTrappist1bDemo(demos.PogoDemo):
                        value='white_light_curve.fits')
 
         # =====================================================================
-        # Definition of general inputs SORBET_WLCTA
+        # Definition of general inputs SORBET_WLCA
         # =====================================================================
         # Prior distributions for the default juliet parameterization
         jps_values = ['P_p1', 't0_p1', 'p_p1', 'b_p1', 'a_p1',
@@ -341,12 +336,11 @@ class SossTrappist1bDemo(demos.PogoDemo):
         # =====================================================================
         # Switches to turn large parts of the code on/off
         # =====================================================================
-        cgroup = 'SORBET.SLCTA'
-
         # Switch for turning on/off the white light curve transit fit
-        self.cdict.set('RUN', group=cgroup, source=__NAME__,
+        self.cdict.set('SORBET.SLCA', group='RUN', source=__NAME__,
                        value=True)
 
+        cgroup = 'SORBET.SLCA'
         # =====================================================================
         # Definition of inputs related to the data
         # =====================================================================
@@ -365,7 +359,7 @@ class SossTrappist1bDemo(demos.PogoDemo):
                        value=20)
 
         # =====================================================================
-        # Definition of general inputs SORBET_SLCTA
+        # Definition of general inputs SORBET_SLCA
         # =====================================================================
         # Prior distributions for the default juliet parameterization
         jps_values = ['P_p1', 't0_p1', 'p_p1', 'b_p1', 'a_p1',

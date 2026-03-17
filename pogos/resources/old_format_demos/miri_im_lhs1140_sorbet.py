@@ -47,7 +47,7 @@ INFO['keywords'] = ['eclipse']
 URL = 'http://206.12.93.77/ari/data/pogos/demos/miri/'
 # download: key = file, value = local path
 DOWNLOAD = dict()
-DOWNLOAD['SORBET.WLCTA.INPUT_FILE'] = 'SORBET.WLCTA.INPUT_PATH'
+DOWNLOAD['SORBET.WLCA.INPUT_FILE'] = 'SORBET.WLCA.INPUT_PATH'
 
 
 # =============================================================================
@@ -99,7 +99,7 @@ Cdict.set('DESCRIPTION', group=cgroup, source=__NAME__,
 # =============================================================================
 # Switches to turn large parts of the code on/off
 # =============================================================================
-cgroup = 'SORBET.WLCTA'
+cgroup = 'SORBET.WLCA'
 
 # Switch for turning on/off the white light curve transit fit
 Cdict.set('RUN', group=cgroup, source=__NAME__,
@@ -113,7 +113,7 @@ Cdict.set('INPUT_FILE', group=cgroup, source=__NAME__,
           value='jw03730009001_03101_white_light_curve.fits')
 
 # =============================================================================
-# Definition of general inputs SORBET_WLCTA
+# Definition of general inputs SORBET_WLCA
 # =============================================================================
 # Prior distributions for the default juliet parameterization
 jps_values = ['P_p1', 't0_p1', 'p_p1', 'b_p1', 'a_p1',

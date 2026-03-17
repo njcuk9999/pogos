@@ -37,7 +37,8 @@ class MiriImagingDemo_LHS1140(demos.PogoDemo):
 
     def __init__(self):
         self.title = 'JWST.MIRI.IMAGING LHS-1140 eclipse [{tflavours}]'
-        self.id = 'DEMO_LHS_1140_JWST.MIRI.IM_20240707.{tflavours}'
+        # in form DEMO_{OBJNAME}.{date}.{telescope}.{inst}.{mode}.{flavours}
+        self.id = 'DEMO_LHS1140.20240707.JWST.MIRI.IM.{tflavours}'
         # define the flavours selected by the user
         self.flavours = []
         # define the string flavours (shortened versions of flavours for
@@ -222,15 +223,15 @@ class MiriImagingDemo_LHS1140(demos.PogoDemo):
         # =====================================================================
         # Add to the downloads
         # =====================================================================
-        self.download['SORBET.WLCTA.INPUT_FILE'] = 'SORBET.WLCTA.INPUT_PATH'
+        self.download['SORBET.WLCA.INPUT_FILE'] = 'SORBET.WLCA.INPUT_PATH'
         # =====================================================================
         # Switches to turn large parts of the code on/off
         # =====================================================================
-        cgroup = 'SORBET.WLCTA'
-
         # Switch for turning on/off the white light curve transit fit
-        self.cdict.set('RUN', group=cgroup, source=__NAME__, value=True)
+        self.cdict.set('SORBET.WLCA', group='RUN', source=__NAME__, value=True)
 
+        # set the group for the rest of the constants
+        cgroup = 'SORBET.WLCA'
         # =====================================================================
         # Definition of inputs related to the data
         # =====================================================================
@@ -239,7 +240,7 @@ class MiriImagingDemo_LHS1140(demos.PogoDemo):
                        value='white_light_curve.fits')
 
         # =====================================================================
-        # Definition of general inputs SORBET_WLCTA
+        # Definition of general inputs SORBET_WLCA
         # =====================================================================
         # Prior distributions for the default juliet parameterization
         jps_values = ['P_p1', 't0_p1', 'p_p1', 'b_p1', 'a_p1',

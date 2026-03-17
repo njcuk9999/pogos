@@ -35,14 +35,14 @@ INFO['date'] = '2025-08-28'
 INFO['author'] = 'Charles Cadieux'
 INFO['id'] = 'DEMO_T1b_JWST.NIRISS.SOSS_SORBET_20220718'
 INFO['red_steps'] = ['Post-extraction:SORBET.WLCA',
-                     'Post-extraction:SORBET.SLCTA']
+                     'Post-extraction:SORBET.SLCA']
 INFO['keywords'] = ['transit']
 # url for data download
 URL = 'http://206.12.93.77/ari/data/pogos/demos/soss/'
 # download: key = file, value = local path
 DOWNLOAD = dict()
-DOWNLOAD['SORBET.WLCTA.INPUT_FILE'] = 'SORBET.WLCTA.INPUT_PATH'
-DOWNLOAD['SORBET.SLCTA.INPUT_FILE'] = 'SORBET.SLCTA.INPUT_PATH'
+DOWNLOAD['SORBET.WLCA.INPUT_FILE'] = 'SORBET.WLCA.INPUT_PATH'
+DOWNLOAD['SORBET.SLCA.INPUT_FILE'] = 'SORBET.SLCA.INPUT_PATH'
 
 
 # =============================================================================
@@ -93,7 +93,7 @@ Cdict.set('DESCRIPTION', group=cgroup, source=__NAME__,
 # =============================================================================
 # Switches to turn large parts of the code on/off
 # =============================================================================
-cgroup = 'SORBET.WLCTA'
+cgroup = 'SORBET.WLCA'
 
 # Switch for turning on/off the white light curve transit fit
 Cdict.set('RUN', group=cgroup, source=__NAME__,
@@ -107,7 +107,7 @@ Cdict.set('INPUT_FILE', group=cgroup, source=__NAME__,
           value='white_light_curve.fits')
 
 # =============================================================================
-# Definition of general inputs SORBET_WLCTA
+# Definition of general inputs SORBET_WLCA
 # =============================================================================
 # Prior distributions for the default juliet parameterization
 jps_values = ['P_p1', 't0_p1', 'p_p1', 'b_p1', 'a_p1',
@@ -159,7 +159,7 @@ Cdict.set('LINEAR_DETRENDING', group=cgroup, source=__NAME__,
 # =============================================================================
 # Switches to turn large parts of the code on/off
 # =============================================================================
-cgroup = 'SORBET.SLCTA'
+cgroup = 'SORBET.SLCA'
 
 # Switch for turning on/off the white light curve transit fit
 Cdict.set('RUN', group=cgroup, source=__NAME__,
@@ -183,7 +183,7 @@ Cdict.set('RESOLUTION_BIN', group=cgroup, source=__NAME__,
           value=20)
 
 # =============================================================================
-# Definition of general inputs SORBET_SLCTA
+# Definition of general inputs SORBET_SLCA
 # =============================================================================
 # Prior distributions for the default juliet parameterization
 jps_values = ['P_p1', 't0_p1', 'p_p1', 'b_p1', 'a_p1',
