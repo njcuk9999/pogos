@@ -1,7 +1,7 @@
 # Define versionV
-DRS.VERSION: 0.0.032
+DRS.VERSION: 0.0.033
 # Define date of release
-DRS.DATE: 2026-02-05
+DRS.DATE: 2026-03-17
 # Define release type
 DRS.RELEASE: alpha
 # Define authors
@@ -12,13 +12,13 @@ DRS.AUTHORS:
 # Version/dates of the individual sub-modules
 # -------------------------------------------------------
 # TSOVORE simulation module
-TSOVORE.VERSION: 0.0.007
-TSOVORE.DATE: 2026-02-04
+TSOVORE.VERSION: 0.0.008
+TSOVORE.DATE: 2026-03-17
 
 # MIRIAM module
-MIRIAM.VERSION: 0.0.005
-MIRIAM.DATE: 2025-11-20
+MIRIAM.VERSION: 0.0.006
+MIRIAM.DATE: 2026-03-17
 
 # SORBET module - general
-SORBET.VERSION: 0.0.006
-SORBET.DATE: 2025-11-20
+SORBET.VERSION: 0.0.007
+SORBET.DATE: 2026-03-17
