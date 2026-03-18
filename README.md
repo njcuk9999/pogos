@@ -3,16 +3,16 @@ PrOcessing General ObServations: A wrapper for TSOVORE, SOSSISSE, MIRIAM and SOR
 
 ## Table of contents
 
-1. [Introduction](#introduction)
-2. [Installation](#1-installation)
+1. [Introduction](#1-introduction)
+2. [Installation](#2-installation)
 3. [Setup POGOS](#2-setting-up-pogos)
-4. [Running POGOS](#3-running-pogos)
+4. [Running POGOS](#4-running-pogos)
 5. [Running POGOS with your own data](#5-running-pogos-with-your-own-data)
-6. [Dev mode](#4-dev-mode)
+6. [Dev mode](#6-dev-mode)
 
 ---
 
-## 2. Introduction
+## 1. Introduction
 
 **POGOS** (PrOcessing General ObServations) is a python package that wraps around 
 several exoplanet data analysis packages to provide a  simple interface for 
