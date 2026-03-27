@@ -96,10 +96,10 @@ class NirissSoss(ts_default.JWST):
         # infiles = loic_niriss.loic_group_scale_step(self, infiles)
 
         # IPC Step
-        infiles = self.apply_interpixel_capacitance(infiles)
+        # infiles = self.apply_interpixel_capacitance(infiles)
 
         # Superbias Step (NIR-specific)
-        infiles = self.subtract_superbias(infiles)
+        # infiles = self.subtract_superbias(infiles)
 
         # Refpix Step
         infiles = self.apply_reference_pixel_correction(infiles)
@@ -108,25 +108,27 @@ class NirissSoss(ts_default.JWST):
         infiles = self.apply_linearity_correction(infiles)
 
         # Dark Current Step
-        infiles = self.subtract_dark_current(infiles)
+        # infiles = self.subtract_dark_current(infiles)
 
         # Persistence Step (optional)
         # infiles = self.correct_persistence(infiles)
 
         # Charge Migration Step
-        infiles = self.correct_charge_migration(infiles)
+        # infiles = self.correct_charge_migration(infiles)
 
         # Jump Step
         infiles = self.detect_and_flag_jumps(infiles)
 
         # Clean Flicker Noise Step
-        infiles = self.remove_flicker_noise(infiles)
+        # infiles = self.remove_flicker_noise(infiles)
 
         # Ramp Fit Step
         infiles = self.fit_signal_ramps(infiles)
 
         # Gain Scale Step → save _rateints.fits
-        # infiles = self.apply_gain_scaling(infiles)
+        infiles = self.apply_gain_scaling(infiles)
+
+        # Save RATEINTS
         infiles = self.save_outputs('_rateints.fits', infiles)
 
         # =====================================================================
@@ -139,38 +141,40 @@ class NirissSoss(ts_default.JWST):
         # Step 2.1: Assign WCS
         infiles = self.assign_wcs_solution(infiles)
 
-        # Step 2.2: Optional Clean Flicker Noise
-        infiles = self.remove_flicker_noise(infiles)
+        # Step 2.2: Flat Field
+        infiles = self.apply_flat_field(infiles)
 
         # Step 2.3: Background Subtraction (usually skipped for TSO)
-        infiles = self.subtract_background(infiles)
+        # infiles = self.subtract_background(infiles)
 
         # Step 2.4: Source Type (srctype)
         infiles = self.srctype_determination(infiles)
 
-        # Step 2.5: Flat Field
-        infiles = self.apply_flat_field(infiles)
-
-        # Step 2.6: Stray Light Correction
-        infiles = self.correct_stray_light(infiles)
-
-        # Step 2.7: Fringe Correction
-        infiles = self.correct_fringe(infiles)
-
-        # Step 2.8: Path Loss Correction
-        infiles = self.correct_path_loss(infiles)
-
-        # Step 2.9: Bar Shadow Correction
-        infiles = self.correct_bar_shadow(infiles)
-
-        # Step 2.10: Extract 1D Spectrum → save _x1dints.fits
+        # Step 2.5: Extract 1D Spectrum → save _x1dints.fits
         x1d_files = self.extract_1d_spectrum(infiles)
+
+        # Step 2.6: Photometric Calibration on infiles
+        x1d_files = self.apply_photometric_calibration(x1d_files)
+
         # Save 1D extracted spectra
         x1d_files = self.save_outputs('_x1dints.fits', x1d_files)
 
-        # Step 2.11: Photometric Calibration on infiles → save _calints.fits
-        infiles = self.apply_photometric_calibration(infiles)
-        infiles = self.save_outputs('_calints.fits', infiles)
+        ########## Below steps were removed by Loic (2026/03/26) ##############
+        # Step 2.2: Optional Clean Flicker Noise
+        # infiles = self.remove_flicker_noise(infiles)
+
+        # Step 2.6: Stray Light Correction
+        # infiles = self.correct_stray_light(infiles)
+
+        # Step 2.7: Fringe Correction
+        # infiles = self.correct_fringe(infiles)
+
+        # Step 2.8: Path Loss Correction
+        # infiles = self.correct_path_loss(infiles)
+
+        # Step 2.9: Bar Shadow Correction
+        # infiles = self.correct_bar_shadow(infiles)
+
         # ---------------------------------------------------------------------
         # Last step is to save the outputs for return, do not remove this
         self.add_output(infiles)
