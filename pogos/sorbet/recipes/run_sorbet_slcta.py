@@ -58,7 +58,7 @@ def main(**kwargs):
     msg = f'Using yaml file: {os.path.realpath(params["GLOBAL.YAML_FILE"])}'
     WLOG(params, 'info', msg)
     # run the spectral light curve analysis
-    if params['SORBET.SLCTA.RUN']:
+    if params['RUN.SORBET.SLCA']:
         sorbet.general.run_sorbet_slcta(params)
 
 def run():

@@ -3,15 +3,16 @@ PrOcessing General ObServations: A wrapper for TSOVORE, SOSSISSE, MIRIAM and SOR
 
 ## Table of contents
 
-1. [Introduction](#introduction)
-2. [Installation](#1-installation)
+1. [Introduction](#1-introduction)
+2. [Installation](#2-installation)
 3. [Setup POGOS](#2-setting-up-pogos)
-4. [Running POGOS](#3-running-pogos)
-5. [Dev mode](#4-dev-mode)
+4. [Running POGOS](#4-running-pogos)
+5. [Running POGOS with your own data](#5-running-pogos-with-your-own-data)
+6. [Dev mode](#6-dev-mode)
 
 ---
 
-## 2. Introduction
+## 1. Introduction
 
 **POGOS** (PrOcessing General ObServations) is a python package that wraps around 
 several exoplanet data analysis packages to provide a  simple interface for 
@@ -67,7 +68,7 @@ we recommend a new clean environment to avoid module conflicts.
 
 
 ```bash
-conda create --name pogos-env python=3.11
+conda create --name pogos-env python=3.12
 ```
 
 ```bash
@@ -102,7 +103,11 @@ From inside the `pogos-env` conda environment (or equivalanet), in any directory
 pogos_setup
 ````
 
-This should ask you for several options, and create a file structure and a yaml file.
+This should ask you for several options, and create a file structure and a yaml file, based on a demo we supply.
+You can and should run this demo (it downloads the data) just to make sure your installation ran correctly.
+
+Once you have run a demo you can either manually edit the demo yaml and copy the file structure we provide, or run `pogos_copy` ([This section](#5-running-pogos-with-your-own-data))
+to walk you through creating a new yaml file and file structure based on your own data.
 
 [Back to top](#table-of-contents)
 
@@ -111,40 +116,74 @@ This should ask you for several options, and create a file structure and a yaml 
 ## 4. Running POGOS
 
 Once you have run `pogos_setup` and read and understood the yaml file you can run the main POGOS code.
+We strongly suggest the first time you run POGOS you do so on the demo data to ensure everything is working correctly.
 
-You can do this as follows:
+Running POGOS is as simple as running one command as follows:
 
 ```bash
-pogos_run {path_to_yaml_file}
+pogos_run --yamlfile={path_to_yaml_file}
 ```
 
 where `{path_to_yaml_file}` is the path to the yaml file you created in the setup step.
 
 
+Note once you have run the demo you can run `pogos_run` on your own data ([This section](#5-running-pogos-with-your-own-data)).
+
 [Back to top](#table-of-contents)
 
----
+--
 
-## 5. Dev mode
+## 5. Running POGOS with your own data
+
+There are two options to set up POGOS with your own data:
+1. Manually edit the demo yaml file and copy the demo file structure to your own data.
+2. Use the `pogos_copy` command to walk you through creating a new yaml file and file structure.
+
+To run `pogos_copy` run the following command from inside the `pogos-env` conda environment (or equivalent):
+
+```bash
+pogos_copy --demo_file {demo_yaml_file}
+```
+
+You will then be asked a set of questions about your data and a new yaml file and file structure will be created for you.
+Note for a new instrument/mode combined you will need to run `pogos_setup` first to create a demo for that mode 
+(we recommend again that you test the demo first to ensure your installation is working correctly).
+
+
+[Back to top](#table-of-contents)
+
+--
+
+## 6. Dev mode
 
 For dev mode (editable install of both apero-core and sossisse) please run the following:
 
 ```bash
-conda create --name pogos-env python=3.11
+conda create --name pogos-env python=3.12
 conda activate pogos-env
 
-pip install radvel
-
-git clone git@github.com:njcuk9999/apero-drs.git -b v0.8.003
+mkdir pogos-bin
+cd pogos-bin
+git clone git@github.com:njcuk9999/apero-drs.git -b v0.8.running
+git clone git@github.com:njcuk9999/pastasoss.git
 git clone git@github.com:njcuk9999/sossisse.git -b developer
 git clone git@github.com:njcuk9999/pogos.git -b developer
 
 pip install -U -e './apero-drs/apero-core'
+pip install -U -e './pastasoss'
 pip install -U -e './sossisse[dev]'
 pip install -U -e './pogos[dev]'
 ```
 
 And then proceed with [Setup](#2-setting-up-pogos) and [Running](#3-running-pogos) POGOS.
+
+
+**IMPORTANT NOTE:**
+
+When running in dev mode you must ensure that you are NOT in a directory
+that contains directories called "aperocore", "sossisse" or "pogos" as this will
+cause python to try and import from the local directories instead of the
+installed packages (this includes the ones you cloned above).
 
 [Back to top](#table-of-contents)
 

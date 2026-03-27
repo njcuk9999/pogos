@@ -10,18 +10,18 @@ Created on 2025-02-18 at 14:13
 @author: cook
 """
 import os
+import shutil
+from typing import Any, Dict, Optional
 
-from aperocore.constants.param_functions import ParamDict
-from aperocore.core import drs_misc
-from aperocore.core import drs_log
-from sossisse.recipes import run_sossisse as sossisse_run
-from sossisse.core.exceptions import SossisseFileException
 import sossisse
-
+from aperocore.constants.param_functions import ParamDict
+from aperocore.core import drs_log
+from aperocore.core import drs_misc
 from pogos.core import base
-from pogos.core import io as pogo_io
-from pogos.sorbet.general import general as sorbet_gen
-
+from pogos.tsovore.instruments import default as ts_default
+from sossisse.core import const_funcs
+from sossisse.core.exceptions import SossisseFileException
+from sossisse.recipes import run_sossisse as sossisse_run
 
 # =============================================================================
 # Define variables
@@ -44,7 +44,7 @@ WLOG = drs_log.wlog
 # =============================================================================
 # Define functions
 # =============================================================================
-def run_sossisse_module(params: ParamDict):
+def run_sossisse_module(params: ParamDict, pre_inst: Dict[str, Any]):
     """
     Run the sossisse run recipe
 
@@ -52,6 +52,12 @@ def run_sossisse_module(params: ParamDict):
 
     :return: None, runs sossisse run
     """
+    # set the function name
+    func_name = f'{__NAME__}.run_sossisse_module'
+    # -------------------------------------------------------------------------
+    # get the instances from the pre-extraction step
+    tsovore_inst = pre_inst.get('tsovore', None)
+    # -------------------------------------------------------------------------
     # if RUN.SOSSISSE is False skip
     if not params['RUN.SOSSISSE']:
         return
@@ -66,22 +72,25 @@ def run_sossisse_module(params: ParamDict):
     # make sure yaml file is set
     sparams['INPUTS.PARAM_FILE'] = str(params['GLOBAL.YAML_FILE'])
 
-
-    # SOSSISSE requires raw data to be copied to a specific location
-    # check here if that exists and if not prompt the user
-    spath = os.path.join(sparams['INPUTS.SOSSIOPATH'],
-                         params['GLOBAL.INSTRUMENTMODE'],
-                         sparams['INPUTS.OBJECTNAME'], 'rawdata')
-    # deal with SOSSISSE raw data path not existing
-    if not os.path.exists(spath):
-        msg = ('\n\nSOSSISSE requires raw data to be in a specific location:\n'
-               '  {0}\n'
-               'Please copy the raw data to this location and re-run.\n'
-               'Skipping SOSSISSE run.')
-        # create path if not there
-        os.makedirs(spath, exist_ok=True)
-        # return an error
-        raise SossisseFileException(msg.format(spath))
+    # ----------------------------------------------------------------------
+    # Deal with input from TSOVORE if available
+    # ----------------------------------------------------------------------
+    if tsovore_inst is not None:
+        sparams = tsovore_input(params, tsovore_inst)
+        # ---------------------------------------------------------------------
+        # SOSSISSE requires raw data to be copied to a specific location
+        # check here if that exists and if not prompt the user
+        spath = sparams['PATHS.RAWPATH']
+        # deal with SOSSISSE raw data path not existing
+        if not os.path.exists(spath):
+            msg = ('\n\nSOSSISSE requires raw data to be in a '
+                   'specific location:\n   {0}\n'
+                   'Please copy the raw data to this location and re-run.\n'
+                   'Skipping SOSSISSE run.')
+            # create path if not there
+            os.makedirs(spath, exist_ok=True)
+            # return an error
+            raise SossisseFileException(msg.format(spath))
     # -------------------------------------------------------------------------
     # run the sossisse recipe
     inst = sossisse_run.main(__YAML_DICT__=sparams)
@@ -125,10 +134,11 @@ def setup_sossisse_module(params: ParamDict, cdict):
         # if the key exists update it
         if pkey in params:
             params.set(pkey, spaths[path], source=func_name)
-    # update the SID if changed
-    if sparams['INPUTS.SID'] is not None:
-        params.set('SOSSISSE.INPUTS.SID', sparams['INPUTS.SID'],
-                   source=sparams.sources['INPUTS.SID'])
+    # update the SUBDIRECTORY if changed
+    if sparams['INPUTS.SUBDIRECTORY'] is not None:
+        params.set('SOSSISSE.INPUTS.SUBDIRECTORY',
+        sparams['INPUTS.SUBDIRECTORY'],
+                   source=sparams.sources['INPUTS.SUBDIRECTORY'])
     # -------------------------------------------------------------------------
     # re-save the yaml file after sossisse updates
     # get the yaml file
@@ -141,6 +151,67 @@ def setup_sossisse_module(params: ParamDict, cdict):
     # -------------------------------------------------------------------------
     # return the parameters
     return params
+
+
+def tsovore_input(params: ParamDict,
+                  tsovore_inst: Optional[ts_default.JWST] = None):
+    # set function name
+    func_name = f'{__NAME__}.tsovore_input'
+    # -------------------------------------------------------------------------
+    # get the SOSSISSE sub-dictionary
+    sossisse_params = params.get('SOSSISSE')
+    # deal with SOSSISSE nested dictionary not in params
+    if sossisse_params is None:
+        # we assume that if SOSSISSE is not there we don't want to run this
+        return
+    # convert to independent parameter dictionary
+    sparams = sossisse_params.as_param_dict()
+    # -------------------------------------------------------------------------
+    # get tsovore files to copy
+    tsovore_outputs = tsovore_inst.variables['OUT']
+    # set the output files as input to SOSSISSE
+    sossisse_params['INPUTS']['FILES'] = tsovore_outputs
+    # ---------------------------------------------------------------------
+    # prepare input directory
+    sparams = const_funcs.run_time_params(sparams, only_create=True)
+    # Get the SOSSISSE input directory
+    sossisse_input_dir = sparams['PATHS.RAWPATH']
+    # ---------------------------------------------------------------------
+    # copy files to SOSSISSE input location
+    for tsovore_output in tsovore_outputs:
+        # get the filename
+        filename = os.path.basename(tsovore_output)
+        # define source and destination
+        source = str(os.path.join(tsovore_outputs, filename))
+        dest = str(os.path.join(sossisse_input_dir, filename))
+        # log the copy
+        msg = f'Copying TSOVORE output file to SOSSISSE input: {filename}'
+        WLOG(params, '', msg)
+        # copy file
+        shutil.copy(source, dest)
+    # ---------------------------------------------------------------------
+    # copy calibration files
+    if 'X1D' in tsovore_inst.variables['CALIBS']:
+        # get the calibration file
+        calib_file = tsovore_inst.variables['CALIBS']['X1D']
+        # get the sossisse calibration directory
+        calib_dir = sparams['PATHS.CALIBPATH']
+        # define source and destination
+        source = str(calib_file)
+        dest = str(os.path.join(calib_dir, os.path.basename(calib_file)))
+        # log the copy
+        msg = (f'Copying TSOVORE calibration file to SOSSISSE calib dir: '
+               f'{os.path.basename(calib_file)}')
+        WLOG(params, '', msg)
+        # copy file
+        shutil.copy(source, dest)
+        # update the SOSSISSE wavelength solution file
+        sossisse_params['INPUTS.WAVEFILE'] = os.path.basename(calib_file)
+        # update the SOSSISSE wavelength solution file type
+        sossisse_params['INPUTS.WAVE_FILE_TYPE'] = 'ext_1d'
+    # ---------------------------------------------------------------------
+    # return params
+    return sossisse_params
 
 
 # =============================================================================

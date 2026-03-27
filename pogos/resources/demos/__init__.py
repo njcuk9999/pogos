@@ -10,20 +10,17 @@ Created on 2025-03-25 at 09:57
 @author: cook
 """
 from pogos.core import base
-from pogos.resources.demos import soss_t1b_sossisse
-from pogos.resources.demos import soss_t1b_sossisse_sorbet
-from pogos.resources.demos import soss_t1b_sorbet
-from pogos.resources.demos import prism_wasp39b_sossisse
-from pogos.resources.demos import g395_wasp39b_sossisse
-from pogos.resources.demos import miri_im_lhs1140_miriam
-
+from pogos.resources.demos import soss_demo
+from pogos.resources.demos import miri_demo
+from pogos.resources.demos import bots_g395_demo as g395_demo
+from pogos.resources.demos import bots_prism_demo as prism_demo
 
 # =============================================================================
 # Define instrument short names
 # =============================================================================
 soss = 'JWST.NIRISS.SOSS'
-prism = 'JWST.NIRSPEC.PRISM'
-g395 = 'JWST.NIRSPEC.G395'
+prism = 'JWST.NIRSPEC.BOTS.PRISM'
+g395 = 'JWST.NIRSPEC.BOTS.G395M'
 miri_im = 'JWST.MIRI.IMAGING'
 
 # =============================================================================
@@ -37,17 +34,16 @@ for instrument in base.INSTRUMENTS:
 # =============================================================================
 # Define usable demos
 # =============================================================================
-# JWST.NIRISS.SOSS demos
-DEMOS[soss]['t1b.sossisse'] = soss_t1b_sossisse
-DEMOS[soss]['t1b.sorbet'] = soss_t1b_sorbet
-DEMOS[soss]['t1b.sossisse+sorbet'] = soss_t1b_sossisse_sorbet
+# # JWST.NIRISS.SOSS demos
+DEMOS[soss]['t1b.sossisse'] = soss_demo.SossTrappist1bDemo
 
-# JWST.NIRSPEC.PRISM demos
-DEMOS[prism]['wasp39b.sossisse'] = prism_wasp39b_sossisse
-DEMOS[g395]['wasp39b.sossisse'] = g395_wasp39b_sossisse
+# # JWST.NIRSPEC.PRISM demos
+DEMOS[prism]['wasp39b.sossisse'] = prism_demo.BotsPrismDemo_WASP39b
+DEMOS[g395]['wasp39b.sossisse'] = g395_demo.BotsG395Demo_WASP39b
 
 # JWST.MIRI.IMAGING demo
-DEMOS[miri_im]['miri.im.lhs1140.miriam'] = miri_im_lhs1140_miriam
+DEMOS[miri_im]['miri.im.lhs1140'] = miri_demo.MiriImagingDemo_LHS1140
+
 
 
 # =============================================================================

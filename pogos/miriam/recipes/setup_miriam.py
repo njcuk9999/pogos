@@ -21,7 +21,7 @@ from pogos import miriam
 # =============================================================================
 # Define variables
 # =============================================================================
-__NAME__ = 'pogos.recipes.setup_sorbet'
+__NAME__ = 'pogos.miriam.recipes.setup_sorbet'
 __PACKAGE__ = base.__PACKAGE__
 __version__ = base.__version__
 __authors__ = base.__authors__
@@ -51,8 +51,12 @@ def main(**kwargs):
     # setup individual modules
     params = miriam.setup_miriam_module(params)
     # -------------------------------------------------------------------------
+    # get the demo local value
+    demolocal = params.get('GLOBAL.LOCAL_DOWNLOAD_DATA', None)
+    demosymlink = params.get('GLOBAL.DEMO_SYMLINK_DATA', False)
     # ask for data download
-    load_functions.download_data(params)
+    load_functions.download_data(params, demolocal=demolocal,
+                                 demosymlink=demosymlink)
     # -------------------------------------------------------------------------
     # print splash
     general.end_splash()

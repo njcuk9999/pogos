@@ -9,19 +9,23 @@ Created on 2025-10-16 at 14:10
 
 @author: cook
 """
+import os
+import shutil
 import time
+from typing import Any, Dict, Optional
 
 import numpy as np
 
 from aperocore.constants.param_functions import ParamDict
 from aperocore.core import drs_log
-from aperocore.core import drs_misc
 from pogos.core import base
 from pogos.core import general as pogos_general
 from pogos.core import io as pogos_io
 from pogos.miriam.core import general as mc_general
 from pogos.miriam.general import plots as mc_plots
 from pogos.miriam.general import science as mc_science
+from pogos.miriam.general import io as mc_io
+from pogos.tsovore.instruments import default as ts_default
 from sossisse.core import misc
 
 # =============================================================================
@@ -33,11 +37,6 @@ __version__ = base.__version__
 __authors__ = base.__authors__
 __date__ = base.__date__
 __release__ = base.__release__
-# get the Drs Exceptions
-AperoCodedException = drs_log.AperoCodedException
-AperoCodedWarning = drs_log.AperoCodedWarning
-# get display func
-display_func = drs_misc.display_func
 # Get Logging function
 WLOG = drs_log.wlog
 
@@ -45,20 +44,40 @@ WLOG = drs_log.wlog
 # =============================================================================
 # Define functions
 # =============================================================================
-def run_miriam(params: ParamDict):
+def run_miriam(params: ParamDict, pre_inst: Dict[str, Any]) -> ParamDict:
+    """
+    Run the MIRIAM processing
+
+    :param params: ParamDict, the parameter dictionary of constants
+
+    :return:
+    """
     # set the function name
     func_name = f'{__NAME__}.run_miriam'
+    # -------------------------------------------------------------------------
+    # get the instances from the pre-extraction step
+    tsovore_inst = pre_inst.get('tsovore', None)
+    # -------------------------------------------------------------------------
     # print the white light curve splash
     print(misc.art('MIRIAM', 'yellow', 'CYAN'))
     time.sleep(0.1)
     # prepare the directories
     prepare_directories(params)
+
+    # ----------------------------------------------------------------------
+    # Deal with input from TSOVORE if available
+    # ----------------------------------------------------------------------
+    if tsovore_inst is not None:
+        params = tsovore_input(params, tsovore_inst)
+    # ----------------------------------------------------------------------
+
     # get miriam specific parameters
     mparams = params.get('MIRIAM')
     # -------------------------------------------------------------------------
     # Step 1: merge all input files into a single (cropped) data structure
     # -------------------------------------------------------------------------
-    cube, cube_err, mtbl, weights = mc_science.merge_inputs(params)
+    mi_out = mc_science.merge_inputs(params)
+    cube, cube_err, mtbl, weights, xstart, ystart = mi_out
 
     # -------------------------------------------------------------------------
     # Step 2: perform systematics correction on the data
@@ -77,9 +96,9 @@ def run_miriam(params: ParamDict):
     # Step 4: Change the cube to photometry
     # -------------------------------------------------------------------------
     ptbl0 = mc_science.cube2phot(params, cube2, cube2_err, mtbl, weights,
-                                d2flag=True)
+                                 xstart, ystart, d2flag=True)
     ptbl1 = mc_science.cube2phot(params, cube2, cube2_err, mtbl, weights,
-                                d2flag=False)
+                                 xstart, ystart, d2flag=False)
     # -------------------------------------------------------------------------
     # Step 5: plot results
     # -------------------------------------------------------------------------
@@ -90,13 +109,17 @@ def run_miriam(params: ParamDict):
     # -------------------------------------------------------------------------
     # Step 6: save results
     # -------------------------------------------------------------------------
-    mc_science.write_photometry_results(params, ptbl0, ptbl1)
+    oparams = mc_io.write_photometry_results(params, ptbl0, ptbl1)
     # -------------------------------------------------------------------------
     # produce summary html
     stitle = params.get('MIRIAM.GENERAL.DESCRIPTION', '')
     pogos_io.summary_html(params, 'MIRIAM', 'MIRIAM.PATHS.PLOT_PATH',
-                          'MIRIAM.GENERAL.SID', 'MIRIAM.PATHS.OUTPUT_PATH',
+                          'MIRIAM.GENERAL.SUBDIRECTORY',
+                          'MIRIAM.PATHS.OUTPUT_PATH',
                           stitle)
+    # return output params
+    return oparams
+
 
 def setup_miriam_module(params: ParamDict) -> ParamDict:
     """
@@ -119,7 +142,7 @@ def setup_miriam_module(params: ParamDict) -> ParamDict:
 
 def prepare_directories(params: ParamDict):
 
-    sid_path = 'MIRIAM.GENERAL.SID'
+    sid_path = 'MIRIAM.GENERAL.SUBDIRECTORY'
     sid_null = mc_general.miriam_unique_id()
     mode = 'miriam'
     # -------------------------------------------------------------------------
@@ -148,6 +171,46 @@ def prepare_directories(params: ParamDict):
     # runt the prepare directory function
     pogos_general.prepare_directory(params, pkind, sid_path, sid_null,
                                     file_path, mode)
+
+
+def tsovore_input(params: ParamDict,
+                  tsovore_inst: Optional[ts_default.JWST] = None):
+    # set function name
+    func_name = f'{__NAME__}.tsovore_input'
+    # -------------------------------------------------------------------------
+    # get the MIRIAM sub-dictionary
+    miriam_params = params.get('MIRIAM')
+    # deal with MIRIAM nested dictionary not in params
+    if miriam_params is None:
+        # we assume that if MIRIAM is not there we don't want to run this
+        return
+    # convert to independent parameter dictionary
+    miriam_params = miriam_params.as_param_dict()
+    # -------------------------------------------------------------------------
+    # get tsovore files to copy
+    tsovore_outputs = tsovore_inst.variables['OUT']
+    # ---------------------------------------------------------------------
+    # Get the MIRIAM input directory
+    miriam_input_dir = miriam_params['PATHS.INPUT_PATH']
+    # ---------------------------------------------------------------------
+    basenames = []
+    # copy files to MIRIAM input location
+    for tsovore_output in tsovore_outputs:
+        # get the filename
+        basename = os.path.basename(tsovore_output)
+        # define source and destination
+        dest = str(os.path.join(miriam_input_dir, basename))
+        # log the copy
+        msg = f'Copying TSOVORE output file to MIRIAM input: {basename}'
+        WLOG(params, '', msg)
+        # copy file
+        shutil.copy(tsovore_output, dest)
+        # store basename
+        basenames.append(basename)
+    # update MIRIAM inputs
+    params['MIRIAM.INPUTS.FILES'] = basenames
+    # return params
+    return params
 
 
 # =============================================================================

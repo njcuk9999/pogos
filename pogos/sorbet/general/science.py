@@ -10,17 +10,18 @@ Created on 2025-02-19 at 13:43
 
 No imports from sorbet.general.general
 """
+from pogos.core.external_imports import juliet, StellarLimbDarkening
+from pogos.core.external_imports import JULIET_IMPORT_MESSAGES
+from pogos.core.external_imports import EXOTIC_LD_IMPORT_MESSAGES
 
 import os
 import pickle as pkl
 import warnings
 from typing import Any, Dict, Literal, List, Optional
-
-import juliet
 import numpy as np
 from astropy.table import Table
 from astropy.io import fits
-from exotic_ld import StellarLimbDarkening
+
 from scipy.signal import medfilt
 
 from aperocore import math as mp
@@ -30,6 +31,7 @@ from pogos.core import base
 from pogos.sorbet.core import base as sorbet_base
 from pogos.sorbet.core import core
 from sossisse.core import io
+
 
 # =============================================================================
 # Define variables
@@ -59,19 +61,19 @@ def load_wlc(params: ParamDict):
     """
     # get function name
     func_name = __NAME__ + '.load_wlc()'
-    # check that this function is only being used for SORBET.WLCTA
-    if params['SORBET.WLCTA.RUN'] is None:
-        msg = f'Cannot use "{func_name}" without SORBET.WLCTA.RUN = True'
+    # check that this function is only being used for SORBET.WLCA
+    if params['RUN.SORBET.WLCA'] is None:
+        msg = f'Cannot use "{func_name}" without RUN.SORBET.WLCA = True'
         raise sorbet_base.SorbetException(msg)
 
     # input file with the white light curve data
-    input_file = params['SORBET.WLCTA.INPUT_FILE']
+    input_file = params['SORBET.WLCA.INPUT_FILE']
     # check if the file exists
     if os.path.isfile(input_file):
         filename = input_file
     else:
         # get input path
-        inpath = params[f'SORBET.WLCTA.INPUT_PATH']
+        inpath = params[f'SORBET.WLCA.INPUT_PATH']
         # construct full filename
         filename = os.path.join(inpath, input_file)
     # load the light curve table
@@ -97,12 +99,12 @@ def load_slc(params: ParamDict, input_file: str,
     """
     # get function name
     func_name = __NAME__ + '.load_slc()'
-    # check that this function is only being used for SORBET.SLCTA
-    if params['SORBET.SLCTA.RUN'] is None:
-        msg = f'Cannot use "{func_name}" without SORBEt.SLCTA.RUN = True'
+    # check that this function is only being used for SORBET.SLCA
+    if params['RUN.SORBET.SLCA'] is None:
+        msg = f'Cannot use "{func_name}" without RUN.SORBET.SLCA = True'
         raise sorbet_base.SorbetException(msg)
     # get the sorbet parameters
-    slcta_params = params.get('SORBET.SLCTA')
+    slcta_params = params.get('SORBET.SLCA')
     # check if the file exists
     if os.path.exists(input_file):
         filename = input_file
@@ -114,7 +116,7 @@ def load_slc(params: ParamDict, input_file: str,
         # ---------------------------------------------------------------------
         # deal with file not existing
         if not os.path.exists(filename):
-            msg = f'SORBET.SLCTA.INPUT_FILE="{filename}" does not exist.'
+            msg = f'SORBET.SLCA.INPUT_FILE="{filename}" does not exist.'
             raise sorbet_base.SorbetException(msg)
     # -------------------------------------------------------------------------
     # load the light curve data
@@ -239,7 +241,7 @@ def bin_spectrum(wavegrid: np.ndarray, spec_in: np.ndarray,
 
 
 def find_outliers(params: ParamDict, data_table: Table,
-                  method: Literal['WLCTA', 'SLCTA']):
+                  method: Literal['WLCA', 'SLCA']):
     """
     Find outliers in the dataset using a median filter
 
@@ -250,11 +252,17 @@ def find_outliers(params: ParamDict, data_table: Table,
     # load the dataset
     bjd = np.array(data_table['Time']).astype(np.float64)
     flux = np.array(data_table['RelFlux']).astype(np.float64)
+    # get the outlier kernel size
+    outlier_kernel_size = params[f'SORBET.{method}.OUTLIER_KERNEL_SIZE']
 
     # apply median filter to remove outliers
     # transits are roughly the same duration so number of integration may be a 
     # good proxy of exposure time (inverserly proportional)
-    kernel_size = int(0.05 * len(bjd))
+    if outlier_kernel_size is not None:
+        kernel_size = int(outlier_kernel_size)
+    else:
+        kernel_size = int(0.05 * len(bjd))
+    # it must be odd for medfilt
     if kernel_size % 2 == 0:
         kernel_size += 1 # make sure it's odd
     medfilt_model = medfilt(flux, kernel_size) # model including the transit
@@ -267,12 +275,12 @@ def find_outliers(params: ParamDict, data_table: Table,
 
 
 def test_juliet_distributions(params: ParamDict,
-                              method: Literal['WLCTA', 'SLCTA']) -> List[str]:
+                              method: Literal['WLCA', 'SLCA']) -> List[str]:
     """
     Test the user inputted all the Juliet distributions correctly
 
     :param params: ParamDict, the parameter dictionary of constants
-    :param method: str, the method to use (WLCTA or SLCTA)
+    :param method: str, the method to use (WLCA or SLCA)
 
     :return: list of strings, the prior distributions for each juliet parameter
     """
@@ -325,13 +333,13 @@ def test_juliet_distributions(params: ParamDict,
 
 
 def test_juliet_values(params: ParamDict,
-                       method: Literal['WLCTA', 'SLCTA']
+                       method: Literal['WLCA', 'SLCA']
                        ) -> List[float | List[float]]:
     """
     Test the user inputted all the Juliet prior values correctly
 
     :param params: ParamDict, the parameter dictionary of constants
-    :param method: str, the method to use (WLCTA or SLCTA)
+    :param method: str, the method to use (WLCA or SLCA)
 
     :return: list of float or list of float, the prior values for each
              juliet parameter
@@ -392,7 +400,7 @@ def test_juliet_values(params: ParamDict,
 
 
 def prepare_dataset(params: ParamDict, data_table: Table,
-                    method: Literal['WLCTA', 'SLCTA'],
+                    method: Literal['WLCA', 'SLCA'],
                     outlier_mask: np.ndarray,
                     bin_params: Optional[Dict[str, Any]] = None) -> juliet.load:
     """
@@ -405,6 +413,12 @@ def prepare_dataset(params: ParamDict, data_table: Table,
     """
     # get function name
     func_name = __NAME__ + '.prepare_dataset()'
+    # -------------------------------------------------------------------------
+    # Juliet is about to be used - print any warnings
+    if len(JULIET_IMPORT_MESSAGES) > 0:
+        for msg in JULIET_IMPORT_MESSAGES:
+            WLOG(params, 'warning', msg)
+    # -------------------------------------------------------------------------
     # deal with no bin params
     if bin_params is None:
         bin_params = dict(CHANNEL=None, BINNUMBER=None,
@@ -412,7 +426,7 @@ def prepare_dataset(params: ParamDict, data_table: Table,
                           suffix=None)
     # get the sorbet params (based on method)
     sparams = params.get(f'SORBET.{method}')
-    slcta_params = params.get('SORBET.SLCTA')
+    slcta_params = params.get('SORBET.SLCA')
     # select instrumental mode
     inst_mode = core.sorbet_inst_mode(params)
     # -------------------------------------------------------------------------
@@ -491,24 +505,20 @@ def prepare_dataset(params: ParamDict, data_table: Table,
     elif sparams['LINEAR_DETRENDING'] not in [None, 'None', 'none']:
         # check if file exists
         input_file = sparams['LINEAR_DETRENDING']
+        input_type = sparams['LINEAR_DETRENDING_TYPE']
         if os.path.isfile(input_file):
             filename = input_file
         else:
             filename = os.path.join(params['GLOBAL.DATA_PATH'], input_file)
         # load the linear detrending data
         try:
-            lm_tbl = io.load_table(filename)
-            bad = sparams['OUTLIER_MASK']
-            lm_tbl = lm_tbl[~bad]
+            lm_tbl = io.load_table(filename, fmt=input_type)
+            lm_tbl = lm_tbl[~outlier_mask]
         except Exception as e:
             msg = (f'Failed to load data from file "{filename}": {e}'
                    f'\n\tFunction = {func_name}')
             raise sorbet_base.SorbetException(msg)
-        
-        # fetch columns names
-        lm_cols = lm_tbl.colnames
-        # convert table to array
-        lm_quantities = np.ones((len(lm_tbl[lm_cols[0]]), len(lm_cols)))
+
         # fetch columns names
         lm_cols = lm_tbl.colnames
         # convert table to array
@@ -540,26 +550,30 @@ def prepare_dataset(params: ParamDict, data_table: Table,
         linear_regressors = None
         
     # use model limb-darkening if ExoTiC-LD is enabled
-    if method == 'SLCTA':
+    if method == 'SLCA':
         # check if ExoTiC-LD is enabled
         if slcta_params['EXOTIC-LD.ENABLE']:
+            # log exotic ld import warnings
+            if len(EXOTIC_LD_IMPORT_MESSAGES) > 0:
+                for msg in EXOTIC_LD_IMPORT_MESSAGES:
+                    WLOG(params, 'warning', msg, func_name=func_name)
             # check if LD law are defined
             ld_law = slcta_params['EXOTIC-LD.LD_LAW']
             if ld_law is None:
                 emsg = ('ExoTiC-LD law is not defined. '
-                        'Please define in SORBET.SLCTA.EXOTIC-LD.LD_LAW')
+                        'Please define in SORBET.SLCA.EXOTIC-LD.LD_LAW')
                 raise sorbet_base.SorbetException(emsg)
             # check if ExoTiC-LD path exists
             exotic_ld_path = slcta_params['EXOTIC-LD.MODEL_PATH']
             if not os.path.isdir(exotic_ld_path):
                 emsg = (f'ExoTiC-LD path "{exotic_ld_path}" does not exist. '
-                        f'Please define in SORBET.SLCTA.EXOTIC-LD.MODEL_PATH')
+                        f'Please define in SORBET.SLCA.EXOTIC-LD.MODEL_PATH')
                 raise sorbet_base.SorbetException(emsg)
             # check if ExoTiC-LD model grid is defined
             exotic_ld_model = slcta_params['EXOTIC-LD.MODEL_GRID']
             if exotic_ld_model is None:
                 msg = ('ExoTiC-LD model grid is not defined.'
-                       ' Please define in SORBET.SLCTA.EXOTIC-LD.MODEL_GRID')
+                       ' Please define in SORBET.SLCA.EXOTIC-LD.MODEL_GRID')
                 raise sorbet_base.SorbetException(msg)
             
             # compute the q1 and q2 quadratic coefficients
@@ -608,7 +622,7 @@ def prepare_dataset(params: ParamDict, data_table: Table,
     # add output path to the params
     out_folder = sparams['OUTPUT_PATH']
     # if spectral bins
-    if method == 'SLCTA':
+    if method == 'SLCA':
         suffix = str(bin_params['SUFFIX'])
         # check if the folder exists
         if os.path.isdir(out_folder):
@@ -619,7 +633,8 @@ def prepare_dataset(params: ParamDict, data_table: Table,
         # update the output path
         sparams['OUTPUT_SUBPATH'] = out_folder
 
-
+    # Deal with having temporary files
+    deal_with_previous_juilet_files(params, sparams, out_folder)
 
     # Load and fit dataset with juliet:
     dataset = juliet.load(priors=priors,
@@ -631,8 +646,84 @@ def prepare_dataset(params: ParamDict, data_table: Table,
     return dataset
 
 
+def deal_with_previous_juilet_files(params: ParamDict, sparams: ParamDict,
+                                    out_folder: str):
+
+    # if user has flagged they want to use previous juliet files, do not delete
+    if sparams['USE_PREV_JULIET']:
+        # print progress
+        msg = (f'User has flagged to use previous Juliet files '
+               f'in "{out_folder}". '
+               f'\nProceeding without deleting previous Juliet files.')
+        WLOG(params, 'warning', msg, sublevel=2)
+        return
+    # -------------------------------------------------------------------------
+    # get the yaml file
+    yaml_file = params['GLOBAL.YAML_FILE']
+    # -------------------------------------------------------------------------
+    # list files in the output folder
+    prev_files = os.listdir(out_folder)
+    # remove the yaml file from this list
+    if os.path.basename(yaml_file) in prev_files:
+        prev_files.remove(os.path.basename(yaml_file))
+    # -------------------------------------------------------------------------
+    # if directory is empty we save a copy of the yaml file and move on
+    if len(prev_files) == 0:
+        # copy the yaml file to the output folder
+        dest_yaml_file = os.path.join(out_folder, os.path.basename(yaml_file))
+        io.copy_file(yaml_file, dest_yaml_file)
+        # print progress
+        msg = (f'No previous juliet files found in "{out_folder}". '
+               f'Copying yaml file to output folder.')
+        WLOG(params, '', msg)
+        return
+    # -------------------------------------------------------------------------
+    # otherwise we have to compare previous yaml file with current one
+    dest_yaml_file = os.path.join(out_folder, os.path.basename(yaml_file))
+    # if the file does not exist we remove everything in the output folder
+    if not os.path.isfile(dest_yaml_file):
+        pass
+    else:
+        # compare the two yaml files
+        files_match = io.compare_yaml_files(yaml_file, dest_yaml_file)
+        # if they match we do not remove the previous juliet files
+        if files_match:
+            # print progress
+            msg = (f'Previous juliet files found in "{out_folder}" but '
+                   f'yaml files match. '
+                   f'\nProceeding with fit without deleting previous '
+                   f'Juliet files.')
+            WLOG(params, '', msg)
+            return
+    # -------------------------------------------------------------------------
+    # print progress
+    msg = (f'Previous juliet files found in "{out_folder}" but yaml '
+           f'files do not match. '
+           f'\nRemoving previous Juliet files.')
+    WLOG(params, '', msg)
+    # remove everything in the output folder
+    for filename in prev_files:
+        file_path = os.path.join(out_folder, filename)
+        try:
+            if os.path.isfile(file_path):
+                # print removal progress
+                msg = f'Removing file "{file_path}"'
+                WLOG(params, '', msg)
+                # remove file
+                os.remove(file_path)
+            elif os.path.isdir(file_path):
+                # print removal progress
+                msg = f'Removing directory "{file_path}"'
+                WLOG(params, '', msg)
+                # remove directory
+                os.rmdir(file_path)
+        except Exception as e:
+            msg = (f'Failed to delete file "{file_path}": {e}')
+            raise sorbet_base.SorbetException(msg)
+
+
 def fit_transit(params: ParamDict, dataset: juliet.load,
-                method: Literal['WLCTA', 'SLCTA']):
+                method: Literal['WLCA', 'SLCA']):
     """
     Fit the transit using juliet/batman
 
@@ -656,7 +747,7 @@ def fit_transit(params: ParamDict, dataset: juliet.load,
 
 
 def save_transit_model(params: ParamDict, dataset, results: juliet.fit,
-                       method: Literal['WLCTA', 'SLCTA']):
+                       method: Literal['WLCA', 'SLCA']):
     """
     Save the best-fit model (transit + systematics)
 
@@ -678,7 +769,7 @@ def save_transit_model(params: ParamDict, dataset, results: juliet.fit,
         components['gp'] = results.lc.model[inst_mode]['GP']
 
     # file path
-    if method == 'SLCTA':
+    if method == 'SLCA':
         filepath = os.path.join(params[f'SORBET.{method}.OUTPUT_SUBPATH'],
                                 'model_components.pkl')
     else:
@@ -702,7 +793,7 @@ def save_transit_model(params: ParamDict, dataset, results: juliet.fit,
     model_tbl.write(model_tbl_filename, overwrite=True)
 
 
-def load_transit_model(params: ParamDict, method: Literal['WLCTA', 'SLCTA']):
+def load_transit_model(params: ParamDict, method: Literal['WLCA', 'SLCA']):
     """
     Load the best-fit model (transit + systematics)
 
@@ -711,7 +802,7 @@ def load_transit_model(params: ParamDict, method: Literal['WLCTA', 'SLCTA']):
     :return: components, the best-fit model components
     """
     # file path
-    if method == 'SLCTA':
+    if method == 'SLCA':
         filepath = os.path.join(params[f'SORBET.{method}.OUTPUT_SUBPATH'],
                              'model_components.pkl')
     else:
@@ -739,10 +830,10 @@ def save_transmission_spectrum(params: ParamDict, spec_tbl: Table,
     # output path
     bargs = [inst_mode, channel]
     basename = 'transmission_spectrum_{0}_ord{1}.csv'.format(*bargs)
-    output_path = params['SORBET.SLCTA.OUTPUT_PATH']
+    output_path = params['SORBET.SLCA.OUTPUT_PATH']
     filename = os.path.join(output_path, basename)
     # save new path
-    params['SORBET.SLCTA.TRANSMISSION_SPECTRUM_FILE'] = filename
+    params['SORBET.SLCA.TRANSMISSION_SPECTRUM_FILE'] = filename
     # save the transmission spectrum table
     io.save_table(filename, spec_tbl, fmt='csv')
 
@@ -759,8 +850,8 @@ def get_model_ld_coeffs(params: ParamDict, bin_params: Dict[str, Any]):
     
     # Following the example in the ExoTiC-LD tutorial
 
-    # set SLCTA.EXOTIC params
-    ex_params = params.get('SORBET.SLCTA.EXOTIC-LD')
+    # set SLCA.EXOTIC params
+    ex_params = params.get('SORBET.SLCA.EXOTIC-LD')
 
     # Path to the downloaded data
     ld_data_path = ex_params['MODEL_PATH']
@@ -782,9 +873,9 @@ def get_model_ld_coeffs(params: ParamDict, bin_params: Dict[str, Any]):
     # convert to instrumental profile supported in ExoTiC-LD
     # https://exotic-ld.readthedocs.io/en/latest/views/supported_instruments.html
     if inst_mode == 'JWST.NIRISS.SOSS':
-        if params['SORBET.SLCTA.CHANNEL'] == 1:
+        if params['SORBET.SLCA.CHANNEL'] == 1:
             inst_profile = 'JWST_NIRISS_SOSSo1'
-        elif params['SORBET.SLCTA.CHANNEL'] == 2:
+        elif params['SORBET.SLCA.CHANNEL'] == 2:
             inst_profile = 'JWST_NIRISS_SOSSo2'
         else:
             raise ValueError('Provide a valid order for the NIRISS SOSS')

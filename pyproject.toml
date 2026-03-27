@@ -1,5 +1,5 @@
 [build-system]
-requires = ["setuptools", "wheel", "radvel", "numpy"]
+requires = ["setuptools", "wheel", "numpy"]
 build-backend = "setuptools.build_meta"
 
 
@@ -12,27 +12,32 @@ authors = [
 description = 'Processing General Observations - A wrapper for TSOVORE, SOSSISSE and SORBET'
 readme = {file = "README.md", content-type = "text/markdown"}
 license = {file = 'LICENSE'}
-requires-python = "==3.11.*"
+requires-python = "==3.12.*"
 dependencies = [
-        "juliet==2.2.7",
-        "jwst==1.17.1",
-        "numpy==1.26.4",
-        "astropy==7.0.1",
+        "juliet==2.2.10",
+        "jwst==1.20.2",
+        # "crds==12.1.1",
+        "numpy==2.3.4",
+        "astropy==7.2.0",
         "corner==2.2.3",
+        # batman-package on PyPI uses NPY_1_7_API_VERSION which breaks numpy 2.x on macOS.
+        # PR#70 fixed this (NPY_2_0_API_VERSION) but was never released to PyPI.
+        # Pin to the post-fix commit until a new PyPI release is made.
+        "batman-package @ git+https://github.com/lkreidberg/batman.git@3c69c4381d9785cd4d06e898c2cdf83b22ffb365",
         "exotic_ld==3.2.0",
         "ipython==8.32.0",
-        "scipy==1.15.2",
-        "matplotlib==3.10.1",
-        "notebook==7.4.2",
-        "pastasoss==1.2.2",
+        "scipy==1.17.1",
+        "matplotlib==3.10.8",
+        "notebook==7.5.4",
         "prompt_toolkit==3.0.50",
-        "tqdm==4.67.1",
-        "h5py==3.13.0",
-        "ruamel.yaml==0.18.10",
+        "tqdm==4.67.3",
+        "h5py==3.15.1",
+        "ruamel.yaml==0.19.1",
         "wpca==0.1",
-        "scikit-image==0.25.2",
-        "scikit-learn==1.6.1",
-        "statsmodels==0.14.4",
+        "scikit-image==0.26.0",
+        "scikit-learn==1.8.0",
+        "statsmodels==0.14.6",
+        "astraeus-io @ git+https://github.com/kevin218/Astraeus.git"
 ]
 
 [project.urls]
@@ -42,8 +47,11 @@ Repository = 'https://github.com/njcuk9999/{module}'
 [project.scripts]
 pogos_setup = "pogos:recipes.pogos_setup.run"
 pogos_run = "pogos:recipes.pogos_run.run"
+pogos_copy = "pogos:recipes.pogos_copy.run"
 
 [project.optional-dependencies]
-full = ["aperocore @ git+https://github.com/njcuk9999/apero-drs.git@v0.8.003#subdirectory=apero-core",
+full = ["aperocore @ git+https://github.com/njcuk9999/apero-drs.git@v0.8.running#subdirectory=apero-core",
+        "pastasoss @ git+https://github.com/njcuk9999/pastasoss.git",
         "sossisse @ git+https://github.com/njcuk9999/sossisse.git@developer"]
-dev = ["aperocore", "sossisse"]
+
+dev = ["aperocore", "sossisse", "pastasoss"]

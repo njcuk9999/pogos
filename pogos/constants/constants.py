@@ -48,28 +48,57 @@ CDict.add('YAML_FILE', value=None, dtype=str, source=__NAME__,
                  cmd_arg='yamlfile',
                  cmd_kwargs=dict(nargs='?', type=str, default=None,
                                  action='store'),
-                 description='Yaml file used')
-
-# Define the yaml name (for creating new param files only)
-CDict.add('YAML_NAME', value=None, dtype=str,
-          source=__NAME__, user=False, active=False,
-          cmd_arg='yaml_name', group=cgroup,
-          description='The name of the yaml file to create '
-                      '(if not using a previous yaml file)')
+          description='the absolute path and filename of the configuration file '
+                      '(yaml file) to create which '
+                      '(if not using a previous yaml file). '
+                      'This file will contain all parameters required to '
+                      'run POGOS. '
+                      '\n\nE.g. /users/albert/pogo-data/yaml/pogos_test.yaml'
+                      '\nE.g. /home/cook/pogo-data/yaml/pogos_test.yaml'
+                      '\nE.g. C:\\users\\bob\\pogo-data\\yamls\\pogos_test.yaml')
 
 # Define data path
 CDict.add('DATA_PATH', value=None, dtype=str,
           source=__NAME__, user=True,
           active=True, group=cgroup, not_none=True, cmd_arg='data_path',
-          description='The data directory (required)')
+          description='the absolute path to where all input and output data '
+                      'for POGOS will be stored. '
+                      '\n\nE.g. /users/albert/pogo-data/'
+                      '\nE.g. /home/albert/pogo-data/'
+                      '\nE.g. C:\\users\\bob\\pogo-data')
 
 # Instrument mode i.e. JWST.NIRISS.SOSS or JWST.NIRISS.PRISM
 CDict.add('INSTRUMENTMODE', value=None, dtype=str, not_none=True,
           source=__NAME__, user=True, active=True,
           options=base.INSTRUMENTS,
           cmd_arg='instmode', group=cgroup,
-          description='Instrument mode e.g. one of the following: {0}'
+          description='instrument mode e.g. one of the following: {0}'
                       ''.format('\n\t'.join(base.INSTRUMENTS)))
+
+# Only used for copying
+CDict.add('DEMO_FILE', value=None, dtype=str, source=__NAME__, user=False,
+          active=False, cmd_arg='demo_file', group=cgroup,
+          description='the absolute path and filename of a demo yaml file to '
+                      'use as a template for creating a new yaml file/file '
+                      'structure. ')
+
+# Used when user wishes to list the available yaml files
+CDict.add('LIST_YAMLS', value=False, dtype=bool, source=__NAME__, user=False,
+          active=False, cmd_arg='list', group=cgroup,
+          description='lists the available yaml files '
+                      '(in the current directory) and exits.')
+
+# Only used for downloading data
+CDict.add('LOCAL_DOWNLOAD_DATA', value=None, dtype=str, source=__NAME__,
+          user=False, active=False, cmd_arg='demolocal', group=cgroup,
+          description='the absolute path to where demo data is stored locally'
+                      ' this overrides any downloading of data from online.')
+
+# only used for donwloading data
+CDict.add('DEMO_SYMLINK_DATA', value=False, dtype=bool, source=__NAME__,
+          user=False, active=False, cmd_arg='demosymlink', group=cgroup,
+          description='if downloading demo data, symlink the data from the '
+                      'local download location rather than copying it.')
 
 # =============================================================================
 # Switches to turn of major features
@@ -78,25 +107,76 @@ group = 'RUN'
 CDict.add_group(group, description='Switches to turn on major features',
                 source=__NAME__, user=True, active=True)
 
+# -----------------------------------------------------------------------------
+# Pre-extraction flavours
+# -----------------------------------------------------------------------------
+# Run
 # Run TSOVORE
-CDict.add('TSOVORE', value=None, dtype=bool, source=__NAME__,
+CDict.add('TSOVORE', value=False, dtype=bool, source=__NAME__,
           user=True, active=True, group=group, not_none=True,
           description='Run TSOVORE')
 
+# Run Eureka pre-extraction steps
+CDict.add('PRE_EUREKA', value=False, dtype=bool, source=__NAME__,
+          user=True, active=True, group=group, not_none=True,
+          description='Run Eureka pre-extraction steps')
+
+# Run default JWST pre-extraction steps
+CDict.add('PRE_JWST', value=False, dtype=bool, source=__NAME__,
+          user=True, active=True, group=group, not_none=True,
+          description='Run default JWST pre-extraction steps')
+
+# Run NAMELESS pre-extraction steps
+CDict.add('PRE_NAMELESS', value=False, dtype=bool, source=__NAME__,
+          user=True, active=True, group=group, not_none=True,
+          description='Run NAMELESS pre-extraction steps')
+
+# -----------------------------------------------------------------------------
+# Extraction flavours
+# -----------------------------------------------------------------------------
+# Run simple box extraction step
+CDict.add('EXT_BOX', value=False, dtype=bool, source=__NAME__,
+          user=True, active=True, group=group, not_none=True,
+          description='Run simple box extraction step')
+
+# Run Eureka extraction steps
+CDict.add('EXT_EUREKA', value=False, dtype=bool, source=__NAME__,
+          user=True, active=True, group=group, not_none=True,
+          description='Run Eureka extraction steps')
+
+# Run default JWST extraction step
+CDict.add('EXT_JWST', value=False, dtype=bool, source=__NAME__,
+          user=True, active=True, group=group, not_none=True,
+          description='Run default JWST extraction step')
+
+# Run NAMELESS extraction steps
+CDict.add('EXT_NAMELESS', value=False, dtype=bool, source=__NAME__,
+          user=True, active=True, group=group, not_none=True,
+          description='Run NAMELESS extraction steps')
+
 # Run SOSSISSE
-CDict.add('SOSSISSE', value=None, dtype=bool, source=__NAME__,
+CDict.add('SOSSISSE', value=False, dtype=bool, source=__NAME__,
           user=True, active=True, group=group, not_none=True,
           description='Run SOSSISSE')
 
 # Run MIRIAM
-CDict.add('MIRIAM', value=None, dtype=bool, source=__NAME__,
+CDict.add('MIRIAM', value=False, dtype=bool, source=__NAME__,
           user=True, active=True, group=group, not_none=True,
           description='Run MIRIAM')
 
-# Run SORBET
-CDict.add('SORBET', value=None, dtype=bool, source=__NAME__,
+# -----------------------------------------------------------------------------
+# Post-extraction flavours
+# -----------------------------------------------------------------------------
+# Run SORBET WLCA
+CDict.add('SORBET.WLCA', value=False, dtype=bool, source=__NAME__,
           user=True, active=True, group=group, not_none=True,
-          description='Run SORBET')
+          description='Run SORBET white light curve analysis')
+
+# Run SORBET WLCA
+CDict.add('SORBET.SLCA', value=False, dtype=bool, source=__NAME__,
+          user=True, active=True, group=group, not_none=True,
+          description='Run SORBET Spectral light curve analysis')
+
 
 # =============================================================================
 # Start of code

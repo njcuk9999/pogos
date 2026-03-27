@@ -55,7 +55,7 @@ def save_show_plot(params: ParamDict, outname: str, method: str,
 
 
 def plot_corner(params: ParamDict, dataset: juliet.load, results: juliet.fit,
-                method: Literal['WLCTA', 'SLCTA'],
+                method: Literal['WLCA', 'SLCA'],
                 bin_params: Dict[str, Any] = None):
     """
     Plot the posterior distributions of the fitted parameters (corner plot)
@@ -110,7 +110,7 @@ def plot_corner(params: ParamDict, dataset: juliet.load, results: juliet.fit,
 
 
 def plot_transit(params: ParamDict, dataset: juliet.load, results: juliet.fit,
-                 method: Literal['WLCTA', 'SLCTA'],
+                 method: Literal['WLCA', 'SLCA'],
                  bin_params: Dict[str, Any] = None):
     """
     Plot the transit photometry and best-fit transit model
@@ -251,7 +251,7 @@ def plot_transit(params: ParamDict, dataset: juliet.load, results: juliet.fit,
 
 def plot_outlier(params: ParamDict, data_table: Table,
                  medfilt_model: np.ndarray, outlier_mask: np.ndarray,
-                 method: Literal['WLCTA', 'SLCTA'],
+                 method: Literal['WLCA', 'SLCA'],
                  bin_params: Dict[str, Any] = None):
     """
     Plot the outlier removal diagnostic plot
@@ -305,10 +305,10 @@ def plot_outlier(params: ParamDict, data_table: Table,
 
 
 def plot_transmission_spectrum(params: ParamDict,
-                               method: Literal['WLCTA', 'SLCTA'],
+                               method: Literal['WLCA', 'SLCA'],
                                suffix: str = None):
     """
-    Plot the transmission spectrum from the SLCTA
+    Plot the transmission spectrum from the SLCA
     :param params: ParamDict, the parameter dictionary of constants
     :return: None
     """
@@ -316,10 +316,10 @@ def plot_transmission_spectrum(params: ParamDict,
     func_name = f'{__NAME__}.plot_transmission_spectrum()'
     # set title
     title = 'Transmission Spectrum'
-    description = 'Plot showing the transmission spectrum from the SLCTA'
+    description = 'Plot showing the transmission spectrum from the SLCA'
     # -------------------------------------------------------------------------
     # get slcta parameters
-    slcta_params = params.get('SORBET.SLCTA')
+    slcta_params = params.get('SORBET.SLCA')
     # load the transmission spectrum
     filename = slcta_params['TRANSMISSION_SPECTRUM_FILE']
     # check if the file exists

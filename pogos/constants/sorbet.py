@@ -42,15 +42,28 @@ SORBET_CDict.title = SORBET_CDict.yaml_title('SORBET: Suite Of Reduction tools '
                                      version=base.SORBET_VERSION,
                                      date=base.SORBET_DATE)
 
-# set the group for all WLCTA constants
+# set the group for all general constants
 cgroup = 'GENERAL'
 SORBET_CDict.add_group(cgroup, description='General configs for SORBET',
                 source=__NAME__, user=True, active=True)
-# add the sid (to be used when default path required)
-SORBET_CDict.add('SID', value=None, dtype=str, source=__NAME__,
+# add the subdirectory (to be used when default path required)
+SORBET_CDict.add('SUBDIRECTORY', value=None, dtype=str, source=__NAME__,
                  user=True, active=True, group=cgroup,
-                 description='A string ID for the observation (used for '
-                             'default paths etc)')
+                 description='The sub-directory to use for this SORBET run. '
+                             'This should be descriptive and unique. '
+                             '\nIt should contain no whitespaces or special '
+                             'characters other than underscoes.'
+                             '\nAll miriam data will be stored in '
+                             '{GLOBAL.DATA_PATH}/sorbet/{SUBDIRECTORY}/'
+                             '\n\nWe suggest {OBJNAME}-{INST.MODE}-{STEP}-{YYYYMMDD}')
+
+# define what we are running through SORBET
+SORBET_CDict.add('DESCRIPTION', value='', dtype=str, source=__NAME__,
+                 user=True, active=True, group=cgroup,
+                 description='Description of the POGOS run e.g. object name, '
+                             'date of observation, is it a transit or '
+                             'an eclipse etc.')
+
 
 # define the valid Juilet distributions
 jdists = ['fixed', 'uniform', 'loguniform', 'normal', 'truncatednormal', 'beta']
@@ -58,10 +71,6 @@ SORBET_CDict.add('JULIET_VALID_DISTS', value=jdists, dtype=list, dtypei=str,
                  source=__NAME__, user=False, active=False, group=cgroup,
                  description='Valid prior distributions in juliet')
 
-# define what we are running through SORBET
-SORBET_CDict.add('DESCRIPTION', value='', dtype=str, source=__NAME__,
-                 user=True, active=True, group=cgroup,
-                 description='Description of the SORBET run')
 
 # =============================================================================
 # Definition of inputs related to plots
@@ -85,22 +94,18 @@ SORBET_CDict.add('FIGURE_TYPES', value=['png', 'pdf'], dtype=list, dtypei=str,
 # =============================================================================
 # Constants for SORBET white light curve transit analysis
 # =============================================================================
-# set the group for all WLCTA constants
-cgroup = 'WLCTA'
-SORBET_CDict.add_group(cgroup, description='Configs for SORBET.WLCTA: White '
+# set the group for all WLCA constants
+cgroup = 'WLCA'
+SORBET_CDict.add_group(cgroup, description='Configs for SORBET.WLCA: White '
                                           'light curve transit analysis',
                 source=__NAME__, user=True, active=True)
-# Run switch parameter
-SORBET_CDict.add('RUN', value=False, dtype=bool, source=__NAME__,
-                user=True, active=True, group=cgroup,
-                description='Run SORBET.WLCTA')
 # Input data path
 SORBET_CDict.add('INPUT_PATH', value=f'wlcta{os.sep}inputs',
                  dtype=str, source=__NAME__,
                  user=True, active=True, group=cgroup,
                  description='Input data path. If not absolute path'
                              ' it will be set to GLOBAL.DATA_PATH/'
-                             'sorbet/{SID}/wlcta/{INPUT_PATH}/')
+                             'sorbet/{SUBDIRECTORY}/wlcta/{INPUT_PATH}/')
 # Input data file
 SORBET_CDict.add('INPUT_FILE', value='white_light_curve.fits', dtype=str,
                  source=__NAME__, user=True, active=True, group=cgroup,
@@ -118,7 +123,19 @@ SORBET_CDict.add('OUTPUT_PATH', value=f'wlcta{os.sep}outputs', dtype=str,
                             '\nIf this is an aboslute path it will be used as is'
                             '\n otherwise it will be relative to '
                             'GLOBAL.DATA_PATH/sorbet/'
-                            '{SID}/wlcta/{OUTPUT_PATH}/')
+                            '{SUBDIRECTORY}/wlcta/{OUTPUT_PATH}/')
+
+# Whether to use previous juliet files (warning this will mean juliet ignores
+# any updates to parameters set here)
+# Setting this to True will make Juliet run much
+# faster but use at your own risk!
+SORBET_CDict.add('USE_PREV_JULIET', value=False, dtype=bool, source=__NAME__,
+                 user=True, active=True, group=cgroup,
+                 description='Whether to use previous juliet temporary files '
+                             '(warning this will mean juliet ignores any '
+                             'updates to parameters set here). '
+                             '\nSetting this to True will make Juliet run much '
+                             'faster but use at your own risk!')
 
 # Plot path
 SORBET_CDict.add('PLOT_PATH', value=f'wlcta{os.sep}plots', dtype=str,
@@ -128,7 +145,7 @@ SORBET_CDict.add('PLOT_PATH', value=f'wlcta{os.sep}plots', dtype=str,
                             '\nIf this is an aboslute path it will be used as is'
                             '\n otherwise it will be relative to '
                             'GLOBAL.PLOT_PATH/sorbet/'
-                            '{SID}/wlcta/{PLOT_PATH}/')
+                            '{SUBDIRECTORY}/wlcta/{PLOT_PATH}/')
 
 # Juliet parameters
 jps_desc = """
@@ -149,7 +166,8 @@ JULIET_PARAMETERS:
  - sigma_w_{INST_MODE}
  
 Note those parameters that need an instrument should have _{INST_MODE} instead
-of instrument name.
+of instrument name. Please do not remove or change _{INST_MODE} as this is 
+used internally to replace with the instrument name.
 """
 
 SORBET_CDict.add('JULIET_PARAMETERS', value=None, dtype=list, dtypei=str,
@@ -237,15 +255,36 @@ SORBET_CDict.add('JULIET_PRIOR_VALS', value=None, dtype=dict, source=__NAME__,
 
 # Linear detrending
 SORBET_CDict.add('LINEAR_DETRENDING', value=None, dtype=str, source=__NAME__,
-                user=True, active=True, group=cgroup,
-                description='Enable linear detrending of the flux. '
-                '\nTemporal slope is accepted (value=time) or provide the path '
-                '\nto a file with the variable to detrend linearly '
-                'in each column.')
+                 user=True, active=True, group=cgroup,
+                 description='Enable linear detrending of the flux. '
+                 '\nSet this value to "time" for temporal slope or '
+                 '\n\tprovide the path to a file with the variable to '
+                 '\n\tdetrend linearly in each column.'
+                 '\nIf using a file LINEAR_DETRENDING_TYPE should be set to '
+                 '\n\tthe type of file provided e.g. '
+                 '\n\tfile:fits, file:ecsv, file:csv, file:ascii'
+                 '\nNote the file should contain N columns, each column will '
+                 '\n\tbe used as a detrending variable.')
+# Linear detrending type
+SORBET_CDict.add('LINEAR_DETRENDING_TYPE', value='null', dtype=str,
+                 options=['null', 'file:fits', 'file:ecsv', 'file:csv',
+                          'file:ascii'],
+                 source=__NAME__, user=True, active=True, group=cgroup,
+                 description='Define the type of linear detrending to apply. '
+                             '\nSet this to "null" if no linear detrending '
+                             '\n or if the variable to detrend is "time". ')
 # Sampling options
 SORBET_CDict.add('SAMPLING_OPTIONS', value='dynesty', dtype=str, source=__NAME__,
                 user=True, active=True, group=cgroup,
                 description='Sampling options in juliet')
+
+# Outlier kernel size
+SORBET_CDict.add('OUTLIER_KERNEL_SIZE', value=None, dtype=int, source=__NAME__,
+                 user=True, active=True, group=cgroup,
+                 description='Define the kernel size (number of time steps '
+                             '\nto consider) when running on median filter on '
+                             '\nthe time-series to flag outliers. If not set'
+                             '\n5% the length of the vector will be used.')
 # Debug parameter
 SORBET_CDict.add('DEBUG', value=False, dtype=bool, source=__NAME__,
                 user=True, active=True, group=cgroup,
@@ -254,35 +293,31 @@ SORBET_CDict.add('DEBUG', value=False, dtype=bool, source=__NAME__,
 # =============================================================================
 # Constants for SORBET spectral light curve transit analysis
 # =============================================================================
-# set the group for all SLCTA constants
-cgroup = 'SLCTA'
-SORBET_CDict.add_group(cgroup, description='Configs for SORBET.SLCTA: '
+# set the group for all SLCA constants
+cgroup = 'SLCA'
+SORBET_CDict.add_group(cgroup, description='Configs for SORBET.SLCA: '
                                           'Spectral light curve transit '
                                           'analysis',
                 source=__NAME__, user=True, active=True)
-# Run switch parameter
-SORBET_CDict.add('RUN', value=False, dtype=bool, source=__NAME__,
-                user=True, active=True, group=cgroup,
-                description='Run SORBET.SLCTA')
 # Input data path
 SORBET_CDict.add('INPUT_PATH', value=f'slcta{os.sep}inputs',
                  dtype=str, source=__NAME__,
                  user=True, active=True, group=cgroup,
                  description='Input data path. If not absolute path'
                              ' it will be set to GLOBAL.DATA_PATH/'
-                             'sorbet/{SID}/{INPUT_PATH}/')
+                             'sorbet/{SUBDIRECTORY}/{INPUT_PATH}/')
 # Input data file
-SORBET_CDict.add('INPUT_FILES', value=['spectroscopy_light_curves.fits'],
+SORBET_CDict.add('INPUT_FILE', value=['spectroscopy_light_curves.fits'],
                  dtype=list, source=__NAME__,
                  user=True, active=True, group=cgroup,
                  description='Input data file or path to the data file')
-# Trace orders, must be a list the same length as INPUT_FILES
+# Trace orders, must be a list the same length as INPUT_FILE
 #     (Set each item to 1 if there is only one order) otherwise set each item
 #     to the order number
 SORBET_CDict.add('TRACE_ORDERS', value=[1], dtype=list, dtypei=int,
                  source=__NAME__, user=True, active=True, group=cgroup,
                  description='Trace orders, must be a list the same length as'
-                             'INPUT_FILES '
+                             'INPUT_FILE '
                              '\n\t(Set each item to 1 if there is '
                              'only one order) otherwise set each item '
                              'to the order number')
@@ -294,12 +329,24 @@ SORBET_CDict.add('OUTPUT_SUBPATH', value=None, dtype=str, source=__NAME__,
 # Output results folder
 SORBET_CDict.add('OUTPUT_PATH', value=f'slcta{os.sep}outputs',
                  dtype=str, source=__NAME__,
-                user=True, active=True, group=cgroup,
-                description='Output result folder or path to the output folder.'
-                            '\nIf this is an aboslute path it will be used as is'
-                            '\n otherwise it will be relative to '
-                            'GLOBAL.DATA_PATH/sorbet/'
-                            '{SID}/slcta/{OUTPUT_PATH}/')
+                 user=True, active=True, group=cgroup,
+                 description='Output result folder or path to the output folder.'
+                             '\nIf this is an aboslute path it will be used as is'
+                             '\n otherwise it will be relative to '
+                             'GLOBAL.DATA_PATH/sorbet/'
+                             '{SUBDIRECTORY}/slcta/{OUTPUT_PATH}/')
+
+# Whether to use previous juliet files (warning this will mean juliet ignores
+# any updates to parameters set here)
+# Setting this to True will make Juliet run much
+# faster but use at your own risk!
+SORBET_CDict.add('USE_PREV_JULIET', value=False, dtype=bool, source=__NAME__,
+                 user=True, active=True, group=cgroup,
+                 description='Whether to use previous juliet temporary files '
+                             '(warning this will mean juliet ignores any '
+                             'updates to parameters set here). '
+                             '\nSetting this to True will make Juliet run much '
+                             'faster but use at your own risk!')
 
 # Plot path
 SORBET_CDict.add('PLOT_PATH', value=f'slcta{os.sep}plots',  dtype=str,
@@ -309,7 +356,7 @@ SORBET_CDict.add('PLOT_PATH', value=f'slcta{os.sep}plots',  dtype=str,
                             '\nIf this is an aboslute path it will be used as is'
                             '\n otherwise it will be relative to '
                             'GLOBAL.PLOT_PATH/sorbet/'
-                            '{SID}/wlcta/{PLOT_PATH}/')
+                            '{SUBDIRECTORY}/wlcta/{PLOT_PATH}/')
 
 # Resolution to bin the spectral light curves
 SORBET_CDict.add('RESOLUTION_BIN', value=100, dtype=int, source=__NAME__,
@@ -342,12 +389,20 @@ SORBET_CDict.add('LINEAR_DETRENDING', value=None, dtype=str, source=__NAME__,
 SORBET_CDict.add('SAMPLING_OPTIONS', value='dynesty', dtype=str, source=__NAME__,
                 user=True, active=True, group=cgroup,
                 description='Sampling options in juliet')
+
+# Outlier kernel size
+SORBET_CDict.add('OUTLIER_KERNEL_SIZE', value=None, dtype=int, source=__NAME__,
+                 user=True, active=True, group=cgroup,
+                 description='Define the kernel size (number of time steps '
+                             '\nto consider) when running on median filter on '
+                             '\nthe time-series to flag outliers. If not set'
+                             '\n5% the length of the vector will be used.')
 # -----------------------------------------------------------------------------
 # ExoTiC-LD
-cgroup = 'SLCTA.EXOTIC-LD'
+cgroup = 'SLCA.EXOTIC-LD'
 SORBET_CDict.add_group(cgroup,
-                description='Limb-darkening modeling using the ExoTiC-LD package '
-                            '(for transit fitting)',
+                description='Limb-darkening modeling using the ExoTiC-LD '
+                            'package (for transit fitting)',
                 source=__NAME__, user=True, active=True)
 # Use ExoTiC-LD
 SORBET_CDict.add('ENABLE', value=False, dtype=bool, source=__NAME__,

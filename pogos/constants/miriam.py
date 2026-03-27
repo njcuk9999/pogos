@@ -43,20 +43,27 @@ MIRIAM_CDict.title = MIRIAM_CDict.yaml_title('MIRIAM: MIRI Image Analysis '
 # =============================================================================
 # General settings (generally don't touch these)
 # =============================================================================
-# set the group for all WLCTA constants
+# set the group for general constants
 cgroup = 'GENERAL'
-MIRIAM_CDict.add_group(cgroup, description='General configs for SORBET',
+MIRIAM_CDict.add_group(cgroup, description='General configs for MIRIAM',
                        source=__NAME__, user=True, active=True)
 # add the sid (to be used when default path required)
-MIRIAM_CDict.add('SID', value=None, dtype=str, source=__NAME__,
+MIRIAM_CDict.add('SUBDIRECTORY', value=None, dtype=str, source=__NAME__,
                  user=True, active=True, group=cgroup,
-                 description='A string ID for the observation (used for '
-                             'default paths etc)')
+                 description='The sub-directory to use for this MIRIAM run. '
+                             'This should be descriptive and unique. '
+                             '\nIt should contain no whitespaces or special '
+                             'characters other than underscoes.'
+                             '\nAll miriam data will be stored in '
+                             '{GLOBAL.DATA_PATH}/miriam/{SUBDIRECTORY}/'
+                             '\n\nWe suggest {OBJNAME}-{INST.MODE}-{STEP}-{YYYYMMDD}')
 
-# define what we are running through SORBET
+# define what we are running through MIRIAM
 MIRIAM_CDict.add('DESCRIPTION', value='', dtype=str, source=__NAME__,
                  user=True, active=True, group=cgroup,
-                 description='Description of the MIRIAM run')
+                 description='Description of the POGOS run e.g. object name, '
+                             'date of observation, is it a transit or '
+                             'an eclipse etc.')
 
 # =============================================================================
 # Path settings

@@ -77,11 +77,11 @@ SOSSISSE:
     # The data directory
     #         Default value=None
     SOSSIOPATH: /scratch3/jwst/pogos-data/data/sossisse
-    # Set the SOSSISSE ID (SID) for using the same directory as before if left as None
+    # Set the SOSSISSE ID (SUBDIRECTORY) for using the same directory as before if left as None
     # the code will work out whether this yaml is found before or whether we need to
-    # create a new SID
+    # create a new SUBDIRECTORY
     #         Default value=None
-    SID: SID-00017472301470485360-MF6R
+    SUBDIRECTORY: SID-00017472301470485360-MF6R
     # Log level (DEBUG, INFO, WARNING, ERROR, NONE)
     #         Default value=INFO
     LOG_LEVEL: INFO
