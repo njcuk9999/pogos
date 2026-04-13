@@ -86,20 +86,24 @@ class NirissSoss(ts_default.JWST):
         # =====================================================================
         # LEVEL 1: Detector-Level Processing (calwebb_detector1)
         # =====================================================================
+
         msg = ('Applying Level 1 (detector) calibration steps to NIRISS '
                'SOSS data')
         WLOG(self.params, 'info', msg)
 
         # Initialize Detector Data (bundled: group_scale + dq_init + saturation)
         infiles = self.initialize_detector_data(infiles)
-        # This is an example for Loic
-        # infiles = loic_niriss.loic_group_scale_step(self, infiles)
 
-        # IPC Step
-        # infiles = self.apply_interpixel_capacitance(infiles)
+        # Get the dictionary for the pastasoss reference file (formerly spectrace)
+        # spectracedict contains x_o1, y_o1, wave_o1 and throughput_o1
+        # and for all 3 orders.
+        spectracedict = loic_niriss.get_spectrace(infiles)
 
-        # Superbias Step (NIR-specific)
-        # infiles = self.subtract_superbias(infiles)
+        # Build a deep stack for each group of the TSO.
+        deepstack_grouplevel = loic_niriss.stack_multisegments(infiles)
+        # TODO: no need to return deepstack_grouplevel here but I will need a
+        #  internal way of naming this kind of "calibration" files.
+        # TODO: create more functions like it to create masks of different flavors
 
         # Refpix Step
         infiles = self.apply_reference_pixel_correction(infiles)
@@ -146,12 +150,22 @@ class NirissSoss(ts_default.JWST):
 
         # Step 2.3: Background Subtraction (usually skipped for TSO)
         # infiles = self.subtract_background(infiles)
+        #TODO: Loic to implement a custom step for background subtraction
+        # it will either call the current default step or the custom step.
+        # and the yaml file will dictate which is used.
+
+        # Loic's looooooooong method to flag and remove bad pixels
+        infiles = loic_niriss.soss_correct_badpix(infiles)
 
         # Step 2.4: Source Type (srctype)
         infiles = self.srctype_determination(infiles)
 
         # Save cal _calints.fits
         infiles = self.save_outputs('_calints.fits', infiles)
+        # TODO: there is a bug. Files named ./temporary/jw..._nis_badpixinterp_sourcetypestep.fits
+        #  created by my previous custom step are overwritten to ./temporary/jw..._nis_calints.fits
+        #  instead of being copied to output/jw..._nis_calints.fits
+        #  Neil?
 
         # Step 2.5: Extract 1D Spectrum → save _x1dints.fits
         x1d_files = self.extract_1d_spectrum(infiles)
@@ -202,6 +216,8 @@ class NirissSossSuperstripe(NirissSoss):
 # Main code here
 if __name__ == "__main__":
     print("Hello World!")
+    print("To run, type at the command line in the proper conda environment, for example:")
+    print("pogos_run --yamlfile DEMO_T1b.20220718.JWST.NIRISS.SOSS.TSOVORE.yaml")
 
 # =============================================================================
 # End of code
