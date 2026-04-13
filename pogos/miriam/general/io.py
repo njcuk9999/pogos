@@ -97,8 +97,10 @@ def out_wlc_file(params: ParamDict, ptbl: Table) -> str:
 
     :return: str, the filename of the written white light curve fits file
     """
+    # get miriam parameters
+    mparams = params.get('MIRIAM')
     # get the output directory
-    output_dir = params.get('MIRIAM.PATHS.OUTPUT_PATH')
+    output_dir = mparams.get('PATHS.OUTPUT_PATH')
     # get columns names to keep
     rtable = Table()
     rtable['Time'] = ptbl['int_start_BJD_TDB']
@@ -129,7 +131,8 @@ def out_wlc_file(params: ParamDict, ptbl: Table) -> str:
     meta_data['POGOS_EV'] = (base.MIRIAM_VERSION, 'POGOS extraction version')
     # -------------------------------------------------------------------------
     # construct the fits filename
-    filename = os.path.join(output_dir, 'white_light_curve.fits')
+    filename = os.path.join(output_dir, '{prefix}_wlc.fits')
+    filename = filename.format(prefix=mparams['INPUTS']['PREFIX'])
     # save the fits file
     pogos_io.save_fits(params, filename, datalist=datalist,
                        datatypes=datatypes, datanames=datanames,
@@ -150,12 +153,14 @@ def save_eureka(params: ParamDict, ptbl: Table) -> str:
     """
     # set function name
     func_name = __NAME__ + '.save_eureka()'
-
+    # get miriam parameters
+    mparams = params.get('MIRIAM')
     # get the output directory
-    output_dir = params.get('MIRIAM.PATHS.OUTPUT_PATH')
+    output_dir = mparams.get('PATHS.OUTPUT_PATH')
     # -------------------------------------------------------------------------
     # construct the fits filename
-    filename = os.path.join(output_dir, 'white_light_curve.h5')
+    filename = os.path.join(output_dir, '{prefix}_wlc.h5')
+    filename = filename.format(prefix=mparams['INPUTS']['PREFIX'])
     # -------------------------------------------------------------------------
     # attempt to install astraeus package
     try:

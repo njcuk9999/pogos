@@ -204,8 +204,8 @@ def sossisse_input(params: ParamDict,
         # copy linear recon coeffs csv file
         shutil.copy(sossisse_spec_lc_file, sorbet_file)
         # update params
-        params['SORBET.SLCA.INPUT_FILES'] = [os.path.basename(sorbet_file)]
-        params.set_source('SORBET.SLCA.INPUT_FILES', func_name)
+        params['SORBET.SLCA.INPUT_FILE'] = [os.path.basename(sorbet_file)]
+        params.set_source('SORBET.SLCA.INPUT_FILE', func_name)
     # return params
     return params
 
@@ -317,7 +317,7 @@ def run_sorbet_slcta(params: ParamDict):
     # prepare directories
     prepare_directories(params, method='SLCA')
     # check the dataset (multiple channels/orders?)
-    input_files = slcta_params['INPUT_FILES']
+    input_files = slcta_params['INPUT_FILE']
     # get the trace order
     trace_orders = slcta_params['TRACE_ORDERS']
     # deal with single string input

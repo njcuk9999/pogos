@@ -21,6 +21,7 @@ from tqdm import tqdm
 
 from aperocore import math as mp
 from aperocore.constants.param_functions import ParamDict
+from aperocore.constants import load_functions
 from aperocore.core import drs_log
 from aperocore.core import drs_misc
 from pogos.core import base
@@ -164,6 +165,9 @@ def merge_inputs(params: ParamDict) -> MergedReturn:
         else:
             input_paths.append(input_path)
             input_basenames.append(os.path.basename(input_path))
+    # -------------------------------------------------------------------------
+    # set prefix (for use in output files)
+    mparams['INPUTS']['PREFIX'] = load_functions.common_prefix(input_basenames)
     # -------------------------------------------------------------------------
     # attempt to load merged data from previous run
     if mparams['INPUTS.USE_PREVIOUS_MERGED_DATA']:

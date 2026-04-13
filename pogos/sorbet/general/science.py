@@ -309,9 +309,11 @@ def test_juliet_distributions(params: ParamDict,
 
     # test that all juliet parameters have a prior distribution
     prior_dists: List[str] = []
+    found = []
     for param in jparams:
         if param in jdists and jdists[param] in valid_dists:
             prior_dists.append(jdists[param])
+            found.append(param)
         elif param in jdists and jdists[param] not in valid_dists:
             msg = (f'Parameter "{param}" has an invalid prior distribution '
                    f'"{jdists[param]}". Valid distributions are: '
@@ -326,9 +328,17 @@ def test_juliet_distributions(params: ParamDict,
                    f' "SORBET.{method}.JULIET_PRIOR_DISTS"')
             raise sorbet_base.SorbetException(msg)
 
+    # deal with param in piror dists but not in parameters
+    for param in jdists:
+        if param not in found:
+            msg = (f'Parameter "{param}" is in JULIET_PRIOR_DISTS but not in '
+                   f'JULIET_PARAMETERS. Please remove it from '
+                   f'JULIET_PRIOR_DISTS or add it to JULIET_PARAMETERS.')
+            raise sorbet_base.SorbetException(msg)
+
     # update juliet params with instrument mode
     prior_dists = [p.replace('{INST_MODE}', inst_mode) for p in prior_dists]
-
+    # return the prior distributions
     return prior_dists
 
 
@@ -373,6 +383,7 @@ def test_juliet_values(params: ParamDict,
 
     # test that all juliet parameters have a prior distribution
     prior_vals: List[float | List[float]] = []
+    found = []
     for param in jparams:
         if param in jvals:
             # get yaml value
@@ -380,11 +391,13 @@ def test_juliet_values(params: ParamDict,
             # deal with raw value being a float
             if isinstance(raw_val, (int, float, str)):
                 prior_vals.append(force_float(raw_val))
+                found.append(param)
             # deal with raw value being a string (i.e 4e5 is read as a string)
             elif isinstance(raw_val, list):
                 # make sure all values are numbers
                 list_val = [force_float(v) for v in raw_val]
                 prior_vals.append(list_val)
+                found.append(param)
             # deal with anything else (bad)
             else:
                 msg = (f'Value "{raw_val}" is not a valid type. '
@@ -393,9 +406,17 @@ def test_juliet_values(params: ParamDict,
         else:
             msg = (f'Parameter "{param}" does not have a prior distribution '
                    f'defined in the yaml file. Please define it under '
-                   f' "SORBET.{method}.JULIET_PRIOR_DISTS"')
+                   f' "SORBET.{method}.JULIET_PRIOR_VALS"')
             raise sorbet_base.SorbetException(msg)
 
+    # deal with param in piror dists but not in parameters
+    for param in jvals:
+        if param not in found:
+            msg = (f'Parameter "{param}" is in JULIET_PRIOR_VALS but not in '
+                   f'JULIET_PARAMETERS. Please remove it from '
+                   f'JULIET_PRIOR_VALS or add it to JULIET_PARAMETERS.')
+            raise sorbet_base.SorbetException(msg)
+    # return the prior values
     return prior_vals
 
 
@@ -476,7 +497,7 @@ def prepare_dataset(params: ParamDict, data_table: Table,
     # temporal slope# check if the file exists
     if sparams['LINEAR_DETRENDING'] == 'time':
         # make sure to not fit baseline twice
-        idx = juliet_params.index(f'mflux_{inst_mode}')
+        idx = juliet_params.index(f'mflux_{str(inst_mode)}')
         prior_dists[idx] = 'fixed'
         prior_vals[idx] = 0.0
 

@@ -141,6 +141,12 @@ MIRIAM_CDict.add('FILES', value=None, dtype=list, dtypei=str, not_none=False,
                  source=__NAME__, user=True, active=True, group=cgroup,
                  description=fdesc)
 # -----------------------------------------------------------------------------
+# The common prefix based on the raw files
+MIRIAM_CDict.add('PREFIX', value=None, dtype=str, not_none=False,
+                 source=__NAME__, user=False, active=False, group=cgroup,
+                 description='The common prefix based on the raw files '
+                             '(set in code)')
+# -----------------------------------------------------------------------------
 # List of integrations to skip (0-indexed)
 MIRIAM_CDict.add('SKIP_INTEGRATIONS', value=None, dtype=list, dtypei=int,
                  not_none=False, source=__NAME__, user=True, active=True,
