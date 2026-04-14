@@ -9,7 +9,13 @@ Created on 2026-01-29 at 11:50
 
 @author: cook
 """
+from typing import List, Optional
+import numpy as np
 from astropy.io import fits
+from jwst import datamodels
+import os
+from scipy.signal import medfilt2d
+from scipy.interpolate import griddata
 
 
 # =============================================================================
