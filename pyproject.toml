@@ -24,7 +24,7 @@ dependencies = [
         # PR#70 fixed this (NPY_2_0_API_VERSION) but was never released to PyPI.
         # Pin to the post-fix commit until a new PyPI release is made.
         "batman-package @ git+https://github.com/lkreidberg/batman.git@3c69c4381d9785cd4d06e898c2cdf83b22ffb365",
-        "exotic_ld==3.2.0",
+
         "ipython==8.32.0",
         "scipy==1.17.1",
         "matplotlib==3.10.8",
@@ -52,6 +52,7 @@ pogos_copy = "pogos:recipes.pogos_copy.run"
 [project.optional-dependencies]
 full = ["aperocore @ git+https://github.com/njcuk9999/apero-drs.git@v0.8.running#subdirectory=apero-core",
         "pastasoss @ git+https://github.com/njcuk9999/pastasoss.git",
+        "exotic_ld @ git+https://github.com/njcuk9999/ExoTiC-LD.git",
         "sossisse @ git+https://github.com/njcuk9999/sossisse.git@developer"]
 
-dev = ["aperocore", "sossisse", "pastasoss"]
+dev = ["aperocore", "sossisse", "pastasoss", "exotic_ld"]
