@@ -296,7 +296,7 @@ class Tso():
             WLOG(self.params, '', msg)
             # -----------------------------------------------------------------
             # update meta data
-            seg.meta.filename = seg_file
+            # seg.meta.filename = seg_file
             # -----------------------------------------------------------------
             # write update seg file
             seg.write(seg.meta.filename)
