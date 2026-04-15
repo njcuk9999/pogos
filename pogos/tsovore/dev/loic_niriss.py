@@ -40,14 +40,13 @@ def loic_group_scale_step(self, infiles: list) -> list:
     """
     # set function name
     func_name = f"{__NAME__}.JWST.loic_group_scale_step"
-    # get params from step constant
-    run_step, flavour, kwargs, suffix = self.from_step_args(func_name)
-    # deal with skipping step
-    run_step, infiles = self.skip_step(
-        run_step, 'GROUP_SCALE_STEP', suffix, infiles)
-    # deal with not running this step
-    if not run_step:
-        return infiles
+    # ---------------------------------------------------------------------
+    # Do not modify this step
+    # ---------------------------------------------------------------------
+    # initialize step (do not modify)
+    rkwargs = self.assign_step(infiles, func_name)
+    if not rkwargs['RUN_STEP']: return rkwargs['INFILES']
+    # ---------------------------------------------------------------------
     # get parameters from params
     datadir = self.tparams['PATHS.TEMP_PATH']
     # storage for output files

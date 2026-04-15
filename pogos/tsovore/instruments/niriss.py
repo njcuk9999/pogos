@@ -99,7 +99,7 @@ class NirissSoss(ts_default.JWST, tso.Tso):
         # Get the dictionary for the pastasoss reference file (formerly spectrace)
         # spectracedict contains x_o1, y_o1, wave_o1 and throughput_o1
         # and for all 3 orders.
-        spectracedict = self.get_spectrace(infiles)
+        infiles = self.get_spectrace(infiles)
 
         # Build a deep stack for each group of the TSO.
         infiles = self.stack_multisegments(infiles)
@@ -114,20 +114,8 @@ class NirissSoss(ts_default.JWST, tso.Tso):
         # Linearity Step
         infiles = self.apply_linearity_correction(infiles)
 
-        # Dark Current Step
-        # infiles = self.subtract_dark_current(infiles)
-
-        # Persistence Step (optional)
-        # infiles = self.correct_persistence(infiles)
-
-        # Charge Migration Step
-        # infiles = self.correct_charge_migration(infiles)
-
         # Jump Step
         infiles = self.detect_and_flag_jumps(infiles)
-
-        # Clean Flicker Noise Step
-        # infiles = self.remove_flicker_noise(infiles)
 
         # Ramp Fit Step
         infiles = self.fit_signal_ramps(infiles)
@@ -165,10 +153,6 @@ class NirissSoss(ts_default.JWST, tso.Tso):
 
         # Save cal _calints.fits
         infiles = self.save_outputs('_calints.fits', infiles)
-        # TODO: there is a bug. Files named ./temporary/jw..._nis_badpixinterp_sourcetypestep.fits
-        #  created by my previous custom step are overwritten to ./temporary/jw..._nis_calints.fits
-        #  instead of being copied to output/jw..._nis_calints.fits
-        #  Neil?
 
         # Step 2.5: Extract 1D Spectrum → save _x1dints.fits
         x1d_files = self.extract_1d_spectrum(infiles)
@@ -178,22 +162,6 @@ class NirissSoss(ts_default.JWST, tso.Tso):
 
         # Save 1D extracted spectra
         x1d_files = self.save_outputs('_x1dints.fits', x1d_files)
-
-        ########## Below steps were removed by Loic (2026/03/26) ##############
-        # Step 2.2: Optional Clean Flicker Noise
-        # infiles = self.remove_flicker_noise(infiles)
-
-        # Step 2.6: Stray Light Correction
-        # infiles = self.correct_stray_light(infiles)
-
-        # Step 2.7: Fringe Correction
-        # infiles = self.correct_fringe(infiles)
-
-        # Step 2.8: Path Loss Correction
-        # infiles = self.correct_path_loss(infiles)
-
-        # Step 2.9: Bar Shadow Correction
-        # infiles = self.correct_bar_shadow(infiles)
 
         # ---------------------------------------------------------------------
         # Last step is to save the outputs for return, do not remove this

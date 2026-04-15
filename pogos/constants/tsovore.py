@@ -9,10 +9,12 @@ Created on 2024-10-29 at 09:30
 
 @author: cook
 """
+from stpipe.entry_points import STEPS_GROUP
 
 from aperocore.constants import constant_functions
 
 from pogos.core import base
+from pogos.tsovore.core import misc as ts_misc
 
 # =============================================================================
 # Define variables
@@ -180,199 +182,218 @@ cgroup = 'STEP'
 TSOVORE_CDict.add_group(cgroup, source=__NAME__, user=True, active=True,
                        description='Settings for the science steps')
 # -----------------------------------------------------------------------------
-STEPS = ['INITIALIZE_DETECTOR_DATA',
-         'APPLY_INTERPIXEL_CAPACITANCE',
-         'SUBTRACT_SUPERBIAS',
-         'APPLY_REFERENCE_PIXEL_CORRECTION',
-         'REMOVE_FIRST_FRAME_SIGNAL',
-         'REMOVE_LAST_FRAME_SIGNAL',
-         'CORRECT_RESET_ANOMALY',
-         'APPLY_LINEARITY_CORRECTION',
-         'APPLY_RSCD_CORRECTION',
-         'SUBTRACT_DARK_CURRENT',
-         'CORRECT_PERSISTENCE',
-         'CORRECT_CHARGE_MIGRATION',
-         'DETECT_AND_FLAG_JUMPS',
-         'PICTURE_FRAME_STEP',
-         'REMOVE_FLICKER_NOISE',
-         'FIT_SIGNAL_RAMPS',
-         'APPLY_GAIN_SCALING',
-         'SUBTRACT_BACKGROUND',
-         'ASSIGN_WCS_SOLUTION',
-         'EXTRACT_2D_SPECTRUM',
-         'SRCTYPE_DETERMINATION',
-         'CORRECT_STRAY_LIGHT',
-         'APPLY_FLAT_FIELD',
-         'CORRECT_FRINGE',
-         'CORRECT_PATH_LOSS',
-         'CORRECT_BAR_SHADOW',
-         'CORRECT_WFSS_CONTAMINATION',
-         'CORRECT_WAVELENGTH',
-         'SUBTRACT_MASTER_BACKGROUND',
-         'MEASURE_TARGET_CENTROID',
-         'CORRECT_RESIDUAL_FRINGE',
-         'EXTRACT_1D_SPECTRUM',
-         'APPLY_PHOTOMETRIC_CALIBRATION',
-         'RESAMPLE_IMAGES']
+# Create a Step list to manage adding steps
+STEPS = ts_misc.StepList()
 
-# default flavour for each step
-DEFAULT_FLAVOURS = dict()
-DEFAULT_FLAVOURS['INITIALIZE_DETECTOR_DATA'] = 'jwst'
-DEFAULT_FLAVOURS['APPLY_INTERPIXEL_CAPACITANCE'] = 'jwst'
-DEFAULT_FLAVOURS['SUBTRACT_SUPERBIAS'] = 'jwst'
-DEFAULT_FLAVOURS['APPLY_REFERENCE_PIXEL_CORRECTION'] = 'jwst'
-DEFAULT_FLAVOURS['REMOVE_FIRST_FRAME_SIGNAL'] = 'jwst'
-DEFAULT_FLAVOURS['REMOVE_LAST_FRAME_SIGNAL'] = 'jwst'
-DEFAULT_FLAVOURS['CORRECT_RESET_ANOMALY'] = 'jwst'
-DEFAULT_FLAVOURS['APPLY_LINEARITY_CORRECTION'] = 'jwst'
-DEFAULT_FLAVOURS['APPLY_RSCD_CORRECTION'] = 'jwst'
-DEFAULT_FLAVOURS['SUBTRACT_DARK_CURRENT'] = 'jwst'
-DEFAULT_FLAVOURS['CORRECT_PERSISTENCE'] = 'jwst'
-DEFAULT_FLAVOURS['CORRECT_CHARGE_MIGRATION'] = 'jwst'
-DEFAULT_FLAVOURS['DETECT_AND_FLAG_JUMPS'] = 'jwst'
-DEFAULT_FLAVOURS['PICTURE_FRAME_STEP'] = 'jwst'
-DEFAULT_FLAVOURS['REMOVE_FLICKER_NOISE'] = 'jwst'
-DEFAULT_FLAVOURS['FIT_SIGNAL_RAMPS'] = 'jwst'
-DEFAULT_FLAVOURS['APPLY_GAIN_SCALING'] = 'jwst'
-DEFAULT_FLAVOURS['SUBTRACT_BACKGROUND'] = 'jwst'
-DEFAULT_FLAVOURS['ASSIGN_WCS_SOLUTION'] = 'jwst'
-DEFAULT_FLAVOURS['EXTRACT_2D_SPECTRUM'] = 'jwst'
-DEFAULT_FLAVOURS['SRCTYPE_DETERMINATION'] = 'jwst'
-DEFAULT_FLAVOURS['CORRECT_STRAY_LIGHT'] = 'jwst'
-DEFAULT_FLAVOURS['APPLY_FLAT_FIELD'] = 'jwst'
-DEFAULT_FLAVOURS['CORRECT_FRINGE'] = 'jwst'
-DEFAULT_FLAVOURS['CORRECT_PATH_LOSS'] = 'jwst'
-DEFAULT_FLAVOURS['CORRECT_BAR_SHADOW'] = 'jwst'
-DEFAULT_FLAVOURS['CORRECT_WFSS_CONTAMINATION'] = 'jwst'
-DEFAULT_FLAVOURS['CORRECT_WAVELENGTH'] = 'jwst'
-DEFAULT_FLAVOURS['SUBTRACT_MASTER_BACKGROUND'] = 'jwst'
-DEFAULT_FLAVOURS['MEASURE_TARGET_CENTROID'] = 'jwst'
-DEFAULT_FLAVOURS['CORRECT_RESIDUAL_FRINGE'] = 'jwst'
-DEFAULT_FLAVOURS['EXTRACT_1D_SPECTRUM'] = 'jwst'
-DEFAULT_FLAVOURS['APPLY_PHOTOMETRIC_CALIBRATION'] = 'jwst'
-DEFAULT_FLAVOURS['RESAMPLE_IMAGES'] = 'jwst'
-
-# Default run state for each step (based on JWST pipeline defaults)
-DEFAULT_RUN = dict()
-DEFAULT_RUN['INITIALIZE_DETECTOR_DATA'] = True
-DEFAULT_RUN['APPLY_INTERPIXEL_CAPACITANCE'] = True
-DEFAULT_RUN['SUBTRACT_SUPERBIAS'] = True
-DEFAULT_RUN['APPLY_REFERENCE_PIXEL_CORRECTION'] = True
-DEFAULT_RUN['REMOVE_FIRST_FRAME_SIGNAL'] = True
-DEFAULT_RUN['REMOVE_LAST_FRAME_SIGNAL'] = True
-DEFAULT_RUN['CORRECT_RESET_ANOMALY'] = True
-DEFAULT_RUN['APPLY_LINEARITY_CORRECTION'] = True
-DEFAULT_RUN['APPLY_RSCD_CORRECTION'] = True
-DEFAULT_RUN['SUBTRACT_DARK_CURRENT'] = True
-DEFAULT_RUN['CORRECT_PERSISTENCE'] = False  # Always commented out
-DEFAULT_RUN['CORRECT_CHARGE_MIGRATION'] = True
-DEFAULT_RUN['DETECT_AND_FLAG_JUMPS'] = True
-DEFAULT_RUN['PICTURE_FRAME_STEP'] = True
-DEFAULT_RUN['REMOVE_FLICKER_NOISE'] = True
-DEFAULT_RUN['FIT_SIGNAL_RAMPS'] = True
-DEFAULT_RUN['APPLY_GAIN_SCALING'] = True
-DEFAULT_RUN['SUBTRACT_BACKGROUND'] = True
-DEFAULT_RUN['ASSIGN_WCS_SOLUTION'] = True
-DEFAULT_RUN['EXTRACT_2D_SPECTRUM'] = True
-DEFAULT_RUN['SRCTYPE_DETERMINATION'] = True
-DEFAULT_RUN['CORRECT_STRAY_LIGHT'] = True
-DEFAULT_RUN['APPLY_FLAT_FIELD'] = True
-DEFAULT_RUN['CORRECT_FRINGE'] = True
-DEFAULT_RUN['CORRECT_PATH_LOSS'] = True
-DEFAULT_RUN['CORRECT_BAR_SHADOW'] = True
-DEFAULT_RUN['CORRECT_WFSS_CONTAMINATION'] = True
-DEFAULT_RUN['CORRECT_WAVELENGTH'] = True
-DEFAULT_RUN['SUBTRACT_MASTER_BACKGROUND'] = True
-DEFAULT_RUN['MEASURE_TARGET_CENTROID'] = False  # Commented out in MIRI LRS
-DEFAULT_RUN['CORRECT_RESIDUAL_FRINGE'] = True
-DEFAULT_RUN['EXTRACT_1D_SPECTRUM'] = True
-DEFAULT_RUN['APPLY_PHOTOMETRIC_CALIBRATION'] = True
-DEFAULT_RUN['RESAMPLE_IMAGES'] = True
 
 # -----------------------------------------------------------------------------
-# Step description
-STEP_DESCRIPTION = ('Whether to perform the step: {0}. '
-                    'Each step should contiain the following:'
-                    '\n - RUN: bool, whether to run the step'
-                    '\n - MODE: str, the mode to use for the step'
-                    '\n - KWARGS: dict, any additional keyword arguments')
-
-STEP_DESCS = dict()
-STEP_DESCS['INITIALIZE_DETECTOR_DATA'] = dict()
-STEP_DESCS['INITIALIZE_DETECTOR_DATA']['jwst'] = """
-No kwargs for initialization step
-"""
-
-STEP_DESCS['DETECT_AND_FLAG_JUMPS'] = dict()
-STEP_DESCS['DETECT_AND_FLAG_JUMPS']['jwst'] = """
-Kwargs for jump detection:
-- rejection_threshold: float, the sigma threshold for jump detection
-- max_shower_amplitude: float
-- three_group_rejection_threshold: float
-- four_group_rejection_threshold:  float
-- only_use_ints: bool 
-"""
-# -----------------------------------------------------------------------------
-# Step output filenames (for skipping)
-STEP_SUFFIX = dict()
 # Detector1 level steps (calwebb_detector1.py)
-STEP_SUFFIX['INITIALIZE_DETECTOR_DATA'] = '_saturationstep.fits'
-STEP_SUFFIX['APPLY_INTERPIXEL_CAPACITANCE'] = '_ipcstep.fits'
-STEP_SUFFIX['SUBTRACT_SUPERBIAS'] = '_superbiasstep.fits'
-STEP_SUFFIX['APPLY_REFERENCE_PIXEL_CORRECTION'] = '_refpixstep.fits'
-STEP_SUFFIX['APPLY_RSCD_CORRECTION'] = '_rscdstep.fits'
-STEP_SUFFIX['REMOVE_FIRST_FRAME_SIGNAL'] = '_firstframestep.fits'
-STEP_SUFFIX['REMOVE_LAST_FRAME_SIGNAL'] = '_lastframestep.fits'
-STEP_SUFFIX['APPLY_LINEARITY_CORRECTION'] = '_linearitystep.fits'
-STEP_SUFFIX['SUBTRACT_DARK_CURRENT'] = '_darkcurrentstep.fits'
-STEP_SUFFIX['CORRECT_RESET_ANOMALY'] = '_resetstep.fits'
-STEP_SUFFIX['CORRECT_PERSISTENCE'] = '_persistencestep.fits'
-STEP_SUFFIX['CORRECT_CHARGE_MIGRATION'] = '_chargemigrationstep.fits'
-STEP_SUFFIX['DETECT_AND_FLAG_JUMPS'] = '_jump.fits'
-STEP_SUFFIX['PICTURE_FRAME_STEP'] = '_pictureframestep.fits'
-STEP_SUFFIX['REMOVE_FLICKER_NOISE'] = '_cleanflickernoisestep.fits'
-STEP_SUFFIX['FIT_SIGNAL_RAMPS'] = '_1_rampfitstep.fits'
-STEP_SUFFIX['APPLY_GAIN_SCALING'] = '_gainscalestep.fits'
+# -----------------------------------------------------------------------------
+# description for initialize detector data
+jwst_initialize_desc = 'No kwargs for initialization step'
+# Initialize detector data
+STEPS.add_step(name='INITIALIZE_DETECTOR_DATA',
+               flavour='jwst', fname='_saturationstep.fits',
+               ftype='suffix', run=True,
+               modes=STEPS.all_modes(),
+               descs=dict(jwst=jwst_initialize_desc))
+# - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+# Apply interpixel capacitance
+STEPS.add_step(name='APPLY_INTERPIXEL_CAPACITANCE',
+               flavour='jwst', fname='_ipcstep.fits',
+               ftype='suffix', run=True,
+               modes=STEPS.not_modes('JWST.NIRISS.SOSS'))
+# Remove first frame signal
+STEPS.add_step(name='REMOVE_FIRST_FRAME_SIGNAL',
+               flavour='jwst', fname='_firstframestep.fits',
+               ftype='suffix', run=True,
+               modes=STEPS.not_modes('JWST.NIRISS.SOSS'))
+# Remove last frame signal
+STEPS.add_step(name='REMOVE_LAST_FRAME_SIGNAL',
+               flavour='jwst', fname='_lastframestep.fits',
+               ftype='suffix', run=True,
+               modes=STEPS.not_modes('JWST.NIRISS.SOSS'))
+# Correct reset anomaly
+STEPS.add_step(name='CORRECT_RESET_ANOMALY',
+               flavour='jwst', fname='_resetstep.fits',
+               ftype='suffix', run=True,
+               modes=STEPS.not_modes('JWST.NIRISS.SOSS'))
+# Apply linearity correction
+STEPS.add_step(name='APPLY_LINEARITY_CORRECTION',
+               flavour='jwst', fname='_linearitystep.fits',
+               ftype='suffix', run=True,
+               modes=STEPS.not_modes('JWST.NIRISS.SOSS'))
+# Apply RSCD correction
+STEPS.add_step(name='APPLY_RSCD_CORRECTION',
+               flavour='jwst', fname='_rscdstep.fits',
+               ftype='suffix', run=True,
+               modes=STEPS.not_modes('JWST.NIRISS.SOSS'))
+# - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+# Build deepstack spectrace product
+STEPS.add_step(name='GET_SPECTRACE',
+               flavour='tso', fname='spectrace0.fits',
+               ftype='full', run=True,
+               modes=['JWST.NIRISS.SOSS'])
+# Stack multisegment deepstack products
+STEPS.add_step(name='STACK_MULTISEGMENTS',
+               flavour='tso', fname='deepstack.fits',
+               ftype='full', run=True,
+               modes=['JWST.NIRISS.SOSS'])
+# - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+# Apply reference pixel correction
+STEPS.add_step(name='APPLY_REFERENCE_PIXEL_CORRECTION',
+               flavour='jwst', fname='_refpixstep.fits',
+               ftype='suffix', run=True,
+               modes=STEPS.all_modes())
+# Subtract dark current
+STEPS.add_step(name='SUBTRACT_DARK_CURRENT',
+               flavour='jwst', fname='_darkcurrentstep.fits',
+               ftype='suffix', run=True,
+               modes=STEPS.not_modes('JWST.NIRISS.SOSS'))
+# Correct persistence
+STEPS.add_step(name='CORRECT_PERSISTENCE',
+               flavour='jwst', fname='_persistencestep.fits',
+               ftype='suffix', run=False,
+               modes=STEPS.not_modes('JWST.NIRISS.SOSS',
+                                     'JWST.MIRI.IMAGING'))
+# Correct charge migration
+STEPS.add_step(name='CORRECT_CHARGE_MIGRATION',
+               flavour='jwst', fname='_chargemigrationstep.fits',
+               ftype='suffix', run=True,
+               modes=STEPS.not_modes('JWST.NIRISS.SOSS'))
+# - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+# description for jump detection kwargs (flavour=jwst)
+jwst_jump_desc = ('Kwargs for jump detection:\n'
+                  '- rejection_threshold: float, the sigma threshold '
+                  'for jump detection\n'
+                  '- max_shower_amplitude: float\n'
+                  '- three_group_rejection_threshold: float\n'
+                  '- four_group_rejection_threshold:  float\n'
+                  '- only_use_ints: bool')
+# Detect and flag jumps
+STEPS.add_step(name='DETECT_AND_FLAG_JUMPS',
+               flavour='jwst', fname='_jump.fits',
+               ftype='suffix', run=True,
+               descs=dict(jwst=jwst_jump_desc),
+               modes=STEPS.all_modes())
+# - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+# Run picture frame correction
+STEPS.add_step(name='PICTURE_FRAME_STEP',
+               flavour='jwst', fname='_pictureframestep.fits',
+               ftype='suffix', run=True,
+               modes=STEPS.not_modes('JWST.NIRISS.SOSS'))
+# Remove flicker noise
+STEPS.add_step(name='REMOVE_FLICKER_NOISE',
+               flavour='jwst', fname='_cleanflickernoisestep.fits',
+               ftype='suffix', run=True,
+               modes=STEPS.not_modes('JWST.NIRISS.SOSS'))
+# Fit signal ramps
+STEPS.add_step(name='FIT_SIGNAL_RAMPS',
+               flavour='jwst', fname='_1_rampfitstep.fits',
+               ftype='suffix', run=True,
+               modes=STEPS.all_modes())
+# Apply gain scaling
+STEPS.add_step(name='APPLY_GAIN_SCALING',
+               flavour='jwst', fname='_gainscalestep.fits',
+               ftype='suffix', run=True,
+               modes=STEPS.not_modes('JWST.MIRI.IMAGING'))
+# -----------------------------------------------------------------------------
 # Image2/Spec2 level steps (calwebb_image2.py / calwebb_spec2.py)
-STEP_SUFFIX['SUBTRACT_BACKGROUND'] = '_backgroundstep.fits'
-STEP_SUFFIX['ASSIGN_WCS_SOLUTION'] = '_assignwcsstep.fits'
-STEP_SUFFIX['EXTRACT_2D_SPECTRUM'] = '_extract2dstep.fits'
-STEP_SUFFIX['EXTRACT_1D_SPECTRUM'] = '_extract1dstep.fits'
-STEP_SUFFIX['SRCTYPE_DETERMINATION'] = '_srctypestep.fits'
-STEP_SUFFIX['CORRECT_STRAY_LIGHT'] = '_straylightstep.fits'
-STEP_SUFFIX['APPLY_FLAT_FIELD'] = '_flatfieldstep.fits'
-STEP_SUFFIX['CORRECT_FRINGE'] = '_fringestep.fits'
-STEP_SUFFIX['CORRECT_PATH_LOSS'] = '_pathlossstep.fits'
-STEP_SUFFIX['CORRECT_BAR_SHADOW'] = '_barshadowstep.fits'
-STEP_SUFFIX['CORRECT_WFSS_CONTAMINATION'] = '_wfsscontamstep.fits'
-STEP_SUFFIX['CORRECT_WAVELENGTH'] = '_wavecorrstep.fits'
-STEP_SUFFIX['SUBTRACT_MASTER_BACKGROUND'] = '_masterbackgroundstep.fits'
-STEP_SUFFIX['MEASURE_TARGET_CENTROID'] = '_targcentroidstep.fits'
-STEP_SUFFIX['CORRECT_RESIDUAL_FRINGE'] = '_residualfringestep.fits'
-STEP_SUFFIX['APPLY_PHOTOMETRIC_CALIBRATION'] = '_photomstep.fits'
-STEP_SUFFIX['RESAMPLE_IMAGES'] = '_resamplestep.fits'
+# -----------------------------------------------------------------------------
+# Subtract background
+STEPS.add_step(name='SUBTRACT_BACKGROUND',
+               flavour='jwst', fname='_backgroundstep.fits',
+               ftype='suffix', run=True,
+               modes=STEPS.not_modes('JWST.NIRISS.SOSS'))
+# Assign WCS solution
+STEPS.add_step(name='ASSIGN_WCS_SOLUTION',
+               flavour='jwst', fname='_assignwcsstep.fits',
+               ftype='suffix', run=True,
+               modes=STEPS.all_modes())
+# Apply flat field
+STEPS.add_step(name='APPLY_FLAT_FIELD',
+               flavour='jwst', fname='_flatfieldstep.fits',
+               ftype='suffix', run=True,
+               modes=STEPS.all_modes())
+# SOSS Background correction
+STEPS.add_step(name='SOSS_CORRECT_BADPIX',
+               flavour='tso', fname='_badpixinterp.fits',
+               ftype='suffix', run=True,
+               modes=['JWST.NIRISS.SOSS'])
+# Determine source type
+STEPS.add_step(name='SRCTYPE_DETERMINATION',
+               flavour='jwst', fname='_srctypestep.fits',
+               ftype='suffix', run=True,
+               modes=STEPS.not_modes('JWST.MIRI.IMAGING'))
+# Extract 1D spectrum
+STEPS.add_step(name='EXTRACT_1D_SPECTRUM',
+               flavour='jwst', fname='_extract1dstep.fits',
+               ftype='suffix', run=True,
+               modes=STEPS.not_modes('JWST.MIRI.IMAGING'))
+# Apply photometric calibration
+STEPS.add_step(name='APPLY_PHOTOMETRIC_CALIBRATION',
+               flavour='jwst', fname='_photomstep.fits',
+               ftype='suffix', run=True,
+               modes=STEPS.all_modes())
 
 # -----------------------------------------------------------------------------
-# Loop around all steps to create constant
-for step in STEPS:
-    # setup each step value
-    value = dict()
-    value['RUN'] = DEFAULT_RUN.get(step, False)
-    value['FLAVOUR'] = DEFAULT_FLAVOURS.get(step, 'None')
-    value['KWARGS'] = dict()
-    value['SUFFIX'] = STEP_SUFFIX.get(step, None)
-    # deal with additional step descriptions
-    desc = STEP_DESCRIPTION
-    if value['FLAVOUR'] in STEP_DESCS:
-        if step in STEP_DESCS[value['FLAVOUR']]:
-            desc = STEP_DESCRIPTION + '\n' + STEP_DESCS[value['FLAVOUR']]
-    # give the step name
-    step_name = step.replace('_', ' ').title()
-    # push into a normal POGOS constant
-    TSOVORE_CDict.add(step, value=value, dtype=dict,
-                      source=__NAME__, user=True, active=True,
-                      group=cgroup,
-                      description=desc.format(step_name))
+# Not used?
+# -----------------------------------------------------------------------------
+# Subtract superbias
+# STEPS.add_step(name='SUBTRACT_SUPERBIAS',
+#                flavour='jwst', fname='_superbiasstep.fits',
+#                ftype='suffix', run=True)
+
+# Extract 2D spectrum
+# STEPS.add_step(name='EXTRACT_2D_SPECTRUM',
+#                flavour='jwst', fname='_extract2dstep.fits',
+#                ftype='suffix', run=True)
+
+# Correct stray light
+# STEPS.add_step(name='CORRECT_STRAY_LIGHT',
+#                flavour='jwst', fname='_straylightstep.fits',
+#                ftype='suffix', run=True)
+
+# Correct fringe
+# STEPS.add_step(name='CORRECT_FRINGE',
+#                flavour='jwst', fname='_fringestep.fits',
+#                ftype='suffix', run=True)
+# Correct path loss
+# STEPS.add_step(name='CORRECT_PATH_LOSS',
+#                flavour='jwst', fname='_pathlossstep.fits',
+#                ftype='suffix', run=True)
+# Correct bar shadow
+# STEPS.add_step(name='CORRECT_BAR_SHADOW',
+#                flavour='jwst', fname='_barshadowstep.fits',
+#                ftype='suffix', run=True)
+# Correct WFSS contamination
+# STEPS.add_step(name='CORRECT_WFSS_CONTAMINATION',
+#                flavour='jwst', fname='_wfsscontamstep.fits',
+#                ftype='suffix', run=True)
+# Correct wavelength
+# STEPS.add_step(name='CORRECT_WAVELENGTH',
+#                flavour='jwst', fname='_wavecorrstep.fits',
+#                ftype='suffix', run=True)
+# Subtract master background
+# STEPS.add_step(name='SUBTRACT_MASTER_BACKGROUND',
+#                flavour='jwst', fname='_masterbackgroundstep.fits',
+#                ftype='suffix', run=True)
+# Measure target centroid
+# STEPS.add_step(name='MEASURE_TARGET_CENTROID',
+#                flavour='jwst', fname='_targcentroidstep.fits',
+#                ftype='suffix', run=False)
+# Correct residual fringe
+# STEPS.add_step(name='CORRECT_RESIDUAL_FRINGE',
+#                flavour='jwst', fname='_residualfringestep.fits',
+#                ftype='suffix', run=True)
+# # Resample images
+# STEPS.add_step(name='RESAMPLE_IMAGES',
+#                flavour='jwst', fname='_resamplestep.fits',
+#                ftype='suffix', run=True)
+
+# -----------------------------------------------------------------------------
+# push all steps into cdict
+STEPS.to_cdict(TSOVORE_CDict, source=__NAME__, group=cgroup)
 
 
 # =============================================================================

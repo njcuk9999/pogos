@@ -9,9 +9,10 @@ Created on 2025-10-27 at 11:39
 """
 import os
 import shutil
-from typing import Any, Dict, List, Tuple
+from typing import Any, Dict, List, Optional
 
 import numpy as np
+from astropy.time import Time
 from jwst import datamodels
 from jwst.assign_wcs import AssignWcsStep
 from jwst.background import BackgroundStep
@@ -84,6 +85,8 @@ class Instrument:
         # push params into class
         self.params = params
         self.tparams = params.get('TSOVORE')
+        # history (to show which steps were actually used)
+        self.history = []
         # store variables to be used throughout the code
         self.variables = ParamDict()
         # push into variables
@@ -631,6 +634,7 @@ class Instrument:
         :param output_filename: str, the output filename
         :return: str, the absolute path to the output file
         """
+        _ = self, it
         # construct absolute path to filename
         absfile = os.path.join(output_dir, output_filename)
         return absfile
@@ -644,7 +648,7 @@ class Instrument:
         :return: list[str], list of output files
         """
         # set function name
-        func_name = f"{__NAME__}.Instrument.rename_results"
+        # func_name = f"{__NAME__}.Instrument.rename_results"
         prefixes = self.variables['PREFIXES']
         # get parameters from params
         datadir = self.tparams['PATHS.TEMP_PATH']
@@ -674,14 +678,14 @@ class Instrument:
                     if (src_stat.st_size == dst_stat.st_size and
                         src_stat.st_mtime <= dst_stat.st_mtime):
                         # Files appear identical, skip copying
-                        msg = ('File {0} already exists and appears up to date, '
-                               'skipping copy').format(new_filename)
+                        msg = (
+                            'File {0} already exists and appears up to date, '
+                            'skipping copy').format(new_filename)
                         WLOG(self.params, 'info', msg)
                         out_files.append(new_filename)
                         continue
                 # File doesn't exist or is different, proceed with copy
-                msg = ('Copying file {0} to {1}').format(filename,
-                                                         new_filename)
+                msg = f'Copying file {filename} to {new_filename}'
                 WLOG(self.params, 'info', msg)
                 # copy the file
                 shutil.copy(filename, new_filename)
@@ -697,7 +701,7 @@ class Instrument:
         :param filepath: str, the path to the file to remove
         """
         # set function name
-        func_name = f"{__NAME__}.Instrument.remove_intermediate_files"
+        # func_name = f"{__NAME__}.Instrument.remove_intermediate_files"
         # get parameters from params
         remove_intermediates = self.tparams['INPUTS.REMOVE_INTERMEDIATES']
         # do not remove the initial input files
@@ -708,7 +712,7 @@ class Instrument:
             # remove the file
             os.remove(filepath)
 
-    def from_step_args(self, func_name: str) -> Tuple[bool, str, Dict[str, Any], str]:
+    def from_step_args(self, func_name: str) -> Dict[str, Any]:
         """
         Get step arguments from params
 
@@ -723,27 +727,34 @@ class Instrument:
         # ---------------------------------------------------------------------
         # see if we have the step in params
         if step_arg not in self.tparams:
-            emsg = ('"{0}" not found in parameters').format(step_arg)
+            emsg = '"{0}" not found in parameters'.format(step_arg)
             eargs = [step_name]
             raise ts_base.TSOvoreException(emsg.format(*eargs))
         # ---------------------------------------------------------------------
+        # create the dictionary to store values
+        rkwargs = dict()
+        # set the step name and arg
+        rkwargs['STEP_NAME'] = step_name
+        rkwargs['STEP_ARG'] = step_arg
         # get run step
-        run_step = self.tparams[f'{step_arg}'].get('RUN', True)
+        rkwargs['RUN_STEP'] = self.tparams[f'{step_arg}'].get('RUN', True)
         # get flavour
-        flavour = self.tparams[f'{step_arg}'].get('FLAVOUR', 'None')
+        rkwargs['FLAVOUR'] = self.tparams[f'{step_arg}'].get('FLAVOUR', 'None')
         # get kwargs
-        kwargs = self.tparams[f'{step_arg}'].get('KWARGS', dict())
-        # get the suffix
-        suffix = self.tparams[f'{step_arg}'].get('SUFFIX', None)
+        rkwargs['KWARGS'] = self.tparams[f'{step_arg}'].get('KWARGS', dict())
+        # get the fname
+        rkwargs['FNAME'] = self.tparams[f'{step_arg}'].get('FNAME', None)
+        # get the file type
+        rkwargs['FTYPE'] = self.tparams[f'{step_arg}'].get('FTYPE', None)
+        # get the mode
+        rkwargs['MODES'] = self.tparams[f'{step_arg}'].get('MODES', None)
         # ---------------------------------------------------------------------
         # if we are running this step print message
-        if run_step:
-            msg = ('\n\nRunning {0} flavour={1}').format(
-                step_name, flavour)
+        if rkwargs['RUN_STEP']:
+            msg = f'\n\nRunning {step_name} flavour={rkwargs["FLAVOUR"]}'
             mlevel = 'info'
         else:
-            msg = ('\n\nSkipping "{0}" [{1}.RUN=False]').format(
-                step_name, step_arg)
+            msg = f'\n\nSkipping "{step_name}" [{step_arg}.RUN=False]'
             mlevel = 'warning'
         sep = '*' * 50
         WLOG(self.params, mlevel, sep)
@@ -751,33 +762,78 @@ class Instrument:
         WLOG(self.params, mlevel, sep)
         # ---------------------------------------------------------------------
         # return values
-        return run_step, flavour, kwargs, suffix
+        return rkwargs
 
-    def skip_step(self, run_step: bool, step_name: str,
-                  suffix: str | List[str], infiles: list):
+    def expected_tmp_file(self, rkwargs: Dict[str, Any],
+                          file_num: Optional[int] = None) -> str:
+        # get the ftype
+        ftype = rkwargs.get('FTYPE', 'suffix')
+        # get the fname if we don't have it create it
+        fname = rkwargs.get('FNAME', f'_{Time.now.fits()}')
+        # deal with a ftype == full
+        if ftype == 'full':
+            expected_base_name = fname
+        # if file_num is None we use the first prefix
+        elif file_num is None:
+            # get variables from self
+            prefixes = self.variables['PREFIXES']
+            # construct expected output filename
+            expected_base_name = prefixes[0] + fname
+        else:
+            # get variables from self
+            prefixes = self.variables['PREFIXES']
+            # construct expected output filename
+            expected_base_name = prefixes[file_num] + fname
+        # ---------------------------------------------------------------------
+        # construct path to filename
+        expected_filename = os.path.join(self.tparams['PATHS.TEMP_PATH'],
+                                         expected_base_name)
+        # ---------------------------------------------------------------------
+        # return the absolute path to the files
+        return str(expected_filename)
+
+
+    def skip_step(self, rkwargs: Dict[str, Any]) -> Dict[str, Any]:
         """
         Decide whether to skip a step based on existing files and parameters
 
-        :param run_step: bool, whether to run the step (from params)
-        :param step_name: str, the name of the step
-        :param suffix: str, the suffix expected for output files
-        :param infiles: list[str], the input files
-        :return: tuple (bool, list[str]), whether to skip and list of
-                 expected files
+        Updates RUN_STEP if we skip
+        Updates INFILES with "expected files" (to return to step call)
+
+        :param rkwargs: dict, must contain:
+
+        - STEP_NAME: str, the name from func_name
+        - STEP_ARG: str, the step argument
+        - RUN_STEP: bool, whether to run the step (from params)
+        - FLAVOUR: str, the flavour to use
+        - KWARGS: dict, optional
+        - FNAME: str, the filename or suffix to use
+        - FTYPE: str, what format FILENAME is in (suffix or full)
+        - INFILES: List[str], the infiles pushed into this step
+
+        :return: dict, updated rkwargs (RUN_STEP and INFILES)
         """
         # set function name
-        func_name = f"{__NAME__}.Instrument.skip_step"
+        # func_name = f"{__NAME__}.Instrument.skip_step"
+        # update step name
+        step_name = rkwargs['STEP_NAME']
         # if we are already not running step then we don't need to check skips
-        if not run_step:
-            return False, infiles
-        # skip if we have no suffix
-        if suffix is None:
-            return run_step, infiles
+        if not rkwargs['RUN_STEP']:
+            return rkwargs
+        # skip if we have no fname we don't try to skip this step
+        if rkwargs['FNAME'] is None:
+            return rkwargs
         # skip if we are not skipping processed files
         if not self.tparams['INPUTS.SKIP_PROCESSED_FILES']:
-            return run_step, infiles
-        # get variables from self
-        prefixes = self.variables['PREFIXES']
+            return rkwargs
+        # skip if we are not in the correct mode
+        if 'MODE' in rkwargs and rkwargs['MODE'] is not None:
+            if self.params['INSTRUMENT'] not in rkwargs['MODE']:
+                rkwargs['RUN_STEP'] = False
+                return rkwargs
+        # ---------------------------------------------------------------------
+        infiles = rkwargs['INFILES']
+        fname, ftype = rkwargs['FNAME'], rkwargs['FTYPE']
         # assume all files are found
         all_found = True
         expected_files = []
@@ -785,9 +841,7 @@ class Instrument:
         # file exists
         for it in range(len(infiles)):
             # construct expected output filename
-            expected_base_name = prefixes[it] + suffix
-            expected_filename = os.path.join(self.tparams['PATHS.TEMP_PATH'],
-                                             expected_base_name)
+            expected_filename = self.expected_tmp_file(rkwargs, it)
             # store expected filename
             expected_files.append(expected_filename)
             # check if file exists
@@ -795,17 +849,29 @@ class Instrument:
                 all_found = False
         # if all found then run_step is False and we return expected files
         if all_found:
-            # update run step
-            run_step = False
             # print message to user
             msg = ('\tINPUTS.SKIP_PROCESSED_FILES=True\n\tAll expected '
-                   'output files found with suffix "{0}".'
-                   '\n\tSkipping step "{1}".')
-            margs = [suffix, step_name]
-            WLOG(self.params, '', msg.format(*margs))
-            return run_step, expected_files
+                   f'output files found with fname="{fname}" ftype="{ftype}".'
+                   f'\n\tSkipping step "{step_name}".')
+            WLOG(self.params, '', msg)
+            rkwargs['RUN_STEP'] = False
+            rkwargs['INFILES'] = expected_files
+        # return the (possibly updated)
+        return rkwargs
 
-        return run_step, infiles
+    def assign_step(self, infiles: List[str], func_name: str) -> Dict[str, Any]:
+        # get params from step constant
+        rkwargs = self.from_step_args(func_name)
+        # push the infiles into rkwargs
+        rkwargs['INFILES'] = infiles
+        # deal with skipping step
+        rkwargs = self.skip_step(rkwargs)
+        # ---------------------------------------------------------------------
+        # update history
+        if rkwargs['RUN_STEP']:
+            self.history.append(rkwargs['STEP_NAME'])
+        # ---------------------------------------------------------------------
+        return rkwargs
 
     def save_model_with_suffix(self, model, output_dir: str, suffix: str,
                                iteration: int) -> str:
@@ -875,7 +941,7 @@ class Instrument:
         self.variables.set('CALIBS', calibs)
 
 
-class Custom():
+class Custom:
     """
     Custom class for passing non-JWST functions to all instruments
     Note that we should not have methods that are in JWST or Instrument to
@@ -888,6 +954,7 @@ class JWST(Instrument):
     """
     JWST Instrument class
     """
+
     def __init__(self, params: ParamDict, instrument: str = 'JWST.NONE'):
         super().__init__(params, instrument)
 
@@ -966,14 +1033,13 @@ class JWST(Instrument):
         """
         # set function name
         func_name = f"{__NAME__}.JWST.initialize_detector_data"
-        # get params from step constant
-        run_step, flavour, kwargs, suffix = self.from_step_args(func_name)
-        # deal with skipping step
-        run_step, infiles = self.skip_step(run_step, 'INITIALIZE_DETECTOR_DATA',
-                                           suffix, infiles)
-        # deal with not running this step
-        if not run_step:
-            return infiles
+        # ---------------------------------------------------------------------
+        # Do not modify this step
+        # ---------------------------------------------------------------------
+        # initialize step (do not modify)
+        rkwargs = self.assign_step(infiles, func_name)
+        if not rkwargs['RUN_STEP']: return rkwargs['INFILES']
+        # ---------------------------------------------------------------------
         # get parameters from params
         datadir = self.tparams['PATHS.TEMP_PATH']
         # storage for output files
@@ -983,7 +1049,8 @@ class JWST(Instrument):
             # Read input segments files from disk
             input_data = datamodels.open(filename)
             # Step 1: Group Scale (even if skipped converts ints --> floats)
-            result = GroupScaleStep.call(input_data, save_results=False)
+            result = GroupScaleStep.call(input_data, save_results=False,
+                                         **rkwargs['KWARGS'])
             # Execute the bundled steps in sequence
             result = self._force_float(result)
             # Step 2: DQ Init
@@ -1012,8 +1079,9 @@ class JWST(Instrument):
         :return: list[str], list of output files
         """
         # Raise error - this step should not be called directly anymore
-        emsg = ('group_scale_step is deprecated. Use initialize_detector_data() '
-                'instead, which bundles group_scale + dq_init + emicorr + saturation.')
+        emsg = (
+            'group_scale_step is deprecated. Use initialize_detector_data() '
+            'instead, which bundles group_scale + dq_init + emicorr + saturation.')
         raise ts_base.TSOvoreException(emsg)
 
     def dq_init_step(self, infiles: list) -> list:
@@ -1071,14 +1139,11 @@ class JWST(Instrument):
         # set function name
         func_name = f"{__NAME__}.JWST.apply_interpixel_capacitance"
         # ---------------------------------------------------------------------
-        # get params from step constant
-        run_step, flavour, kwargs, suffix = self.from_step_args(func_name)
-        # deal with skipping step
-        run_step, infiles = self.skip_step(
-            run_step, 'APPLY_INTERPIXEL_CAPACITANCE', suffix, infiles)
-        # deal with not running this step
-        if not run_step:
-            return infiles
+        # Do not modify this step
+        # ---------------------------------------------------------------------
+        # initialize step (do not modify)
+        rkwargs = self.assign_step(infiles, func_name)
+        if not rkwargs['RUN_STEP']: return rkwargs['INFILES']
         # ---------------------------------------------------------------------
         # get parameters from params
         datadir = self.tparams['PATHS.TEMP_PATH']
@@ -1089,7 +1154,7 @@ class JWST(Instrument):
             # Read input segments files from disk
             input_data = datamodels.open(filename)
             result = IPCStep.call(input_data, output_dir=datadir,
-                                  save_results=True, **kwargs)
+                                  save_results=True, **rkwargs['KWARGS'])
             # To limit disk usage, erase the file from the previously saved step
             self.remove_intermediate_files(filename)
             # get output path
@@ -1112,14 +1177,12 @@ class JWST(Instrument):
         # set function name
         func_name = f"{__NAME__}.JWST.remove_first_frame_signal"
         # ---------------------------------------------------------------------
-        # get params from step constant
-        run_step, flavour, kwargs, suffix = self.from_step_args(func_name)
-        # deal with skipping step
-        run_step, infiles = self.skip_step(
-            run_step, 'REMOVE_FIRST_FRAME_SIGNAL', suffix, infiles)
-        # deal with not running this step
-        if not run_step:
-            return infiles
+        # ---------------------------------------------------------------------
+        # Do not modify this step
+        # ---------------------------------------------------------------------
+        # initialize step (do not modify)
+        rkwargs = self.assign_step(infiles, func_name)
+        if not rkwargs['RUN_STEP']: return rkwargs['INFILES']
         # ---------------------------------------------------------------------
         # get parameters from params
         datadir = self.tparams['PATHS.TEMP_PATH']
@@ -1130,7 +1193,7 @@ class JWST(Instrument):
             # Read input segments files from disk
             input_data = datamodels.open(filename)
             result = FirstFrameStep.call(input_data, output_dir=datadir,
-                                         save_results=True, **kwargs)
+                                         save_results=True, **rkwargs['KWARGS'])
             # To limit disk usage, erase the file from the previously saved step
             self.remove_intermediate_files(filename)
             # get output path
@@ -1149,14 +1212,11 @@ class JWST(Instrument):
         # set function name
         func_name = f"{__NAME__}.JWST.remove_last_frame_signal"
         # ---------------------------------------------------------------------
-        # get params from step constant
-        run_step, flavour, kwargs, suffix = self.from_step_args(func_name)
-        # deal with skipping step
-        run_step, infiles = self.skip_step(
-            run_step, 'REMOVE_LAST_FRAME_SIGNAL', suffix, infiles)
-        # deal with not running this step
-        if not run_step:
-            return infiles
+        # Do not modify this step
+        # ---------------------------------------------------------------------
+        # initialize step (do not modify)
+        rkwargs = self.assign_step(infiles, func_name)
+        if not rkwargs['RUN_STEP']: return rkwargs['INFILES']
         # ---------------------------------------------------------------------
         # get parameters from params
         datadir = self.tparams['PATHS.TEMP_PATH']
@@ -1167,7 +1227,7 @@ class JWST(Instrument):
             # Read input segments files from disk
             input_data = datamodels.open(filename)
             result = LastFrameStep.call(input_data, output_dir=datadir,
-                                        save_results=True, **kwargs)
+                                        save_results=True, **rkwargs['KWARGS'])
             # To limit disk usage, erase the file from the previously saved step
             self.remove_intermediate_files(filename)
             # get output path
@@ -1186,14 +1246,11 @@ class JWST(Instrument):
         # set function name
         func_name = f"{__NAME__}.JWST.correct_reset_anomaly"
         # ---------------------------------------------------------------------
-        # get params from step constant
-        run_step, flavour, kwargs, suffix = self.from_step_args(func_name)
-        # deal with skipping step
-        run_step, infiles = self.skip_step(
-            run_step, 'CORRECT_RESET_ANOMALY', suffix, infiles)
-        # deal with not running this step
-        if not run_step:
-            return infiles
+        # Do not modify this step
+        # ---------------------------------------------------------------------
+        # initialize step (do not modify)
+        rkwargs = self.assign_step(infiles, func_name)
+        if not rkwargs['RUN_STEP']: return rkwargs['INFILES']
         # ---------------------------------------------------------------------
         # get parameters from params
         datadir = self.tparams['PATHS.TEMP_PATH']
@@ -1204,7 +1261,7 @@ class JWST(Instrument):
             # Read input segments files from disk
             input_data = datamodels.open(filename)
             result = ResetStep.call(input_data, output_dir=datadir,
-                                    save_results=True, **kwargs)
+                                    save_results=True, **rkwargs['KWARGS'])
             # To limit disk usage, erase the file from the previously saved step
             self.remove_intermediate_files(filename)
             # get output path
@@ -1223,14 +1280,11 @@ class JWST(Instrument):
         # set function name
         func_name = f"{__NAME__}.JWST.apply_linearity_correction"
         # ---------------------------------------------------------------------
-        # get params from step constant
-        run_step, flavour, kwargs, suffix = self.from_step_args(func_name)
-        # deal with skipping step
-        run_step, infiles = self.skip_step(
-            run_step, 'APPLY_LINEARITY_CORRECTION', suffix, infiles)
-        # deal with not running this step
-        if not run_step:
-            return infiles
+        # Do not modify this step
+        # ---------------------------------------------------------------------
+        # initialize step (do not modify)
+        rkwargs = self.assign_step(infiles, func_name)
+        if not rkwargs['RUN_STEP']: return rkwargs['INFILES']
         # ---------------------------------------------------------------------
         # get parameters from params
         datadir = self.tparams['PATHS.TEMP_PATH']
@@ -1241,7 +1295,7 @@ class JWST(Instrument):
             # Read input segments files from disk
             input_data = datamodels.open(filename)
             result = LinearityStep.call(input_data, output_dir=datadir,
-                                        save_results=True, **kwargs)
+                                        save_results=True, **rkwargs['KWARGS'])
             # To limit disk usage, erase the file from the previously saved step
             self.remove_intermediate_files(filename)
             # get output path
@@ -1260,14 +1314,11 @@ class JWST(Instrument):
         # set function name
         func_name = f"{__NAME__}.JWST.apply_rscd_correction"
         # ---------------------------------------------------------------------
-        # get params from step constant
-        run_step, flavour, kwargs, suffix = self.from_step_args(func_name)
-        # deal with skipping step
-        run_step, infiles = self.skip_step(
-            run_step, 'APPLY_RSCD_CORRECTION', suffix, infiles)
-        # deal with not running this step
-        if not run_step:
-            return infiles
+        # Do not modify this step
+        # ---------------------------------------------------------------------
+        # initialize step (do not modify)
+        rkwargs = self.assign_step(infiles, func_name)
+        if not rkwargs['RUN_STEP']: return rkwargs['INFILES']
         # ---------------------------------------------------------------------
         # get parameters from params
         datadir = self.tparams['PATHS.TEMP_PATH']
@@ -1278,7 +1329,7 @@ class JWST(Instrument):
             # Read input segments files from disk
             input_data = datamodels.open(filename)
             result = RscdStep.call(input_data, output_dir=datadir,
-                                   save_results=True, **kwargs)
+                                   save_results=True, **rkwargs['KWARGS'])
             # To limit disk usage, erase the file from the previously saved step
             self.remove_intermediate_files(filename)
             # get output path
@@ -1297,14 +1348,11 @@ class JWST(Instrument):
         # set function name
         func_name = f"{__NAME__}.JWST.subtract_dark_current"
         # ---------------------------------------------------------------------
-        # get params from step constant
-        run_step, flavour, kwargs, suffix = self.from_step_args(func_name)
-        # deal with skipping step
-        run_step, infiles = self.skip_step(
-            run_step, 'SUBTRACT_DARK_CURRENT', suffix, infiles)
-        # deal with not running this step
-        if not run_step:
-            return infiles
+        # Do not modify this step
+        # ---------------------------------------------------------------------
+        # initialize step (do not modify)
+        rkwargs = self.assign_step(infiles, func_name)
+        if not rkwargs['RUN_STEP']: return rkwargs['INFILES']
         # ---------------------------------------------------------------------
         # get parameters from params
         datadir = self.tparams['PATHS.TEMP_PATH']
@@ -1315,7 +1363,8 @@ class JWST(Instrument):
             # Read input segments files from disk
             input_data = datamodels.open(filename)
             result = DarkCurrentStep.call(input_data, output_dir=datadir,
-                                          save_results=True, **kwargs)
+                                          save_results=True,
+                                          **rkwargs['KWARGS'])
             # To limit disk usage, erase the file from the previously saved step
             self.remove_intermediate_files(filename)
             # get output path
@@ -1334,14 +1383,11 @@ class JWST(Instrument):
         # set function name
         func_name = f"{__NAME__}.JWST.apply_reference_pixel_correction"
         # ---------------------------------------------------------------------
-        # get params from step constant
-        run_step, flavour, kwargs, suffix = self.from_step_args(func_name)
-        # deal with skipping step
-        run_step, infiles = self.skip_step(
-            run_step, 'APPLY_REFERENCE_PIXEL_CORRECTION', suffix, infiles)
-        # deal with not running this step
-        if not run_step:
-            return infiles
+        # Do not modify this step
+        # ---------------------------------------------------------------------
+        # initialize step (do not modify)
+        rkwargs = self.assign_step(infiles, func_name)
+        if not rkwargs['RUN_STEP']: return rkwargs['INFILES']
         # ---------------------------------------------------------------------
         # get parameters from params
         datadir = self.tparams['PATHS.TEMP_PATH']
@@ -1352,7 +1398,7 @@ class JWST(Instrument):
             # Read input segments files from disk
             input_data = datamodels.open(filename)
             result = RefPixStep.call(input_data, output_dir=datadir,
-                                     save_results=True, **kwargs)
+                                     save_results=True, **rkwargs['KWARGS'])
             # To limit disk usage, erase the file from the previously saved step
             self.remove_intermediate_files(filename)
             # get output path
@@ -1371,14 +1417,11 @@ class JWST(Instrument):
         # set function name
         func_name = f"{__NAME__}.JWST.correct_charge_migration"
         # ---------------------------------------------------------------------
-        # get params from step constant
-        run_step, flavour, kwargs, suffix = self.from_step_args(func_name)
-        # deal with skipping step
-        run_step, infiles = self.skip_step(
-            run_step, 'CORRECT_CHARGE_MIGRATION', suffix, infiles)
-        # deal with not running this step
-        if not run_step:
-            return infiles
+        # Do not modify this step
+        # ---------------------------------------------------------------------
+        # initialize step (do not modify)
+        rkwargs = self.assign_step(infiles, func_name)
+        if not rkwargs['RUN_STEP']: return rkwargs['INFILES']
         # ---------------------------------------------------------------------
         # get parameters from params
         datadir = self.tparams['PATHS.TEMP_PATH']
@@ -1389,7 +1432,8 @@ class JWST(Instrument):
             # Read input segments files from disk
             input_data = datamodels.open(filename)
             result = ChargeMigrationStep.call(input_data, output_dir=datadir,
-                                              save_results=True, **kwargs)
+                                              save_results=True,
+                                              **rkwargs['KWARGS'])
             # To limit disk usage, erase the file from the previously saved step
             self.remove_intermediate_files(filename)
             # get output path
@@ -1408,14 +1452,11 @@ class JWST(Instrument):
         # set function name
         func_name = f"{__NAME__}.JWST.detect_and_flag_jumps"
         # ---------------------------------------------------------------------
-        # get params from step constant
-        run_step, flavour, kwargs, suffix = self.from_step_args(func_name)
-        # deal with skipping step
-        run_step, infiles = self.skip_step(
-            run_step, 'DETECT_AND_FLAG_JUMPS', suffix, infiles)
-        # deal with not running this step
-        if not run_step:
-            return infiles
+        # Do not modify this step
+        # ---------------------------------------------------------------------
+        # initialize step (do not modify)
+        rkwargs = self.assign_step(infiles, func_name)
+        if not rkwargs['RUN_STEP']: return rkwargs['INFILES']
         # ---------------------------------------------------------------------
         # get parameters from params
         datadir = self.tparams['PATHS.TEMP_PATH']
@@ -1426,7 +1467,7 @@ class JWST(Instrument):
             # Read input segments files from disk
             input_data = datamodels.open(filename)
             result = JumpStep.call(input_data, output_dir=datadir,
-                                   save_results=True, **kwargs)
+                                   save_results=True, **rkwargs['KWARGS'])
             # Note: JumpStep may modify the input file instead of creating
             # new file
             # get output path
@@ -1445,14 +1486,11 @@ class JWST(Instrument):
         # set function name
         func_name = f"{__NAME__}.JWST.remove_flicker_noise"
         # ---------------------------------------------------------------------
-        # get params from step constant
-        run_step, flavour, kwargs, suffix = self.from_step_args(func_name)
-        # deal with skipping step
-        run_step, infiles = self.skip_step(
-            run_step, 'REMOVE_FLICKER_NOISE', suffix, infiles)
-        # deal with not running this step
-        if not run_step:
-            return infiles
+        # Do not modify this step
+        # ---------------------------------------------------------------------
+        # initialize step (do not modify)
+        rkwargs = self.assign_step(infiles, func_name)
+        if not rkwargs['RUN_STEP']: return rkwargs['INFILES']
         # ---------------------------------------------------------------------
         # get parameters from params
         datadir = self.tparams['PATHS.TEMP_PATH']
@@ -1463,7 +1501,8 @@ class JWST(Instrument):
             # Read input segments files from disk
             input_data = datamodels.open(filename)
             result = CleanFlickerNoiseStep.call(input_data, output_dir=datadir,
-                                                save_results=True, **kwargs)
+                                                save_results=True,
+                                                **rkwargs['KWARGS'])
             # To limit disk usage, erase the file from the previously saved step
             self.remove_intermediate_files(filename)
             # get output path
@@ -1482,14 +1521,11 @@ class JWST(Instrument):
         # set function name
         func_name = f"{__NAME__}.JWST.fit_signal_ramps"
         # ---------------------------------------------------------------------
-        # get params from step constant
-        run_step, flavour, kwargs, suffix = self.from_step_args(func_name)
-        # deal with skipping step
-        run_step, infiles = self.skip_step(
-            run_step, 'FIT_SIGNAL_RAMPS', suffix, infiles)
-        # deal with not running this step
-        if not run_step:
-            return infiles
+        # Do not modify this step
+        # ---------------------------------------------------------------------
+        # initialize step (do not modify)
+        rkwargs = self.assign_step(infiles, func_name)
+        if not rkwargs['RUN_STEP']: return rkwargs['INFILES']
         # ---------------------------------------------------------------------
         # get parameters from params
         datadir = self.tparams['PATHS.TEMP_PATH']
@@ -1500,7 +1536,8 @@ class JWST(Instrument):
             # Read input segments files from disk
             input_data = datamodels.open(filename)
             rate, result = RampFitStep.call(input_data, output_dir=datadir,
-                                            save_results=True, **kwargs)
+                                            save_results=True,
+                                            **rkwargs['KWARGS'])
             # To limit disk usage, erase the file from the previously saved step
             self.remove_intermediate_files(filename)
             # get output path
@@ -1519,14 +1556,11 @@ class JWST(Instrument):
         # set function name
         func_name = f"{__NAME__}.JWST.apply_gain_scaling"
         # ---------------------------------------------------------------------
-        # get params from step constant
-        run_step, flavour, kwargs, suffix = self.from_step_args(func_name)
-        # deal with skipping step
-        run_step, infiles = self.skip_step(
-            run_step, 'APPLY_GAIN_SCALING', suffix, infiles)
-        # deal with not running this step
-        if not run_step:
-            return infiles
+        # Do not modify this step
+        # ---------------------------------------------------------------------
+        # initialize step (do not modify)
+        rkwargs = self.assign_step(infiles, func_name)
+        if not rkwargs['RUN_STEP']: return rkwargs['INFILES']
         # ---------------------------------------------------------------------
         # get parameters from params
         datadir = self.tparams['PATHS.TEMP_PATH']
@@ -1537,7 +1571,7 @@ class JWST(Instrument):
             # Read input segments files from disk
             input_data = datamodels.open(filename)
             result = GainScaleStep.call(input_data, output_dir=datadir,
-                                        save_results=True, **kwargs)
+                                        save_results=True, **rkwargs['KWARGS'])
             # To limit disk usage, erase the file from the previously saved step
             self.remove_intermediate_files(filename)
             # get output path
@@ -1556,14 +1590,11 @@ class JWST(Instrument):
         # set function name
         func_name = f"{__NAME__}.JWST.subtract_background"
         # ---------------------------------------------------------------------
-        # get params from step constant
-        run_step, flavour, kwargs, suffix = self.from_step_args(func_name)
-        # deal with skipping step
-        run_step, infiles = self.skip_step(
-            run_step, 'SUBTRACT_BACKGROUND', suffix, infiles)
-        # deal with not running this step
-        if not run_step:
-            return infiles
+        # Do not modify this step
+        # ---------------------------------------------------------------------
+        # initialize step (do not modify)
+        rkwargs = self.assign_step(infiles, func_name)
+        if not rkwargs['RUN_STEP']: return rkwargs['INFILES']
         # ---------------------------------------------------------------------
         # get parameters from params
         datadir = self.tparams['PATHS.TEMP_PATH']
@@ -1574,7 +1605,7 @@ class JWST(Instrument):
             # Read input segments files from disk
             input_data = datamodels.open(filename)
             result = BackgroundStep.call(input_data, output_dir=datadir,
-                                         save_results=True, **kwargs)
+                                         save_results=True, **rkwargs['KWARGS'])
             # To limit disk usage, erase the file from the previously saved step
             self.remove_intermediate_files(filename)
             # get output path
@@ -1593,14 +1624,11 @@ class JWST(Instrument):
         # set function name
         func_name = f"{__NAME__}.JWST.assign_wcs_solution"
         # ---------------------------------------------------------------------
-        # get params from step constant
-        run_step, flavour, kwargs, suffix = self.from_step_args(func_name)
-        # deal with skipping step
-        run_step, infiles = self.skip_step(
-            run_step, 'ASSIGN_WCS_SOLUTION', suffix, infiles)
-        # deal with not running this step
-        if not run_step:
-            return infiles
+        # Do not modify this step
+        # ---------------------------------------------------------------------
+        # initialize step (do not modify)
+        rkwargs = self.assign_step(infiles, func_name)
+        if not rkwargs['RUN_STEP']: return rkwargs['INFILES']
         # ---------------------------------------------------------------------
         # get parameters from params
         datadir = self.tparams['PATHS.TEMP_PATH']
@@ -1611,7 +1639,7 @@ class JWST(Instrument):
             # Read input segments files from disk
             input_data = datamodels.open(filename)
             result = AssignWcsStep.call(input_data, output_dir=datadir,
-                                        save_results=True, **kwargs)
+                                        save_results=True, **rkwargs['KWARGS'])
             # To limit disk usage, erase the file from the previously saved step
             self.remove_intermediate_files(filename)
             # get output path
@@ -1630,15 +1658,11 @@ class JWST(Instrument):
         # set function name
         func_name = f"{__NAME__}.JWST.apply_flat_field"
         # ---------------------------------------------------------------------
-        # get params from step constant
-        run_step, flavour, kwargs, suffix = self.from_step_args(func_name)
-        # deal with skipping step
-        run_step, infiles = self.skip_step(run_step, 'APPLY_FLAT_FIELD',
-                                           suffix, infiles)
-        # deal with not running this step
-        if not run_step:
-            # save output files to {PREFIX}_rateints.fits
-            return infiles
+        # Do not modify this step
+        # ---------------------------------------------------------------------
+        # initialize step (do not modify)
+        rkwargs = self.assign_step(infiles, func_name)
+        if not rkwargs['RUN_STEP']: return rkwargs['INFILES']
         # ---------------------------------------------------------------------
         # get parameters from params
         datadir = self.tparams['PATHS.TEMP_PATH']
@@ -1649,7 +1673,7 @@ class JWST(Instrument):
             # Read input segments files from disk
             input_data = datamodels.open(filename)
             result = FlatFieldStep.call(input_data, output_dir=datadir,
-                                        save_results=True, **kwargs)
+                                        save_results=True, **rkwargs['KWARGS'])
             # To limit disk usage, erase the file from the previously saved step
             self.remove_intermediate_files(filename)
             # get output path
@@ -1668,15 +1692,11 @@ class JWST(Instrument):
         # set function name
         func_name = f"{__NAME__}.JWST.apply_photometric_calibration"
         # ---------------------------------------------------------------------
-        # get params from step constant
-        run_step, flavour, kwargs, suffix = self.from_step_args(func_name)
-        # deal with skipping step
-        run_step, infiles = self.skip_step(
-            run_step, 'APPLY_PHOTOMETRIC_CALIBRATION', suffix, infiles)
-        # deal with not running this step
-        if not run_step:
-            # if we don't run this step return the infiles
-            return infiles
+        # Do not modify this step
+        # ---------------------------------------------------------------------
+        # initialize step (do not modify)
+        rkwargs = self.assign_step(infiles, func_name)
+        if not rkwargs['RUN_STEP']: return rkwargs['INFILES']
         # ---------------------------------------------------------------------
         # get parameters from params
         datadir = self.tparams['PATHS.TEMP_PATH']
@@ -1687,7 +1707,7 @@ class JWST(Instrument):
             # Read input segments files from disk
             input_data = datamodels.open(filename)
             result = PhotomStep.call(input_data, output_dir=datadir,
-                                     save_results=True, **kwargs)
+                                     save_results=True, **rkwargs['KWARGS'])
             # To limit disk usage, erase the file from the previously saved step
             self.remove_intermediate_files(filename)
             # get output path
@@ -1705,14 +1725,13 @@ class JWST(Instrument):
         """
         # set function name
         func_name = f"{__NAME__}.JWST.subtract_superbias"
-        # get params from step constant
-        run_step, flavour, kwargs, suffix = self.from_step_args(func_name)
-        # deal with skipping step
-        run_step, infiles = self.skip_step(
-            run_step, 'SUBTRACT_SUPERBIAS', suffix, infiles)
-        # deal with not running this step
-        if not run_step:
-            return infiles
+        # ---------------------------------------------------------------------
+        # Do not modify this step
+        # ---------------------------------------------------------------------
+        # initialize step (do not modify)
+        rkwargs = self.assign_step(infiles, func_name)
+        if not rkwargs['RUN_STEP']: return rkwargs['INFILES']
+        # ---------------------------------------------------------------------
         # get parameters from params
         datadir = self.tparams['PATHS.TEMP_PATH']
         # storage for output files
@@ -1722,7 +1741,7 @@ class JWST(Instrument):
             # Read input segments files from disk
             input_data = datamodels.open(filename)
             result = SuperBiasStep.call(input_data, output_dir=datadir,
-                                        save_results=True, **kwargs)
+                                        save_results=True, **rkwargs['KWARGS'])
             # To limit disk usage, erase the file from the previously saved step
             self.remove_intermediate_files(filename)
             # get output path
@@ -1740,11 +1759,13 @@ class JWST(Instrument):
         """
         # set function name
         func_name = f"{__NAME__}.JWST.picture_frame_step"
-        # get params from step constant
-        run_step, flavour, kwargs, suffix = self.from_step_args(func_name)
-        # deal with not running this step
-        if not run_step:
-            return infiles
+        # ---------------------------------------------------------------------
+        # Do not modify this step
+        # ---------------------------------------------------------------------
+        # initialize step (do not modify)
+        rkwargs = self.assign_step(infiles, func_name)
+        if not rkwargs['RUN_STEP']: return rkwargs['INFILES']
+        # ---------------------------------------------------------------------
         # NOTE: Picture frame step is not a standard step in JWST pipeline
         msg = 'Picture frame step not implemented in standard JWST pipeline'
         WLOG(self.params, 'warning', msg)
@@ -1759,11 +1780,13 @@ class JWST(Instrument):
         """
         # set function name
         func_name = f"{__NAME__}.JWST.correct_persistence"
-        # get params from step constant
-        run_step, flavour, kwargs, suffix = self.from_step_args(func_name)
-        # deal with not running this step
-        if not run_step:
-            return infiles
+        # ---------------------------------------------------------------------
+        # Do not modify this step
+        # ---------------------------------------------------------------------
+        # initialize step (do not modify)
+        rkwargs = self.assign_step(infiles, func_name)
+        if not rkwargs['RUN_STEP']: return rkwargs['INFILES']
+        # ---------------------------------------------------------------------
         # NOTE: Persistence step is not implemented in standard JWST pipeline
         msg = 'Persistence correction not available in standard JWST pipeline'
         WLOG(self.params, 'warning', msg)
@@ -1781,14 +1804,13 @@ class JWST(Instrument):
         """
         # set function name
         func_name = f"{__NAME__}.JWST.extract_2d_spectrum"
-        # get params from step constant
-        run_step, flavour, kwargs, suffix = self.from_step_args(func_name)
-        # deal with skipping step
-        run_step, infiles = self.skip_step(
-            run_step, 'EXTRACT_2D_SPECTRUM', suffix, infiles)
-        # deal with not running this step
-        if not run_step:
-            return infiles
+        # ---------------------------------------------------------------------
+        # Do not modify this step
+        # ---------------------------------------------------------------------
+        # initialize step (do not modify)
+        rkwargs = self.assign_step(infiles, func_name)
+        if not rkwargs['RUN_STEP']: return rkwargs['INFILES']
+        # ---------------------------------------------------------------------
         # get parameters from params
         datadir = self.tparams['PATHS.TEMP_PATH']
         # storage for output files
@@ -1798,7 +1820,8 @@ class JWST(Instrument):
             # Read input segments files from disk
             input_data = datamodels.open(filename)
             result = Extract2dStep.call(input_data, output_dir=datadir,
-                                        save_results=True, **kwargs)
+                                        save_results=True,
+                                        **rkwargs['KWARGS'])
             # To limit disk usage, erase the file from the previously saved step
             self.remove_intermediate_files(filename)
             # get output path
@@ -1816,14 +1839,13 @@ class JWST(Instrument):
         """
         # set function name
         func_name = f"{__NAME__}.JWST.extract_1d_spectrum"
-        # get params from step constant
-        run_step, flavour, kwargs, suffix = self.from_step_args(func_name)
-        # deal with skipping step
-        run_step, infiles = self.skip_step(
-            run_step, 'EXTRACT_1D_SPECTRUM', suffix, infiles)
-        # deal with not running this step
-        if not run_step:
-            return infiles
+        # ---------------------------------------------------------------------
+        # Do not modify this step
+        # ---------------------------------------------------------------------
+        # initialize step (do not modify)
+        rkwargs = self.assign_step(infiles, func_name)
+        if not rkwargs['RUN_STEP']: return rkwargs['INFILES']
+        # ---------------------------------------------------------------------
         # get parameters from params
         datadir = self.tparams['PATHS.TEMP_PATH']
         # storage for output files
@@ -1833,7 +1855,8 @@ class JWST(Instrument):
             # Read input segments files from disk
             input_data = datamodels.open(filename)
             result = Extract1dStep.call(input_data, output_dir=datadir,
-                                        save_results=True, **kwargs)
+                                        save_results=True,
+                                        **rkwargs['KWARGS'])
             # erase previous step file to limit disk usage
             self.remove_intermediate_files(filename)
             # get output path
@@ -1851,14 +1874,13 @@ class JWST(Instrument):
         """
         # set function name
         func_name = f"{__NAME__}.JWST.srctype_determination"
-        # get params from step constant
-        run_step, flavour, kwargs, suffix = self.from_step_args(func_name)
-        # deal with skipping step
-        run_step, infiles = self.skip_step(
-            run_step, 'SRCTYPE_DETERMINATION', suffix, infiles)
-        # deal with not running this step
-        if not run_step:
-            return infiles
+        # ---------------------------------------------------------------------
+        # Do not modify this step
+        # ---------------------------------------------------------------------
+        # initialize step (do not modify)
+        rkwargs = self.assign_step(infiles, func_name)
+        if not rkwargs['RUN_STEP']: return rkwargs['INFILES']
+        # ---------------------------------------------------------------------
         # get parameters from params
         datadir = self.tparams['PATHS.TEMP_PATH']
         # storage for output files
@@ -1868,7 +1890,8 @@ class JWST(Instrument):
             # Read input segments files from disk
             input_data = datamodels.open(filename)
             result = SourceTypeStep.call(input_data, output_dir=datadir,
-                                         save_results=True, **kwargs)
+                                         save_results=True,
+                                         **rkwargs['KWARGS'])
             # To limit disk usage, erase the file from the previously saved step
             self.remove_intermediate_files(filename)
             # get output path
@@ -1886,14 +1909,13 @@ class JWST(Instrument):
         """
         # set function name
         func_name = f"{__NAME__}.JWST.correct_stray_light"
-        # get params from step constant
-        run_step, flavour, kwargs, suffix = self.from_step_args(func_name)
-        # deal with skipping step
-        run_step, infiles = self.skip_step(
-            run_step, 'CORRECT_STRAY_LIGHT', suffix, infiles)
-        # deal with not running this step
-        if not run_step:
-            return infiles
+        # ---------------------------------------------------------------------
+        # Do not modify this step
+        # ---------------------------------------------------------------------
+        # initialize step (do not modify)
+        rkwargs = self.assign_step(infiles, func_name)
+        if not rkwargs['RUN_STEP']: return rkwargs['INFILES']
+        # ---------------------------------------------------------------------
         # get parameters from params
         datadir = self.tparams['PATHS.TEMP_PATH']
         # storage for output files
@@ -1903,7 +1925,8 @@ class JWST(Instrument):
             # Read input segments files from disk
             input_data = datamodels.open(filename)
             result = StraylightStep.call(input_data, output_dir=datadir,
-                                         save_results=True, **kwargs)
+                                         save_results=True,
+                                         **rkwargs['KWARGS'])
             # To limit disk usage, erase the file from the previously saved step
             self.remove_intermediate_files(filename)
             # get output path
@@ -1921,14 +1944,13 @@ class JWST(Instrument):
         """
         # set function name
         func_name = f"{__NAME__}.JWST.correct_fringe"
-        # get params from step constant
-        run_step, flavour, kwargs, suffix = self.from_step_args(func_name)
-        # deal with skipping step
-        run_step, infiles = self.skip_step(
-            run_step, 'CORRECT_FRINGE', suffix, infiles)
-        # deal with not running this step
-        if not run_step:
-            return infiles
+        # ---------------------------------------------------------------------
+        # Do not modify this step
+        # ---------------------------------------------------------------------
+        # initialize step (do not modify)
+        rkwargs = self.assign_step(infiles, func_name)
+        if not rkwargs['RUN_STEP']: return rkwargs['INFILES']
+        # ---------------------------------------------------------------------
         # get parameters from params
         datadir = self.tparams['PATHS.TEMP_PATH']
         # storage for output files
@@ -1938,7 +1960,7 @@ class JWST(Instrument):
             # Read input segments files from disk
             input_data = datamodels.open(filename)
             result = FringeStep.call(input_data, output_dir=datadir,
-                                     save_results=True, **kwargs)
+                                     save_results=True, **rkwargs['KWARGS'])
             # To limit disk usage, erase the file from the previously saved step
             self.remove_intermediate_files(filename)
             # get output path
@@ -1956,14 +1978,13 @@ class JWST(Instrument):
         """
         # set function name
         func_name = f"{__NAME__}.JWST.correct_path_loss"
-        # get params from step constant
-        run_step, flavour, kwargs, suffix = self.from_step_args(func_name)
-        # deal with skipping step
-        run_step, infiles = self.skip_step(
-            run_step, 'CORRECT_PATH_LOSS', suffix, infiles)
-        # deal with not running this step
-        if not run_step:
-            return infiles
+        # ---------------------------------------------------------------------
+        # Do not modify this step
+        # ---------------------------------------------------------------------
+        # initialize step (do not modify)
+        rkwargs = self.assign_step(infiles, func_name)
+        if not rkwargs['RUN_STEP']: return rkwargs['INFILES']
+        # ---------------------------------------------------------------------
         # get parameters from params
         datadir = self.tparams['PATHS.TEMP_PATH']
         # storage for output files
@@ -1973,7 +1994,7 @@ class JWST(Instrument):
             # Read input segments files from disk
             input_data = datamodels.open(filename)
             result = PathLossStep.call(input_data, output_dir=datadir,
-                                       save_results=True, **kwargs)
+                                       save_results=True, **rkwargs['KWARGS'])
             # To limit disk usage, erase the file from the previously saved step
             self.remove_intermediate_files(filename)
             # get output path
@@ -1991,14 +2012,13 @@ class JWST(Instrument):
         """
         # set function name
         func_name = f"{__NAME__}.JWST.correct_bar_shadow"
-        # get params from step constant
-        run_step, flavour, kwargs, suffix = self.from_step_args(func_name)
-        # deal with skipping step
-        run_step, infiles = self.skip_step(
-            run_step, 'CORRECT_BAR_SHADOW', suffix, infiles)
-        # deal with not running this step
-        if not run_step:
-            return infiles
+        # ---------------------------------------------------------------------
+        # Do not modify this step
+        # ---------------------------------------------------------------------
+        # initialize step (do not modify)
+        rkwargs = self.assign_step(infiles, func_name)
+        if not rkwargs['RUN_STEP']: return rkwargs['INFILES']
+        # ---------------------------------------------------------------------
         # get parameters from params
         datadir = self.tparams['PATHS.TEMP_PATH']
         # storage for output files
@@ -2008,7 +2028,8 @@ class JWST(Instrument):
             # Read input segments files from disk
             input_data = datamodels.open(filename)
             result = BarShadowStep.call(input_data, output_dir=datadir,
-                                        save_results=True, **kwargs)
+                                        save_results=True,
+                                        **rkwargs['KWARGS'])
             # To limit disk usage, erase the file from the previously saved step
             self.remove_intermediate_files(filename)
             # get output path
@@ -2026,14 +2047,13 @@ class JWST(Instrument):
         """
         # set function name
         func_name = f"{__NAME__}.JWST.correct_wfss_contamination"
-        # get params from step constant
-        run_step, flavour, kwargs, suffix = self.from_step_args(func_name)
-        # deal with skipping step
-        run_step, infiles = self.skip_step(
-            run_step, 'CORRECT_WFSS_CONTAMINATION', suffix, infiles)
-        # deal with not running this step
-        if not run_step:
-            return infiles
+        # ---------------------------------------------------------------------
+        # Do not modify this step
+        # ---------------------------------------------------------------------
+        # initialize step (do not modify)
+        rkwargs = self.assign_step(infiles, func_name)
+        if not rkwargs['RUN_STEP']: return rkwargs['INFILES']
+        # ---------------------------------------------------------------------
         # get parameters from params
         datadir = self.tparams['PATHS.TEMP_PATH']
         # storage for output files
@@ -2043,7 +2063,8 @@ class JWST(Instrument):
             # Read input segments files from disk
             input_data = datamodels.open(filename)
             result = WfssContamStep.call(input_data, output_dir=datadir,
-                                         save_results=True, **kwargs)
+                                         save_results=True,
+                                         **rkwargs['KWARGS'])
             # To limit disk usage, erase the file from the previously saved step
             self.remove_intermediate_files(filename)
             # get output path
@@ -2061,14 +2082,13 @@ class JWST(Instrument):
         """
         # set function name
         func_name = f"{__NAME__}.JWST.correct_wavelength"
-        # get params from step constant
-        run_step, flavour, kwargs, suffix = self.from_step_args(func_name)
-        # deal with skipping step
-        run_step, infiles = self.skip_step(
-            run_step, 'CORRECT_WAVELENGTH', suffix, infiles)
-        # deal with not running this step
-        if not run_step:
-            return infiles
+        # ---------------------------------------------------------------------
+        # Do not modify this step
+        # ---------------------------------------------------------------------
+        # initialize step (do not modify)
+        rkwargs = self.assign_step(infiles, func_name)
+        if not rkwargs['RUN_STEP']: return rkwargs['INFILES']
+        # ---------------------------------------------------------------------
         # get parameters from params
         datadir = self.tparams['PATHS.TEMP_PATH']
         # storage for output files
@@ -2078,7 +2098,8 @@ class JWST(Instrument):
             # Read input segments files from disk
             input_data = datamodels.open(filename)
             result = WavecorrStep.call(input_data, output_dir=datadir,
-                                       save_results=True, **kwargs)
+                                       save_results=True,
+                                       **rkwargs['KWARGS'])
             # To limit disk usage, erase the file from the previously saved step
             self.remove_intermediate_files(filename)
             # get output path
@@ -2096,14 +2117,13 @@ class JWST(Instrument):
         """
         # set function name
         func_name = f"{__NAME__}.JWST.subtract_master_background"
-        # get params from step constant
-        run_step, flavour, kwargs, suffix = self.from_step_args(func_name)
-        # deal with skipping step
-        run_step, infiles = self.skip_step(
-            run_step, 'SUBTRACT_MASTER_BACKGROUND', suffix, infiles)
-        # deal with not running this step
-        if not run_step:
-            return infiles
+        # ---------------------------------------------------------------------
+        # Do not modify this step
+        # ---------------------------------------------------------------------
+        # initialize step (do not modify)
+        rkwargs = self.assign_step(infiles, func_name)
+        if not rkwargs['RUN_STEP']: return rkwargs['INFILES']
+        # ---------------------------------------------------------------------
         # get parameters from params
         datadir = self.tparams['PATHS.TEMP_PATH']
         # storage for output files
@@ -2113,7 +2133,8 @@ class JWST(Instrument):
             # Read input segments files from disk
             input_data = datamodels.open(filename)
             result = MasterBackgroundStep.call(input_data, output_dir=datadir,
-                                               save_results=True, **kwargs)
+                                               save_results=True,
+                                               **rkwargs['KWARGS'])
             # To limit disk usage, erase the file from the previously saved step
             self.remove_intermediate_files(filename)
             # get output path
@@ -2143,7 +2164,7 @@ class JWST(Instrument):
         :return: list[str], list of output files
         """
         # set function name
-        func_name = f"{__NAME__}.JWST.correct_residual_fringe"
+        # func_name = f"{__NAME__}.JWST.correct_residual_fringe"
         # NOTE: Residual fringe correction is MIRI-specific and not in standard
         msg = 'Residual fringe correction not in standard JWST pipeline'
         WLOG(self.params, 'warning', msg)
@@ -2158,14 +2179,13 @@ class JWST(Instrument):
         """
         # set function name
         func_name = f"{__NAME__}.JWST.resample_images"
-        # get params from step constant
-        run_step, flavour, kwargs, suffix = self.from_step_args(func_name)
-        # deal with skipping step
-        run_step, infiles = self.skip_step(
-            run_step, 'RESAMPLE_IMAGES', suffix, infiles)
-        # deal with not running this step
-        if not run_step:
-            return infiles
+        # ---------------------------------------------------------------------
+        # Do not modify this step
+        # ---------------------------------------------------------------------
+        # initialize step (do not modify)
+        rkwargs = self.assign_step(infiles, func_name)
+        if not rkwargs['RUN_STEP']: return rkwargs['INFILES']
+        # ---------------------------------------------------------------------
         # get parameters from params
         datadir = self.tparams['PATHS.TEMP_PATH']
         # storage for output files
@@ -2175,7 +2195,7 @@ class JWST(Instrument):
             # Read input segments files from disk
             input_data = datamodels.open(filename)
             result = ResampleStep.call(input_data, output_dir=datadir,
-                                       save_results=True, **kwargs)
+                                       save_results=True, **rkwargs['KWARGS'])
             # To limit disk usage, erase the file from the previously saved step
             self.remove_intermediate_files(filename)
             # get output path
@@ -2237,7 +2257,7 @@ class JWST(Instrument):
         if hasattr(result, 'zeroframe') and result.zeroframe is not None:
             if result.zeroframe.dtype != np.float32:
                 result.zeroframe = result.zeroframe.astype(np.float32,
-                                                            copy=True)
+                                                           copy=True)
         return result
 
 

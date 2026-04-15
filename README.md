@@ -175,6 +175,7 @@ pip install -U -e './pastasoss'
 pip install -U -e './ExoTiC-LD'
 pip install -U -e './sossisse[dev]'
 pip install -U -e './pogos[dev]'
+
 ```
 
 And then proceed with [Setup](#2-setting-up-pogos) and [Running](#3-running-pogos) POGOS.
