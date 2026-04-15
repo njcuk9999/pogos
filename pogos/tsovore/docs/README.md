@@ -78,6 +78,8 @@ All values are the **default** values put into the yaml files - any user can cha
   - If the prefix + suffix or full file name is in the PATHS.TEMP_PATH then this skip wil be skipped. 
   - If filename is None this step can never be skipped - no files are produced (not recommended). 
 
+- IMPORTANT: if `ftype=full` you should always return the infiles
+
 - where `run` is True to run by default (if False by default this step will not be run)
 
 - where `modes` is a list of instrument modes that this step is to be used in. 

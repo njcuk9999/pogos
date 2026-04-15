@@ -31,10 +31,12 @@ WLOG = drs_log.wlog
 Const = constant_functions.Const
 ConstDict = constant_functions.ConstantsDict
 STEP_DESCRIPTION = ('Whether to perform the step: {0}. '
-                    'Each step should contiain the following:'
+                    '\nEach step should contiain the following:'
                     '\n - RUN: bool, whether to run the step'
                     '\n - MODE: str, the mode to use for the step'
-                    '\n - KWARGS: dict, any additional keyword arguments')
+                    '\n - KWARGS: dict, any additional keyword arguments'
+                    '\n - FNAME: str, the suffix/basename to use'
+                    '\n - FTYPE: str, whether FNAME is a suffix or a basename')
 
 
 # =============================================================================
@@ -143,13 +145,14 @@ class Step:
         value['RUN'] = self.run
         value['FLAVOUR'] = self.flavour
         value['KWARGS'] = self.kwargs
-        value['FILENAME'] = self.fname
+        value['FNAME'] = self.fname
         value['FTYPE'] = self.ftype
         # set the description
         description = str(STEP_DESCRIPTION)
         # deal with flvaour descriptions
         for flavour in self.descs:
-            description += f'\n\n{flavour}\n{self.descs[flavour]}\n'
+            description += (f'\nFlavour={flavour} notes:'
+                            f'\n{self.descs[flavour]}\n')
         # generate step name for title
         step_name = self.name.replace('_', ' ').title()
         # push into arguments to add to the call of cdict
@@ -160,6 +163,8 @@ class Step:
         ckwargs['source'] = source
         ckwargs['group'] = group
         ckwargs['description'] = description.format(step_name)
+        ckwargs['user'] = True
+        ckwargs['active'] = True
         # only add modes if we aren't adding all of them
         if len(self.modes) < len(set(pogos_base.INSTRUMENTS)):
             ckwargs['modes'] = self.modes

@@ -51,14 +51,16 @@ class Tso(ts_default.Instrument):
         # FILES CREATED IN: get_spectrace
         # ---------------------------------------------------------------------
         # reminder that spectracename comes from step
-        # self.file_spectracename = {{FROM STEP}}: GET_SPECTRACE
+        # {{FROM STEP}}: GET_SPECTRACE
+        self.file_spectracename = None
 
         # ---------------------------------------------------------------------
         # FILES CREATED IN: stack_multisegments
         # ---------------------------------------------------------------------
         # reminder that deepstack comes from step
         # CREATED IN: soss_correct_badpix
-        # self.file_deepstack = {{FROM STEP}}:STACK_MULTISEGMENTS
+        #  {{FROM STEP}}:STACK_MULTISEGMENTS
+        self.file_deepstack = None
 
         # deepstack rms file
         self.file_deepstack_rms = 'deepstack_rms.fits'
@@ -71,7 +73,9 @@ class Tso(ts_default.Instrument):
         self.file_bpblock_name = 'block_badpix_{num:.0f}_{basename}.fits'
 
         # reminder that badpixinterp comes from step
-        # self.file_badpixinterp =  {{FROM STEP}}:SOSS_CORRECT_BADPIX
+        # {{FROM STEP}}:SOSS_CORRECT_BADPIX
+        # will be a list equal to the number of segments
+        self.file_badpixinterp = []
 
         # bad pixel mask file
         self.file_badpixelmask = '{seg}_badpixelmask.fits'
@@ -105,51 +109,53 @@ class Tso(ts_default.Instrument):
         # Open the pastasoss reference file and find the x, y, throughput info
         ref = datamodels.open(pastasoss_name)
 
-        # spectrace = {
-        #     'x_o1': ref.traces[0].trace[:, 0],
-        #     'x_o2': ref.traces[1].trace[:, 0],
-        #     'x_o3': ref.traces[2].trace[:, 0],
-        #     'y_o1': ref.traces[0].trace[:, 1],
-        #     'y_o2': ref.traces[1].trace[:, 1],
-        #     'y_o3': ref.traces[2].trace[:, 1],
-        #     'wave_o1': ref.throughputs[0].wavelength,
-        #     'wave_o2': ref.throughputs[1].wavelength,
-        #     'wave_o3': ref.throughputs[2].wavelength,
-        #     'throughput_o1': ref.throughputs[0].throughput,
-        #     'throughput_o2': ref.throughputs[1].throughput,
-        #     'throughput_o3': ref.throughputs[2].throughput
-        # }
+        spectrace = {
+            'x_o1': ref.traces[0].trace[:, 0],
+            'x_o2': ref.traces[1].trace[:, 0],
+            'x_o3': ref.traces[2].trace[:, 0],
+            'y_o1': ref.traces[0].trace[:, 1],
+            'y_o2': ref.traces[1].trace[:, 1],
+            'y_o3': ref.traces[2].trace[:, 1],
+            'wave_o1': ref.throughputs[0].wavelength,
+            'wave_o2': ref.throughputs[1].wavelength,
+            'wave_o3': ref.throughputs[2].wavelength,
+            'throughput_o1': ref.throughputs[0].throughput,
+            'throughput_o2': ref.throughputs[1].throughput,
+            'throughput_o3': ref.throughputs[2].throughput
+        }
 
-        # make some tables
-        o_tables = dict()
-        # loop around orders
-        for order_num in range(1, 4):
-            # generate a new table
-            o_table = Table()
-            # get traces
-            otraces = ref.traces[order_num]
-            othroughput = ref.throughputs[order_num]
-            # push values into table
-            o_table[f'x'] = otraces.trace[:, 0]
-            o_table[f'y'] = otraces.trace[:, 1]
-            o_table[f'wave'] = othroughput.wavelength
-            o_table[f'throughput'] = othroughput.throughput
-            # push into our list for output
-            o_tables[f'Ord{order_num}'] = o_table
+        # # make some tables
+        # o_tables = dict()
+        # # loop around orders
+        # for order_num in range(1, 4):
+        #     # generate a new table
+        #     o_table = Table()
+        #     # get traces
+        #     otraces = ref.traces[order_num]
+        #     othroughput = ref.throughputs[order_num]
+        #     # push values into table
+        #     o_table[f'x'] = otraces.trace[:, 0]
+        #     o_table[f'y'] = otraces.trace[:, 1]
+        #     o_table[f'wave'] = othroughput.wavelength
+        #     o_table[f'throughput'] = othroughput.throughput
+        #     # push into our list for output
+        #     o_tables[f'Ord{order_num}'] = o_table
 
         # ---------------------------------------------------------------------
         # deal with saving files
         # ---------------------------------------------------------------------
         # construct the deepstack filename (from STEP)
         spectracename = self.expected_tmp_file(rkwargs)
+        # update file spectracename (for use later)
+        self.file_spectracename = os.path.basename(spectracename)
 
         # Primary HDU of a fits file should be header only
-        hdulist = fits.HDUList([fits.PrimaryHDU])
+        hdulist = fits.HDUList([fits.PrimaryHDU()])
         # push all keys as individual extensions of fits file
-        # for key in spectrace:
-        #     hdulist.append(fits.ImageHDU(spectrace[key], name=key))
-        for o_key in o_tables:
-            hdulist.append(fits.BinTableHDU(o_tables[o_key], name=o_key))
+        for key in spectrace:
+            hdulist.append(fits.ImageHDU(spectrace[key], name=key))
+        # for o_key in o_tables:
+        #     hdulist.append(fits.BinTableHDU(o_tables[o_key], name=o_key))
 
         # write to file
         hdulist.writeto(spectracename, overwrite=True)
@@ -220,7 +226,7 @@ class Tso(ts_default.Instrument):
         for b_it in range(nblocks):
             # ---------------------------------------------------------------------
             # print progress
-            msg = 'Block {:}'.format(b_it + 1)
+            msg = f'Block {b_it + 1} of {nblocks}'
             WLOG(self.params, '', msg)
             # reset the data (to avoid warnings)
             data, mask = np.array([]), np.array([])
@@ -289,9 +295,11 @@ class Tso(ts_default.Instrument):
         # ---------------------------------------------------------------------
         # construct the deepstack filename (from STEP)
         deepstackname = self.expected_tmp_file(rkwargs)
+        # update file deepstack (for use later)
+        self.file_deepstack = os.path.basename(deepstackname)
         # ---------------------------------------------------------------------
         # for the rms file we construct filename ourselfs
-        datadir = self.tparams['PATH.TEMP_PATH']
+        datadir = self.tparams['PATHS.TEMP_PATH']
         rms_out = os.path.join(datadir, self.file_deepstack_rms)
         # ---------------------------------------------------------------------
         if save_results:
@@ -540,6 +548,8 @@ class Tso(ts_default.Instrument):
             skwargs = seg=segment_basename_list[segment]
             # construct seg file (after bad pixel interp) from STEP
             seg_outpath = self.expected_tmp_file(rkwargs, file_num=segment)
+            # update file badpixintrp (for use later)
+            self.file_badpixinterp.append(os.path.basename(seg_outpath))
             # construct mask file
             maskfile = self.file_badpixelmask.format(**skwargs)
             mask_outpath = os.path.join(outdir, maskfile)
@@ -628,7 +638,7 @@ def _badpixel_flag_seconderivative(params, data: np.ndarray,
             msg += f'\n\tddy2_nsigma = {ddy2_nsigma}'
             WLOG(params, '', msg)
             # Primary HDU of a fits file should be header only
-            hdulist = fits.HDUList([fits.PrimaryHDU])
+            hdulist = fits.HDUList([fits.PrimaryHDU()])
             # Add all other extensions
             hdulist.append(fits.ImageHDU(data[it], name='DATA'))
             hdulist.append(fits.ImageHDU(flags[it], name='FLAGS'))

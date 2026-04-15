@@ -147,7 +147,8 @@ def setup_sossisse_module(params: ParamDict, cdict):
     msg = 'Re-saving constants to yaml file after SOSSISSE setup: {0}'
     WLOG(params, '', msg.format(os.path.realpath(yaml_file)))
     # save the constants dictionary to yaml file
-    cdict.save_yaml(params, outpath=yaml_file, log=False)
+    cdict.save_yaml(params, outpath=yaml_file, log=False,
+                    mode=params['GLOBAL.INSTRUMENTMODE'])
     # -------------------------------------------------------------------------
     # return the parameters
     return params

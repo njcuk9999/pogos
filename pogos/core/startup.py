@@ -176,7 +176,8 @@ def setup(params: ParamDict, start_from_demo: bool = True):
             demo_id = params['DEMO_PARAMS']['ID']
             cdict.title += '\n\n Based on demo ID: {0}'.format(demo_id)
     # save the constants dictionary to yaml file
-    cdict.save_yaml(params, outpath=yaml_file, log=False)
+    cdict.save_yaml(params, outpath=yaml_file, log=False,
+                    mode=params['GLOBAL.INSTRUMENTMODE'])
     # return the constants dictionary class
     return cdict
 

@@ -769,7 +769,7 @@ class Instrument:
         # get the ftype
         ftype = rkwargs.get('FTYPE', 'suffix')
         # get the fname if we don't have it create it
-        fname = rkwargs.get('FNAME', f'_{Time.now.fits()}')
+        fname = rkwargs.get('FNAME', f'_{Time.now().fits}')
         # deal with a ftype == full
         if ftype == 'full':
             expected_base_name = fname
@@ -817,6 +817,8 @@ class Instrument:
         # func_name = f"{__NAME__}.Instrument.skip_step"
         # update step name
         step_name = rkwargs['STEP_NAME']
+        # set the instrument mode
+        inst_mode = self.params['GLOBAL.INSTRUMENTMODE']
         # if we are already not running step then we don't need to check skips
         if not rkwargs['RUN_STEP']:
             return rkwargs
@@ -828,7 +830,7 @@ class Instrument:
             return rkwargs
         # skip if we are not in the correct mode
         if 'MODE' in rkwargs and rkwargs['MODE'] is not None:
-            if self.params['INSTRUMENT'] not in rkwargs['MODE']:
+            if inst_mode not in rkwargs['MODE']:
                 rkwargs['RUN_STEP'] = False
                 return rkwargs
         # ---------------------------------------------------------------------
@@ -855,7 +857,9 @@ class Instrument:
                    f'\n\tSkipping step "{step_name}".')
             WLOG(self.params, '', msg)
             rkwargs['RUN_STEP'] = False
-            rkwargs['INFILES'] = expected_files
+            # only if we used the suffix for do we return the files
+            if rkwargs['FTYPE'] == 'suffix':
+                rkwargs['INFILES'] = expected_files
         # return the (possibly updated)
         return rkwargs
 
