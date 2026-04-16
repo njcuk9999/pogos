@@ -63,7 +63,7 @@ class Tso(ts_default.Instrument):
         self.file_deepstack = None
 
         # deepstack rms file
-        self.file_deepstack_rms = 'deepstack_rms.fits'
+        self.file_deepstack_rms = '{cprefix}_deepstack_rms.fits'
 
         # ---------------------------------------------------------------------
         # FILES CREATED IN: soss_correct_badpix
@@ -74,14 +74,13 @@ class Tso(ts_default.Instrument):
 
         # reminder that badpixinterp comes from step
         # {{FROM STEP}}:SOSS_CORRECT_BADPIX
-        # will be a list equal to the number of segments
-        self.file_badpixinterp = []
+        self.file_badpixinterp = None
 
-        # bad pixel mask file
+        # bad pixel mask file [one per segment]
         self.file_badpixelmask = '{seg}_badpixelmask.fits'
 
         # second derivatives file (for NINT=3 only??)
-        self.file_secondderiv = 'toto_secondderivatives.fits'
+        self.file_secondderiv = '{cprefix}_secondderivatives.fits'
 
     # -------------------------------------------------------------------------
     # SOSS functions
@@ -146,8 +145,6 @@ class Tso(ts_default.Instrument):
         # ---------------------------------------------------------------------
         # construct the deepstack filename (from STEP)
         spectracename = self.expected_tmp_file(rkwargs)
-        # update file spectracename (for use later)
-        self.file_spectracename = os.path.basename(spectracename)
 
         # Primary HDU of a fits file should be header only
         hdulist = fits.HDUList([fits.PrimaryHDU()])
@@ -295,12 +292,13 @@ class Tso(ts_default.Instrument):
         # ---------------------------------------------------------------------
         # construct the deepstack filename (from STEP)
         deepstackname = self.expected_tmp_file(rkwargs)
-        # update file deepstack (for use later)
-        self.file_deepstack = os.path.basename(deepstackname)
         # ---------------------------------------------------------------------
         # for the rms file we construct filename ourselfs
         datadir = self.tparams['PATHS.TEMP_PATH']
-        rms_out = os.path.join(datadir, self.file_deepstack_rms)
+
+        cprefix = self.variables['COMMON_PREFIX']
+        rms_filename = self.file_deepstack_rms.format(cprefix=cprefix)
+        rms_out = os.path.join(datadir, rms_filename)
         # ---------------------------------------------------------------------
         if save_results:
             # save results to fits files
@@ -462,10 +460,13 @@ class Tso(ts_default.Instrument):
                 data[i_start-1:i_end, :, :] = data_tmp
                 dq[i_start-1:i_end, :, :] = dq_tmp
             # -----------------------------------------------------------------
+            # set the second deriviate filename
+            cprefix = self.variables['COMMON_PREFIX']
+            secondderiv_file = self.file_secondderiv.format(cprefix=cprefix)
             # Now run the bad pixel flagging on the block containing all
             # integrations in the TSO for these pixels.
             bp = _badpixel_flag_seconderivative(self.params, data,
-                                                self.file_secondderiv,
+                                                secondderiv_file,
                                                 ddx2_nsigma=ddx2_nsigma,
                                                 ddy2_nsigma=ddy2_nsigma)
             # -----------------------------------------------------------------
@@ -482,7 +483,7 @@ class Tso(ts_default.Instrument):
             # -----------------------------------------------------------------
             # Now save this block on disk in nblok separate files.
             # Later stage will merge those into segment files.
-            fits.writeto(bpblock_name_list[b_it], datacorr, overwrite=True)
+            fits.writeto(block_name_list[b_it], datacorr, overwrite=True)
             # -----------------------------------------------------------------
             # Delete big arrays to reduce memory usage
             del bp, data, dq, datacorr
@@ -535,7 +536,7 @@ class Tso(ts_default.Instrument):
                 # Assign corrected pixels with a DQ = 0
                 seg.dq[:,:,firstcol:lastcol] = 0
                 # Do the same for the bad pixel file
-                thisblock = fits.getdata(bpblock_name_list[nblok])
+                thisblock = fits.getdata(bpblock_name_list[b_it])
                 karray = np.array(thisblock[i_start - 1:i_end, :, :])
                 badpix_segment[:,:,firstcol:lastcol] = karray
             # -----------------------------------------------------------------
@@ -545,11 +546,9 @@ class Tso(ts_default.Instrument):
                 WLOG(self.params, 'warning', msg)
             # -----------------------------------------------------------------
             # construct dict for file args
-            skwargs = seg=segment_basename_list[segment]
+            skwargs = dict(seg=segment_basename_list[segment])
             # construct seg file (after bad pixel interp) from STEP
             seg_outpath = self.expected_tmp_file(rkwargs, file_num=segment)
-            # update file badpixintrp (for use later)
-            self.file_badpixinterp.append(os.path.basename(seg_outpath))
             # construct mask file
             maskfile = self.file_badpixelmask.format(**skwargs)
             mask_outpath = os.path.join(outdir, maskfile)
@@ -563,11 +562,12 @@ class Tso(ts_default.Instrument):
             # -----------------------------------------------------------------
             # write update seg file
             seg.write(seg.meta.filename)
+            outfiles.append(seg.meta.filename)
             # TODO: Is there a better way to do this and preserve the seg
             #       file - maybe we need to copy the datamodel somehow?
             shutil.copy(seg.meta.filename, seg_outpath)
             # write mask file
-            fits.writeto(mask_outpath, maskfile, overwrite=True)
+            fits.writeto(mask_outpath, badpix_segment, overwrite=True)
             # -----------------------------------------------------------------
             # TODO: Loic, erase the temporary block files from disk once this
             #  step has been debugged
@@ -672,7 +672,7 @@ def _interpolate_badpixels_cubic(params, image_3d: np.ndarray,
 
     for it in range(nint):
         # print progress
-        msg = 'interpolate_badpixels_cubic - integration {it+1} of {nint}'
+        msg = f'[interp|badc] integration {it+1} of {nint}'
         WLOG(params, '', msg)
         # Determine the integration indices to retain in the medianing
         imin = max([0, it - integ_halfwidth])
@@ -695,7 +695,7 @@ def _interpolate_badpixels_cubic(params, image_3d: np.ndarray,
         n_nans = np.sum(~np.isfinite(integ_median))
         # -----------------------------------------------------------------
         # print progress
-        msg = ('interpolate_badpixels_cubic - number of NaNs in the '
+        msg = ('[interp|badc] number of NaNs in the '
                f'image to interpolate from: {n_nans}')
         WLOG(params, '', msg)
         # -----------------------------------------------------------------
@@ -726,7 +726,7 @@ def _interpolate_badpixels_cubic(params, image_3d: np.ndarray,
             num_nans = np.sum(~np.isfinite(val_best))
             # -------------------------------------------------------------
             # print progress
-            msg = ('interpolate_badpixels_cubic - remaining number of '
+            msg = ('[interp|badc] remaining number of '
                    f'bad pixels after griddata correction: {num_nans}')
             WLOG(params, '', msg)
             # -------------------------------------------------------------
@@ -734,7 +734,7 @@ def _interpolate_badpixels_cubic(params, image_3d: np.ndarray,
             datacorr[icur, badpix_y, badpix_x] = np.array(toto)
         else:
             # print progress - no nans remain
-            msg = ('interpolate_badpixels_cubic - no NaN remaining after '
+            msg = ('[interp|badc] no NaN remaining after '
                    'griddata correction')
             WLOG(params, '', msg)
             # -------------------------------------------------------------
@@ -743,7 +743,7 @@ def _interpolate_badpixels_cubic(params, image_3d: np.ndarray,
         # -----------------------------------------------------------------
         # print the number of nans left after full process
         num_nans = np.sum(~np.isfinite(datacorr[icur, :, :]))
-        msg = ('interpolate_badpixels_cubic - remaining number of bad '
+        msg = ('[interp|badc] remaining number of bad '
                f'pixels in the end: {num_nans}')
         WLOG(params, '', msg)
         # -----------------------------------------------------------------

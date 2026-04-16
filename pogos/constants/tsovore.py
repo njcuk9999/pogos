@@ -231,13 +231,13 @@ STEPS.add_step(name='APPLY_RSCD_CORRECTION',
 # - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
 # Build deepstack spectrace product
 STEPS.add_step(name='GET_SPECTRACE',
-               flavour='tso', fname='spectrace0.fits',
-               ftype='full', run=True,
+               flavour='tso', fname='_spectrace0.fits',
+               ftype='common', run=True,
                modes=['JWST.NIRISS.SOSS'])
 # Stack multisegment deepstack products
 STEPS.add_step(name='STACK_MULTISEGMENTS',
-               flavour='tso', fname='deepstack.fits',
-               ftype='full', run=True,
+               flavour='tso', fname='_deepstack.fits',
+               ftype='common', run=True,
                modes=['JWST.NIRISS.SOSS'])
 # - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
 # Apply reference pixel correction

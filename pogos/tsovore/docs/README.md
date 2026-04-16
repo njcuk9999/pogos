@@ -70,6 +70,10 @@ All values are the **default** values put into the yaml files - any user can cha
   - Note this can be used so we have two or more "ways" of processing inside the step. 
   - One could imagine having a step name that is already suitable for the task at hand and one wants to give two ways of doing this. 
 
+- where `fype` controls what is expected in `fname`
+  - if `ftype='suffix'` then `fname` is a suffix appended to each infile prefix
+  - if `ftype='common'` then `fname` is a suffix appended to the common prefix of all files
+
 - where `fname`+`ftype` is usually the suffix appended to the end of the prefixes 
 (prefixes are the basename before `_uncal.fits`)
   - if this step produces one file per `uncal` file this is the preferred method (and you must set `ftype=suffix`). 

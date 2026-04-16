@@ -69,7 +69,8 @@ class StepList:
 
 
     def add_step(self, name: str, flavour: str,
-                 fname: str, ftype: Literal['suffix', 'full'],
+                 fname: str,
+                 ftype: Literal['suffix', 'common', 'full'],
                  run: bool = True,
                  modes: Optional[List[str]] = None,
                  descs: Optional[Dict[str, str]] = None):
@@ -89,7 +90,8 @@ class StepList:
 
 class Step:
     def __init__(self, name: str, flavour: str,
-                 fname: str, ftype: Literal['suffix', 'full'],
+                 fname: str,
+                 ftype: Literal['suffix', 'common', 'full'],
                  run: bool = True,
                  modes: Optional[List[str]] = None,
                  descs: Optional[Dict[str, str]] = None):

@@ -92,6 +92,7 @@ class Instrument:
         # push into variables
         self.variables.set('ABSFILES', [], source=func_name)
         self.variables.set('PREFIXES', [], source=func_name)
+        self.variables.set('COMMON_PREFIX', '', source=func_name)
         self.variables.set('NSEGMENTS', 0, source=func_name)
         # variable to return tsovore output files to other modules
         self.variables.set('OUT', [], source=func_name)
@@ -774,11 +775,11 @@ class Instrument:
         if ftype == 'full':
             expected_base_name = fname
         # if file_num is None we use the first prefix
-        elif file_num is None:
+        elif file_num is None or ftype == 'common':
             # get variables from self
-            prefixes = self.variables['PREFIXES']
+            prefix = self.variables['COMMON_PREFIX']
             # construct expected output filename
-            expected_base_name = prefixes[0] + fname
+            expected_base_name = prefix + fname
         else:
             # get variables from self
             prefixes = self.variables['PREFIXES']
@@ -998,6 +999,11 @@ class JWST(Instrument):
         # get the number of segments
         nsegments = len(input_absfiles)
         # ----------------------------------------------------------------------
+        # deal with common prefix
+        input_common_prefix = os.path.commonprefix(input_prefixes)
+        if len(input_common_prefix) == 0:
+            input_common_prefix = str(Time.now().fits)
+        # ----------------------------------------------------------------------
         # print progress
         msg = 'Found {0} input files'.format(nsegments)
         WLOG(self.params, 'info', msg)
@@ -1005,6 +1011,8 @@ class JWST(Instrument):
         # push into variables
         self.variables.set('ABSFILES', input_absfiles, source=func_name)
         self.variables.set('PREFIXES', input_prefixes, source=func_name)
+        self.variables.set('COMMON_PREFIX', input_common_prefix,
+                           source=func_name)
         self.variables.set('NSEGMENTS', nsegments, source=func_name)
 
         return input_absfiles
@@ -1472,8 +1480,8 @@ class JWST(Instrument):
             input_data = datamodels.open(filename)
             result = JumpStep.call(input_data, output_dir=datadir,
                                    save_results=True, **rkwargs['KWARGS'])
-            # Note: JumpStep may modify the input file instead of creating
-            # new file
+            # To limit disk usage, erase the file from the previously saved step
+            self.remove_intermediate_files(filename)
             # get output path
             outfile = self.get_output_path(it, datadir, result.meta.filename)
             outfiles.append(outfile)
