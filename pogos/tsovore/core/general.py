@@ -78,6 +78,8 @@ def run_tsovore(params: ParamDict) -> ts_default.JWST:
     inst = ts_select.load_instrument(params)
     # run the tsovore processing
     inst.process()
+    # summary step
+    inst.summary()
     # return parameters
     return inst
 

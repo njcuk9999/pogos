@@ -53,6 +53,7 @@ from aperocore.core import drs_log
 from pogos.core import base as pogos_base
 from pogos.core import io as pogos_io
 from pogos.tsovore.core import base as ts_base
+from pogos.core import flow as pogos_flow
 
 # =============================================================================
 # Define variables
@@ -112,6 +113,31 @@ class Instrument:
         # raise not implemented error
         nmsg = NOT_IMPLEMENTED_MSG.format(func_name, self.instrument)
         raise NotImplemented(nmsg)
+
+    def summary(self):
+        # if there is no history don't do this step
+        if len(self.history) == 0:
+            return
+        # setup title
+        title = f'TSOVORE Flow'
+        title += f'\n{self.tparams["GENEARL.SUBDIRECTORY"]}'
+        title += f'\n{self.tparams["GENERAL.DESCRIPTION"]}'
+
+        # starting box
+        start = f'INST[{self.params["INPUTS.INSTRUMENTMODE"]}] uncal.fits'
+        # outpath
+        outdir = self.tparams['PATHS.OUTPUT_PATH']
+        outfile = f'flow_{str(Time.now().fits)}.pdf'
+        outpath = os.path.join(outdir, outfile)
+
+        # print progres
+        msg = (f'Generating flow graph for {self.instrument} -'
+               f' {len(self.history)} steps')
+        WLOG(self.params, '', msg)
+        # run flow graph
+        pogos_flow.generate_flow_pdf(title=title, start=start,
+                                     steps=self.history,
+                                     outpath=outpath)
 
     # -------------------------------------------------------------------------
     # Define science methods
