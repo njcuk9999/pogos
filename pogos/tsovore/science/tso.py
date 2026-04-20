@@ -47,6 +47,10 @@ class Tso(ts_default.Instrument):
         # set filenames (to be able to access throughout)
         # Please note that one file MUST be set via STEP
         # (usually the most important or last file)
+
+        # hack for custom step file names
+        self.file_seg_tmp = '{seg}_lastframe.fits'
+
         # ---------------------------------------------------------------------
         # FILES CREATED IN: get_spectrace
         # ---------------------------------------------------------------------
@@ -510,7 +514,7 @@ class Tso(ts_default.Instrument):
             i_start = (np.cumsum(segments_nints[:segment + 1]) + 1)[segment]
             i_end = (np.cumsum(segments_nints[:segment + 2]))[segment + 1]
             # create a file to store this segment's bad pixels
-            badpix_segment = seg.data*0
+            badpix_segment = np.zeros_like(seg.data)
             # -----------------------------------------------------------------
             #if (i_start is None) & (i_end is None):
             if nsegments == 1:
@@ -561,18 +565,49 @@ class Tso(ts_default.Instrument):
             # seg.meta.filename = seg_file
             # -----------------------------------------------------------------
             # write update seg file
-            seg.write(seg.meta.filename)
-            outfiles.append(seg.meta.filename)
+            seg.write(seg_outpath)
+
             # TODO: Is there a better way to do this and preserve the seg
             #       file - maybe we need to copy the datamodel somehow?
-            shutil.copy(seg.meta.filename, seg_outpath)
+            # shutil.copy(seg.meta.filename, seg_outpath)
+            # hack for jwst steps to work
+            tmp_path = self._tmp_path(seg_outpath, skwargs)
+            outfiles.append(tmp_path)
+            # -----------------------------------------------------------------
             # write mask file
             fits.writeto(mask_outpath, badpix_segment, overwrite=True)
             # -----------------------------------------------------------------
             # TODO: Loic, erase the temporary block files from disk once this
             #  step has been debugged
-
+        # ---------------------------------------------------------------------
+        for filename in postrampfitting_list:
+            # To limit disk usage, erase the file from the previously saved step
+            self.remove_intermediate_files(filename)
         return outfiles
+
+    def _tmp_path(self, infile: str, skwargs) -> str:
+        """
+        Hack path so next jwst step will work with a required suffix
+
+        :param infile: str, the file we want to work in the next step
+        :param skwargs: kwargs to pass to the temp file (via string.format)
+
+        :return: None, copies infile to our "temporary file"
+        """
+        #Establish what the directory is and the basename for the files
+        # as well as the names of temporary block files.
+        outdir = self.tparams['PATHS.TEMP_PATH']
+        # ---------------------------------------------------------------------
+        # hack - the jwst steps need a known suffix
+        tmp_file = self.file_seg_tmp.format(**skwargs)
+        tmp_path = os.path.join(outdir, tmp_file)
+        # remove tmp_path if it exists
+        if os.path.exists(tmp_path):
+            os.remove(tmp_path)
+        # copy infile over tmp_path
+        shutil.copy(infile, tmp_path)
+        # ---------------------------------------------------------------------
+        return tmp_path
 
 
 # =============================================================================

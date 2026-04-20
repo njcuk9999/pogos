@@ -294,7 +294,7 @@ STEPS.add_step(name='FIT_SIGNAL_RAMPS',
                modes=STEPS.all_modes())
 # Apply gain scaling
 STEPS.add_step(name='APPLY_GAIN_SCALING',
-               flavour='jwst', fname='_gainscalestep.fits',
+               flavour='jwst', fname='_1_gainscalestep.fits',
                ftype='suffix', run=True,
                modes=STEPS.not_modes('JWST.MIRI.IMAGING'))
 # -----------------------------------------------------------------------------
@@ -322,7 +322,7 @@ STEPS.add_step(name='SOSS_CORRECT_BADPIX',
                modes=['JWST.NIRISS.SOSS'])
 # Determine source type
 STEPS.add_step(name='SRCTYPE_DETERMINATION',
-               flavour='jwst', fname='_srctypestep.fits',
+               flavour='jwst', fname='_sourcetypestep.fits',
                ftype='suffix', run=True,
                modes=STEPS.not_modes('JWST.MIRI.IMAGING'))
 # Extract 1D spectrum
