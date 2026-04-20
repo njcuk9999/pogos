@@ -167,6 +167,7 @@ class Step:
         ckwargs['description'] = description.format(step_name)
         ckwargs['user'] = True
         ckwargs['active'] = True
+        ckwargs['tex_arg'] = True
         # only add modes if we aren't adding all of them
         if len(self.modes) < len(set(pogos_base.INSTRUMENTS)):
             ckwargs['modes'] = self.modes

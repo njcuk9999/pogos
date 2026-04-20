@@ -19,6 +19,7 @@ from typing import Any, Dict, List
 import numpy as np
 from astropy.time import Time
 from astropy.io import fits
+from astropy.table import Table
 
 from aperocore.base import base as aperobase
 from aperocore.constants.constant_functions import ConstantsDict
@@ -52,10 +53,21 @@ HTML_TEMPLATE_FILE = os.path.join(PACKAGE_PATH, 'resources',
 # all valid file extensions to include in html file list (not plots)
 FILE_EXTS = ['.csv', '.fits', '.h5', '.txt', '.tex', '.dat', '.rdb']
 
-# =============================================================================
-# Define variables
-# =============================================================================
-
+# Customize LaTeX output for tex out table
+LATEX_DICT = {
+    # outer environment
+    'tabletype': 'table',
+    # column format with vertical lines
+    'col_align': '|l|r|',
+    # before header row
+    'header_start': r'\hline',
+    # after header row
+    'header_end': r'\hline',
+    # after all data
+    'data_end': r'\hline',
+    # caption text
+    'caption': f'POGOS ({__version__}) parameters used for this run',
+}
 
 # -----------------------------------------------------------------------------
 
@@ -352,6 +364,49 @@ def save_fits(params: ParamDict, filename: str, datalist: List[Any],
         emsg = 'Error saving data to file: {0}\n\t{1}: {2}'
         eargs = [filename, type(e), str(e)]
         raise base.PogosException(emsg.format(*eargs))
+
+
+def save_table(params: ParamDict, filename: str,
+               data: Table, fmt: str = 'csv', **kwargs):
+    """
+    Save the table to a file
+
+    :param params: ParamDict, the parameter dictionary of constants
+    :param filename: str, the filename to save to
+    :param data: Table, the astropy table to save
+    :param fmt: str, the format to save the table in
+    :param kwargs: additional keyword arguments to pass to Table.write()
+
+    :return:
+    """
+    # print progres
+    msg = 'Saving table to file: {0}'
+    WLOG(params, '', msg.format(filename))
+    # try to save the data
+    try:
+        data.write(filename, format=fmt, overwrite=True,
+                   **kwargs)
+    except Exception as e:
+        emsg = 'Error saving table to file: {0}\n\t{1}: {2}'
+        eargs = [filename, type(e), str(e)]
+        raise base.PogosException(emsg.format(*eargs))
+
+
+def out_tex_file(params: ParamDict, tex_file: str,
+                 module_str: str):
+    """
+    Make a tex file (table) of the parameters used
+
+    :param params: ParamDict, the parameter dictionary of constants
+    :param tex_file: str, the tex file to save
+
+    :return: None saves the tex file to disk
+    """
+    # get tex file snapshot table
+    tsnapshot = params.out_tex_file(key_filter=module_str)
+    # write to latex table
+    save_table(params, tex_file, tsnapshot, fmt='ascii.latex',
+               latexdict=LATEX_DICT)
 
 
 # =============================================================================

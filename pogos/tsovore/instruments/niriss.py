@@ -169,6 +169,8 @@ class NirissSoss(ts_default.JWST, tso.Tso):
         self.add_calib('X1D', x1d_files)
 
 
+
+
 class NirissSossSuperstripe(NirissSoss):
     """
     NIRISS SOSS Superstripe mode processing.

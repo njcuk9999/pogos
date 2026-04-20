@@ -51,6 +51,7 @@ from jwst.wfss_contam import WfssContamStep
 from aperocore.constants import param_functions
 from aperocore.core import drs_log
 from pogos.core import base as pogos_base
+from pogos.core import io as pogos_io
 from pogos.tsovore.core import base as ts_base
 
 # =============================================================================
@@ -924,8 +925,27 @@ class Instrument:
         # deal with a single string
         if isinstance(outfiles, str):
             outfiles = [outfiles]
+        # set the new path
+        newpath = self.tparams['PATHS.OUTPUT_PATH']
+        # storage for output
+        newfiles = []
+        # copy outfiles to output directory
+        for outfile in outfiles:
+            # construct new path
+            newfile = os.path.basename(outfile)
+            # construct absolute path
+            newabspath = os.path.join(newpath, newfile)
+            # print progess
+            msg = f'Copying {newfile} to {newabspath}'
+            WLOG(self.params, '', msg)
+            # copying file
+            shutil.copy(outfile, newabspath)
+            # append to storage
+            newfiles.append(newabspath)
         # set OUT in variables
-        self.variables.set('OUT', outfiles)
+        self.variables.set('OUT', newfiles)
+        # save a tex
+        self.out_tex_file()
 
     def add_calib(self, key: str, calfile: str):
         """
@@ -944,6 +964,22 @@ class Instrument:
         calibs[key] = calfile
         # set CALIBS in variables
         self.variables.set('CALIBS', calibs)
+
+    def out_tex_file(self):
+        """
+        Use ParamDicts build in latex table functionality to produce
+        a latex table of the parameters used in this run
+
+        :return: None, saves a tex table to OUT_TEX_FILE
+        """
+        # get text file name
+        filename = f'params_{str(Time.now().fits)}.tex'
+        # set file path
+        outpath = self.tparams['PATHS.OUTPUT_PATH']
+        # construct absolute path
+        filepath = os.path.join(outpath, filename)
+        # save tex file
+        pogos_io.out_tex_file(self.params, filepath, module_str='TSOVORE')
 
 
 class Custom:
