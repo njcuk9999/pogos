@@ -88,7 +88,10 @@ class Instrument:
         self.params = params
         self.tparams = params.get('TSOVORE')
         # history (to show which steps were actually used)
-        self.history = []
+        # this should be a dictionary where keys are the steps (str)
+        #   and the value is True if step was used / False if it was skipped
+        #   steps that were never used/can never be used should not be added
+        self.history: Dict[str, bool] = dict()
         # store variables to be used throughout the code
         self.variables = ParamDict()
         # push into variables
@@ -120,11 +123,11 @@ class Instrument:
             return
         # setup title
         title = f'TSOVORE Flow'
-        title += f'\n{self.tparams["GENEARL.SUBDIRECTORY"]}'
+        title += f'\n{self.tparams["GENERAL.SUBDIRECTORY"]}'
         title += f'\n{self.tparams["GENERAL.DESCRIPTION"]}'
 
         # starting box
-        start = f'INST[{self.params["INPUTS.INSTRUMENTMODE"]}] uncal.fits'
+        start = f'INST[{self.tparams["INPUTS.INSTRUMENTMODE"]}] uncal.fits'
         # outpath
         outdir = self.tparams['PATHS.OUTPUT_PATH']
         outfile = f'flow_{str(Time.now().fits)}.pdf'
@@ -682,6 +685,8 @@ class Instrument:
         datadir = self.tparams['PATHS.TEMP_PATH']
         # storage for OUT variable
         out_files = []
+        # storage of whether we used this step
+        used_step = False
         # loop around files
         for it, filename in enumerate(infiles):
             # construct new filename
@@ -717,8 +722,13 @@ class Instrument:
                 WLOG(self.params, 'info', msg)
                 # copy the file
                 shutil.copy(filename, new_filename)
+                # update used status
+                used_step = True
+
             # save files to list
             out_files.append(new_filename)
+        # update history (only if file is copied)
+        self.history[f'STEP.SAVE_{suffix.upper()}'] = used_step
 
         return out_files
 
@@ -900,8 +910,7 @@ class Instrument:
         rkwargs = self.skip_step(rkwargs)
         # ---------------------------------------------------------------------
         # update history
-        if rkwargs['RUN_STEP']:
-            self.history.append(rkwargs['STEP_NAME'])
+        self.history[rkwargs['STEP_NAME']] = rkwargs['RUN_STEP']
         # ---------------------------------------------------------------------
         return rkwargs
 
@@ -970,6 +979,8 @@ class Instrument:
             newfiles.append(newabspath)
         # set OUT in variables
         self.variables.set('OUT', newfiles)
+        # update history
+        self.history['STEP.ADD_OUTPUTS'] = True
         # save a tex
         self.out_tex_file()
 
@@ -1033,6 +1044,8 @@ class JWST(Instrument):
         """
         # set function name
         func_name = f"{__NAME__}.JWST.handle_input_data"
+        # update history (this is always run)
+        self.history['STEP.HANDLE_INPUT_DATA'] = True
         # get the input file directory
         input_dir = self.tparams['PATHS.INPUT_PATH']
         # Get the input files

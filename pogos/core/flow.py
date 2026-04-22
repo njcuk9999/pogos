@@ -10,7 +10,7 @@ from __future__ import annotations
 import csv
 import textwrap
 from pathlib import Path
-from typing import List, Optional, Sequence, Tuple
+from typing import List, Mapping, Optional, Sequence, Tuple
 
 import yaml
 from matplotlib import pyplot as plt
@@ -36,22 +36,24 @@ __date__ = __YAML__['DRS.DATE']
 __release__ = __YAML__['DRS.RELEASE']
 
 
-def _validate_inputs(title: str, start: str, steps: Sequence[str],
-                     outpath: str) -> Tuple[List[str], Path]:
+def _validate_inputs(title: str, start: str, steps: Mapping[str, bool],
+                     outpath: str) -> Tuple[List[str], List[Optional[bool]], Path]:
     """Validate and normalize public API inputs."""
     if not isinstance(title, str) or not title.strip():
         raise ValueError('title must be a non-empty string')
     if not isinstance(start, str) or not start.strip():
         raise ValueError('start must be a non-empty string')
-    if steps is None:
-        steps = []
-    if not isinstance(steps, Sequence) or isinstance(steps, (str, bytes)):
-        raise TypeError('steps must be a sequence of strings')
+    if not isinstance(steps, Mapping):
+        raise TypeError('steps must be a mapping of {step_name: bool}')
     normalized_steps: List[str] = []
-    for index, step in enumerate(steps):
-        if not isinstance(step, str) or not step.strip():
-            raise ValueError(f'steps[{index}] must be a non-empty string')
-        normalized_steps.append(step.strip())
+    statuses: List[Optional[bool]] = [None]
+    for step_name, step_used in steps.items():
+        if not isinstance(step_name, str) or not step_name.strip():
+            raise ValueError('all step names must be non-empty strings')
+        if not isinstance(step_used, bool):
+            raise TypeError(f'step "{step_name}" value must be bool')
+        normalized_steps.append(step_name.strip())
+        statuses.append(step_used)
 
     output_path = Path(outpath)
     if not output_path.is_absolute():
@@ -61,56 +63,93 @@ def _validate_inputs(title: str, start: str, steps: Sequence[str],
         output_path = output_path.with_suffix('.pdf')
 
     items = [start.strip()] + normalized_steps
-    return items, output_path
+    return items, statuses, output_path
 
 
-def _compute_layout(n_items: int) -> Tuple[float, float]:
-    """Compute rectangle height and inter-box spacing in axis coordinates."""
-    if n_items <= 0:
-        raise ValueError('n_items must be > 0')
-    y_bottom = 0.08
-    y_top = 0.9
+def _compute_layout(line_counts: Sequence[int], y_top: float,
+                    y_bottom: float = 0.08) -> Tuple[List[float], float, float]:
+    """Compute adaptive box heights and spacing in axis coordinates."""
+    if not line_counts:
+        raise ValueError('line_counts must not be empty')
     available_height = y_top - y_bottom
-    spacing_ratio = 0.6
-    box_height = available_height / (n_items + spacing_ratio * (n_items - 1))
-    box_height = max(0.035, min(0.14, box_height))
-    spacing = box_height * spacing_ratio
-    return box_height, spacing
+    if available_height <= 0.1:
+        raise ValueError('not enough vertical space for flow rendering')
+
+    base_height = 0.040
+    extra_per_line = 0.016
+    raw_heights = [base_height + extra_per_line * (n_lines - 1)
+                   for n_lines in line_counts]
+    spacing = 0.022
+    total_height = sum(raw_heights) + spacing * (len(raw_heights) - 1)
+
+    box_fontsize = 9.0
+    if total_height > available_height:
+        # Scale uniformly when content exceeds available page height.
+        scale = available_height / total_height
+        raw_heights = [height * scale for height in raw_heights]
+        spacing *= scale
+        box_fontsize = max(6.5, box_fontsize * scale)
+
+    return raw_heights, spacing, box_fontsize
 
 
-def _draw_flow_page(title: str, items: Sequence[str], pdf: PdfPages) -> None:
+def _draw_flow_page(title: str, items: Sequence[str],
+                    statuses: Sequence[Optional[bool]], pdf: PdfPages) -> None:
     """Render a single-page linear flow diagram into the PDF."""
+    if len(items) != len(statuses):
+        raise ValueError('items and statuses must have the same length')
+
     fig, ax = plt.subplots(figsize=(8.5, 11.0))
     ax.set_xlim(0, 1)
     ax.set_ylim(0, 1)
     ax.axis('off')
 
-    ax.text(0.5, 0.965, title, ha='center', va='top', fontsize=18,
+    title_fontsize = 12
+    ax.text(0.5, 0.97, title, ha='center', va='top', fontsize=title_fontsize,
             fontweight='bold')
+
+    title_lines = max(1, len(title.splitlines()))
+    title_line_height = 0.028
+    y_top_start = 0.97 - title_lines * title_line_height - 0.02
 
     box_width = 0.72
     x_left = (1.0 - box_width) / 2.0
     x_center = 0.5
+
+    wrapped_texts = [textwrap.fill(raw_text, width=42) for raw_text in items]
+    line_counts = [text.count('\n') + 1 for text in wrapped_texts]
+    box_heights, spacing, box_fontsize = _compute_layout(line_counts,
+                                                         y_top=y_top_start)
     n_items = len(items)
-    box_height, spacing = _compute_layout(n_items)
-    y_top_start = 0.88
+
     current_top = y_top_start
 
-    for index, raw_text in enumerate(items):
+    for index, wrapped in enumerate(wrapped_texts):
+        box_height = box_heights[index]
         y_bottom = current_top - box_height
+        status = statuses[index]
+        if status is True:
+            facecolor = '#eadcff'  # light purple for steps that ran
+            linestyle = 'solid'
+        elif status is False:
+            facecolor = '#fff8cc'  # light yellow for skipped steps
+            linestyle = ':'
+        else:
+            facecolor = 'white'
+            linestyle = 'solid'
         rect = Rectangle((x_left, y_bottom), box_width, box_height,
-                         linewidth=1.5, edgecolor='black', facecolor='white')
+                         linewidth=1.3, edgecolor='black', facecolor=facecolor,
+                         linestyle=linestyle)
         ax.add_patch(rect)
 
-        wrapped = textwrap.fill(raw_text, width=42)
         ax.text(x_center, y_bottom + box_height / 2.0, wrapped,
-                ha='center', va='center', fontsize=10)
+                ha='center', va='center', fontsize=box_fontsize)
 
         if index < n_items - 1:
             next_top = current_top - box_height - spacing
             arrow = FancyArrowPatch((x_center, y_bottom), (x_center, next_top),
-                                    arrowstyle='-|>', mutation_scale=14,
-                                    linewidth=1.4, color='black')
+                                    arrowstyle='-|>', mutation_scale=10,
+                                    linewidth=0.9, color='black')
             ax.add_patch(arrow)
 
         current_top = current_top - box_height - spacing
@@ -150,11 +189,11 @@ def _draw_table_pages(title: str, csv_path: Path, pdf: PdfPages,
         table_title = (
             f'{title}\nCSV: {csv_path.name} (table page {page_index + 1}/{n_pages})'
         )
-        ax.set_title(table_title, fontsize=12, pad=18)
+        ax.set_title(table_title, fontsize=10, pad=16)
 
         table = ax.table(cellText=page_rows, loc='center', cellLoc='left')
         table.auto_set_font_size(False)
-        table.set_fontsize(8)
+        table.set_fontsize(7)
         table.scale(1, 1.2)
 
         for col in range(len(header)):
@@ -166,7 +205,7 @@ def _draw_table_pages(title: str, csv_path: Path, pdf: PdfPages,
         plt.close(fig)
 
 
-def generate_flow_pdf(title: str, start: str, steps: List[str], outpath: str,
+def generate_flow_pdf(title: str, start: str, steps: Mapping[str, bool], outpath: str,
                       csv_path: Optional[str] = None) -> Path:
     """Generate a flow diagram PDF and optionally append CSV table pages.
 
@@ -176,8 +215,9 @@ def generate_flow_pdf(title: str, start: str, steps: List[str], outpath: str,
         Document heading shown on the flow page.
     start : str
         First flow box text.
-    steps : List[str]
-        Linear ordered steps following the start box.
+    steps : Mapping[str, bool]
+        Ordered step map where keys are step names and values indicate whether
+        the step ran (True) or was skipped (False).
     outpath : str
         Absolute path to output PDF.
     csv_path : Optional[str], default=None
@@ -188,11 +228,12 @@ def generate_flow_pdf(title: str, start: str, steps: List[str], outpath: str,
     Path
         Final output path to the generated PDF.
     """
-    items, output_path = _validate_inputs(title=title, start=start,
-                                          steps=steps, outpath=outpath)
+    items, statuses, output_path = _validate_inputs(title=title, start=start,
+                                                    steps=steps,
+                                                    outpath=outpath)
     # all inside the pdf pages matplotlib backend
     with PdfPages(output_path) as pdf:
-        _draw_flow_page(title=title, items=items, pdf=pdf)
+        _draw_flow_page(title=title, items=items, statuses=statuses, pdf=pdf)
         if csv_path is not None:
             _draw_table_pages(title=title, csv_path=Path(csv_path), pdf=pdf)
 
@@ -207,7 +248,12 @@ if __name__ == "__main__":
     generate_flow_pdf(
         title='POGOS Linear Flow Demo',
         start='Start processing',
-        steps=['Load data', 'Calibrate', 'Extract products', 'Publish outputs'],
+        steps={
+            'Load data': True,
+            'Calibrate': True,
+            'Extract products': False,
+            'Publish outputs': True,
+        },
         outpath=str(demo_out),
         csv_path=None,
     )
