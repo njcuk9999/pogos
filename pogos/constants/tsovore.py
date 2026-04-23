@@ -231,12 +231,12 @@ STEPS.add_step(name='APPLY_RSCD_CORRECTION',
 # - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
 # Build deepstack spectrace product
 STEPS.add_step(name='GET_SPECTRACE',
-               flavour='tso', fname='_spectrace0.fits',
+               flavour='tsovore', fname='_spectrace0.fits',
                ftype='common', run=True,
                modes=['JWST.NIRISS.SOSS'])
 # Stack multisegment deepstack products
 STEPS.add_step(name='STACK_MULTISEGMENTS',
-               flavour='tso', fname='_deepstack.fits',
+               flavour='tsovore', fname='_deepstack.fits',
                ftype='common', run=True,
                modes=['JWST.NIRISS.SOSS'])
 # - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
@@ -317,7 +317,7 @@ STEPS.add_step(name='APPLY_FLAT_FIELD',
                modes=STEPS.all_modes())
 # SOSS Background correction
 STEPS.add_step(name='SOSS_CORRECT_BADPIX',
-               flavour='tso', fname='_badpixinterp.fits',
+               flavour='tsovore', fname='_badpixinterp.fits',
                ftype='suffix', run=True,
                modes=['JWST.NIRISS.SOSS'])
 # Determine source type
