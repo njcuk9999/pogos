@@ -728,7 +728,8 @@ class Instrument:
             # save files to list
             out_files.append(new_filename)
         # update history (only if file is copied)
-        self.history[f'STEP.SAVE_{suffix.upper()}'] = used_step
+        step_key = f'STEP.SAVE_{suffix.upper().strip("_")}'
+        self.history[step_key] = used_step
 
         return out_files
 
@@ -910,7 +911,7 @@ class Instrument:
         rkwargs = self.skip_step(rkwargs)
         # ---------------------------------------------------------------------
         # update history
-        step_name = f'{rkwargs["STEP_NAME"]} ({rkwargs["FLAVOUR"]}'
+        step_name = f'{rkwargs["STEP_NAME"]} ({rkwargs["FLAVOUR"]})'
         self.history[step_name] = rkwargs['RUN_STEP']
         # ---------------------------------------------------------------------
         return rkwargs
