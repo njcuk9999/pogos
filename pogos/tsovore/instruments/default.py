@@ -910,7 +910,8 @@ class Instrument:
         rkwargs = self.skip_step(rkwargs)
         # ---------------------------------------------------------------------
         # update history
-        self.history[rkwargs['STEP_NAME']] = rkwargs['RUN_STEP']
+        step_name = f'{rkwargs["STEP_NAME"]} ({rkwargs["FLAVOUR"]}'
+        self.history[step_name] = rkwargs['RUN_STEP']
         # ---------------------------------------------------------------------
         return rkwargs
 
