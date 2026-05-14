@@ -17,7 +17,7 @@ dependencies = [
         "juliet==2.2.10",
         "jwst==1.20.2",
         # "crds==12.1.1",
-        "numpy==2.3.4",
+        "numpy==2.3.3",
         "astropy==7.2.0",
         "corner==2.2.3",
         # batman-package on PyPI uses NPY_1_7_API_VERSION which breaks numpy 2.x on macOS.
@@ -26,7 +26,7 @@ dependencies = [
         "batman-package @ git+https://github.com/lkreidberg/batman.git@3c69c4381d9785cd4d06e898c2cdf83b22ffb365",
 
         "ipython==8.32.0",
-        "scipy==1.17.1",
+        "scipy==1.17.0",
         "matplotlib==3.10.8",
         "notebook==7.5.4",
         "prompt_toolkit==3.0.50",
