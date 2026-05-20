@@ -626,6 +626,25 @@ def check_red_steps(params: ParamDict):
             raise pogos_base.PogosException(emsg.format(*margs))
 
 
+def check_crds(params: ParamDict):
+
+    check1 = 'CRDS_PATH' in os.environ
+    check2 = 'CRDS_SERVER_URL' in os.environ
+
+    if check1 and check2:
+        WLOG(params, 'info', 'Previous CRDS setup detected')
+        return
+
+    # construct crds path
+    crds_path = os.path.join(params['GLOABL.DATA_PATH'], 'crds')
+    # make sure directory exists
+    if not os.path.exists(crds_path):
+        os.makedirs(crds_path)
+    # push into environment
+    os.environ['CRDS_PATH'] = os.path.realpath(crds_path)
+    os.environ['CRDS_SERVER_URL'] = 'https://jwst-crds.stsci.edu'
+
+
 # =============================================================================
 # Quick argument functionality
 # =============================================================================

@@ -89,6 +89,9 @@ def __main__(**kwargs):
     load_functions.download_data(params, demolocal=demolocal,
                                  demosymlink=demosymlink)
     # -------------------------------------------------------------------------
+    # Check CRDS setup
+    startup.check_crds(params)
+    # -------------------------------------------------------------------------
     # Tell user to look at the yaml file created
     msg = 'Please review the yaml file created at:'
     msg += '\n  {0} \n\n You can now run POGOS with'

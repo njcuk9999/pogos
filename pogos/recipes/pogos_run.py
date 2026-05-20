@@ -71,6 +71,9 @@ def main(**kwargs):
     msg = f'Using yaml file: {os.path.realpath(params["GLOBAL.YAML_FILE"])}'
     WLOG(params, 'info', msg)
     # -------------------------------------------------------------------------
+    # Check CRDS setup
+    startup.check_crds(params)
+    # -------------------------------------------------------------------------
     # Make sure runs are not None - this means something is very wrong with
     # the yaml file
     for run_key in list(pogos_base.RUN_KEYS.keys()):
