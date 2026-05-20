@@ -636,7 +636,7 @@ def check_crds(params: ParamDict):
         return
 
     # construct crds path
-    crds_path = os.path.join(params['GLOABL.DATA_PATH'], 'crds')
+    crds_path = os.path.join(params['GLOBAL.DATA_PATH'], 'crds')
     # make sure directory exists
     if not os.path.exists(crds_path):
         os.makedirs(crds_path)
