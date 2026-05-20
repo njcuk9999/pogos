@@ -165,13 +165,14 @@ def tsovore_input(params: ParamDict,
     if sossisse_params is None:
         # we assume that if SOSSISSE is not there we don't want to run this
         return
-    # convert to independent parameter dictionary
-    sparams = sossisse_params.as_param_dict()
     # -------------------------------------------------------------------------
     # get tsovore files to copy
     tsovore_outputs = tsovore_inst.variables['OUT']
     # set the output files as input to SOSSISSE
-    sossisse_params['GENERAL']['FILES'] = tsovore_outputs
+    sossisse_params['GENERAL.FILES'] = tsovore_outputs
+    # -------------------------------------------------------------------------
+    # convert to independent parameter dictionary
+    sparams = sossisse_params.as_param_dict()
     # ---------------------------------------------------------------------
     # prepare input directory
     sparams = const_funcs.run_time_params(sparams, only_create=True)
