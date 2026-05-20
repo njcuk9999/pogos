@@ -171,7 +171,7 @@ def tsovore_input(params: ParamDict,
     # get tsovore files to copy
     tsovore_outputs = tsovore_inst.variables['OUT']
     # set the output files as input to SOSSISSE
-    sossisse_params['INPUTS']['FILES'] = tsovore_outputs
+    sossisse_params['GENERAL']['FILES'] = tsovore_outputs
     # ---------------------------------------------------------------------
     # prepare input directory
     sparams = const_funcs.run_time_params(sparams, only_create=True)
