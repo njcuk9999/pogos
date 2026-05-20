@@ -16,7 +16,8 @@ import sys
 import time
 from typing import Any, List
 
-import crds
+from crds.client import api as crds_api
+from crds.core import utils as crds_utils
 from astropy.time import Time
 from pogos.constants import constants as pogo_constants
 from pogos.core import base as pogos_base
@@ -627,30 +628,67 @@ def check_red_steps(params: ParamDict):
             raise pogos_base.PogosException(emsg.format(*margs))
 
 
-def check_crds(params: ParamDict):
+def _propagate_crds_setup(crds_path: str, server_url: str):
+    """
+    Push CRDS configuration into the environment and refresh CRDS runtime
+    state so already-imported CRDS/JWST modules see the updated settings.
 
+    :param crds_path: str, CRDS cache root path
+    :param server_url: str, CRDS server URL
+    :return: tuple[str, str], normalized path and server URL
+    """
+    # normalize inputs
+    crds_path = os.path.realpath(crds_path)
+    server_url = server_url.rstrip('/')
+
+    # clear any derived CRDS path variables so CRDS_PATH is the single source
+    # of truth for this runtime session
+    for env_name in list(os.environ.keys()):
+        if env_name.startswith('CRDS_') and 'PATH' in env_name:
+            os.environ.pop(env_name, None)
+
+    # push into environment
+    os.environ['CRDS_PATH'] = crds_path
+    os.environ['CRDS_SERVER_URL'] = server_url
+
+    # CRDS keeps an in-memory server proxy once configured, so update it
+    # explicitly for already-imported modules.
+    crds_api.set_crds_server(server_url)
+
+    # CRDS also memoizes a number of environment-dependent lookups (used by
+    # stpipe/JWST as well), so clear those caches after updating the runtime
+    # configuration.
+    for cached_function in list(crds_utils.CachedFunction.cache_set):
+        cached_function.cache.clear()
+
+    return crds_path, server_url
+
+
+def check_crds(params: ParamDict):
+    # use any pre-existing CRDS setup if available, otherwise fall back to the
+    # POGOS-managed cache inside the data directory
     check1 = 'CRDS_PATH' in os.environ
     check2 = 'CRDS_SERVER_URL' in os.environ
+    crds_path = os.environ.get('CRDS_PATH',
+                               os.path.join(params['GLOBAL.DATA_PATH'],
+                                            'crds'))
+    server_url = os.environ.get('CRDS_SERVER_URL',
+                                'https://jwst-crds.stsci.edu')
 
-    if check1 and check2:
-        WLOG(params, 'info', 'Previous CRDS setup detected')
-        return
-
-    # construct crds path
-    crds_path = os.path.join(params['GLOBAL.DATA_PATH'], 'crds')
     # make sure directory exists
     if not os.path.exists(crds_path):
         os.makedirs(crds_path)
-    # push into environment
-    os.environ['CRDS_PATH'] = os.path.realpath(crds_path)
-    os.environ['CRDS_SERVER_URL'] = 'https://jwst-crds.stsci.edu'
-    # As JWST may alreaday have been imported we need to clear the cache of
-    # crds
-    # Blow away the internal CRDS function caches manually
-    crds.client.api.get_server_info.cache = {}
-    crds.client.api.get_base_url.cache = {}
-    # Force CRDS config state to re-evaluate the environment
-    crds.config.initialized = False
+
+    if check1 and check2:
+        WLOG(params, 'info', 'Previous CRDS setup detected')
+    else:
+        WLOG(params, 'info', 'Configuring CRDS runtime')
+
+    crds_path, server_url = _propagate_crds_setup(crds_path, server_url)
+    msg = 'Using CRDS cache: {0}\nUsing CRDS server: {1}'
+    WLOG(params, 'info', msg.format(crds_path, server_url))
+
+
 
 # =============================================================================
 # Quick argument functionality
