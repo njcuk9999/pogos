@@ -173,6 +173,9 @@ def tsovore_input(params: ParamDict,
     # -------------------------------------------------------------------------
     # convert to independent parameter dictionary
     sparams = sossisse_params.as_param_dict()
+    # -------------------------------------------------------------------------
+    # set the source of the parameters (POGOS)
+    sparams['__SOURCE__'] = 'POGOS'
     # ---------------------------------------------------------------------
     # prepare input directory
     sparams = const_funcs.run_time_params(sparams, only_create=True)
