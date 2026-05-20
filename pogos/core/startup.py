@@ -646,7 +646,11 @@ def check_crds(params: ParamDict):
     os.environ['CRDS_SERVER_URL'] = 'https://jwst-crds.stsci.edu'
     # As JWST may alreaday have been imported we need to clear the cache of
     # crds
-    crds.client.api.get_server_info.cache_clear()
+    # Blow away the internal CRDS function caches manually
+    crds.client.api.get_server_info.cache = {}
+    crds.client.api.get_base_url.cache = {}
+    # Force CRDS config state to re-evaluate the environment
+    crds.config.initialized = False
 
 # =============================================================================
 # Quick argument functionality
