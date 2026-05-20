@@ -180,14 +180,14 @@ def tsovore_input(params: ParamDict,
     # prepare input directory
     sparams = const_funcs.run_time_params(sparams, only_create=True)
     # Get the SOSSISSE input directory
-    sossisse_input_dir = sparams['PATHS.RAWPATH']
+    sossisse_input_dir = str(sparams['PATHS.RAWPATH'])
     # ---------------------------------------------------------------------
     # copy files to SOSSISSE input location
     for tsovore_output in tsovore_outputs:
         # get the filename
-        filename = os.path.basename(tsovore_output)
+        filename = str(os.path.basename(tsovore_output))
         # define source and destination
-        source = str(os.path.join(tsovore_outputs, filename))
+        source = str(os.path.join(tsovore_output, filename))
         dest = str(os.path.join(sossisse_input_dir, filename))
         # log the copy
         msg = f'Copying TSOVORE output file to SOSSISSE input: {filename}'
@@ -198,7 +198,7 @@ def tsovore_input(params: ParamDict,
     # copy calibration files
     if 'X1D' in tsovore_inst.variables['CALIBS']:
         # get the calibration file
-        calib_file = tsovore_inst.variables['CALIBS']['X1D']
+        calib_file = str(tsovore_inst.variables['CALIBS']['X1D'])
         # get the sossisse calibration directory
         calib_dir = sparams['PATHS.CALIBPATH']
         # define source and destination
