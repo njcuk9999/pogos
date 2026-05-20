@@ -12,21 +12,22 @@ Created on 2024-10-29 at 10:16
 import glob
 import os
 import string
-import time
 import sys
+import time
 from typing import Any, List
 
+import crds
 from astropy.time import Time
+from pogos.constants import constants as pogo_constants
+from pogos.core import base as pogos_base
+from pogos.resources import demos as demo_mod
 
+from aperocore.base import base as aperocore_base
 from aperocore.constants import load_functions
 from aperocore.constants import param_functions
 from aperocore.core import drs_log
 from aperocore.core import drs_text
-from aperocore.base import base as aperocore_base
 from pogos import constants
-from pogos.constants import constants as pogo_constants
-from pogos.core import base as pogos_base
-from pogos.resources import demos as demo_mod
 
 # =============================================================================
 # Define variables
@@ -643,7 +644,9 @@ def check_crds(params: ParamDict):
     # push into environment
     os.environ['CRDS_PATH'] = os.path.realpath(crds_path)
     os.environ['CRDS_SERVER_URL'] = 'https://jwst-crds.stsci.edu'
-
+    # As JWST may alreaday have been imported we need to clear the cache of
+    # crds
+    crds.client.api.get_server_info.cache_clear()
 
 # =============================================================================
 # Quick argument functionality
