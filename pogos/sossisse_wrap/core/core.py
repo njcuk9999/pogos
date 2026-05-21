@@ -220,6 +220,12 @@ def tsovore_input(params: ParamDict,
             # update the SOSSISSE wavelength solution file type
             sossisse_params['INPUTS.WAVE_FILE_TYPE'] = 'ext_1d'
     # ---------------------------------------------------------------------
+    # push back into sossisse_params (for return) - as before this only in
+    # sparams (due to being populated in run_time_params)
+    for key in sparams:
+        if sossisse_params[key] is None and sparams[key] is not None:
+            sossisse_params[key] = sparams[key]
+    # ---------------------------------------------------------------------
     # return params
     return sossisse_params
 
