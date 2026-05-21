@@ -223,7 +223,9 @@ def tsovore_input(params: ParamDict,
     # push back into sossisse_params (for return) - as before this only in
     # sparams (due to being populated in run_time_params)
     for key in sparams:
-        if sossisse_params[key] is None and sparams[key] is not None:
+        if key not in sossisse_params:
+            sossisse_params[key] = sparams[key]
+        elif sossisse_params[key] is None and sparams[key] is not None:
             sossisse_params[key] = sparams[key]
     # ---------------------------------------------------------------------
     # return params
