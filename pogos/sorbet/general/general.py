@@ -204,7 +204,7 @@ def sossisse_input(params: ParamDict,
         params.set_source('SORBET.WLCA.INPUT_FILE', func_name)
     # ---------------------------------------------------------------------
     # deal with SLCA files
-    if sb_params['SLCA.RUN']:
+    if params['RUN.SORBET.SLCA']:
         # prepare input directory
         prepare_directories(params, method='SLCA', verbose=False)
         # get the sorbet input directory for SLCA
