@@ -216,9 +216,9 @@ def tsovore_input(params: ParamDict,
             # copy file
             shutil.copy(source, dest)
             # update the SOSSISSE wavelength solution file
-            sossisse_params['INPUTS.WAVE_FILE'] = os.path.basename(calib_file)
+            sossisse_params['GENERAL.WAVE_FILE'] = os.path.basename(calib_file)
             # update the SOSSISSE wavelength solution file type
-            sossisse_params['INPUTS.WAVE_FILE_TYPE'] = 'ext_1d'
+            sossisse_params['GENERAL.WAVE_FILE_TYPE'] = 'ext_1d'
     # ---------------------------------------------------------------------
     # push back into sossisse_params (for return) - as before this only in
     # sparams (due to being populated in run_time_params)
