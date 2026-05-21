@@ -198,7 +198,7 @@ def tsovore_input(params: ParamDict,
     # copy calibration files
     if 'X1D' in tsovore_inst.variables['CALIBS']:
         # get the calibration file
-        calib_files = str(tsovore_inst.variables['CALIBS']['X1D'])
+        calib_files = tsovore_inst.variables['CALIBS']['X1D']
         # deal with string / list
         if isinstance(calib_files, str):
             calib_files = [calib_files]
