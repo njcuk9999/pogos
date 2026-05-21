@@ -187,7 +187,7 @@ def tsovore_input(params: ParamDict,
         # get the filename
         filename = str(os.path.basename(tsovore_output))
         # define source and destination
-        source = str(os.path.join(tsovore_output, filename))
+        source = str(tsovore_output)
         dest = str(os.path.join(sossisse_input_dir, filename))
         # log the copy
         msg = f'Copying TSOVORE output file to SOSSISSE input: {filename}'
