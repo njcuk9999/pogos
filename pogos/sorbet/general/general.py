@@ -17,6 +17,7 @@ from typing import Any, Dict, Optional
 import numpy as np
 
 from aperocore.constants.param_functions import ParamDict
+from aperocore.constants import load_functions
 from aperocore.core import drs_log
 from aperocore.core import drs_misc
 from pogos.core import base as pogos_base
@@ -111,7 +112,7 @@ def run_sorbet_module(params: ParamDict, ext_inst: Dict[str, Any]):
     func_name = f'{__NAME__}.run_sorbet_module'
     # -------------------------------------------------------------------------
     # get the instances from the pre-extraction step
-    sossisse_inst = ext_inst.get('tsovore', None)
+    sossisse_inst = ext_inst.get('sossisse', None)
     miriam_params = ext_inst.get('miriam', None)
     # -------------------------------------------------------------------------
     # Check at least one recipe is set to run
@@ -170,12 +171,22 @@ def sossisse_input(params: ParamDict,
     sossisse_output_dir = sossisse_inst.params['PATHS.OUT_PATH']
     # get sorbet parameters
     sb_params = params.get('SORBET')
-    # get sossisse
+    # get sossisse parameters
+    s_params = params.get('SOSSISSE')
     # get sossisse files to copy
     sossisse_wlc_file = sossisse_inst.get_variable('OUT_WLC_FILE',
                                                    func_name)
     sossisse_spec_lc_file = sossisse_inst.get_variable('OUT_SPEC_LC_FILE',
                                                        func_name)
+    # -------------------------------------------------------------------------
+    # get the prefix used for the sossisse files
+    sossisse_prefix = s_params['GENERAL.PREFIX']
+    if sossisse_prefix is None:
+        sossisse_prefix = load_functions.common_prefix(s_params['GENERAL.FILES'])
+    # add the prefix to wlc and spec file
+    sossisse_wlc_file = sossisse_wlc_file.format(prefix=sossisse_prefix)
+    sossisse_spec_lc_file = sossisse_spec_lc_file.format(prefix=sossisse_prefix)
+
     # ---------------------------------------------------------------------
     # deal with WLCA files
     if params['RUN.SORBET.WLCA']:
