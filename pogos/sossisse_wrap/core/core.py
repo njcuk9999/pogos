@@ -198,22 +198,27 @@ def tsovore_input(params: ParamDict,
     # copy calibration files
     if 'X1D' in tsovore_inst.variables['CALIBS']:
         # get the calibration file
-        calib_file = str(tsovore_inst.variables['CALIBS']['X1D'])
-        # get the sossisse calibration directory
-        calib_dir = sparams['PATHS.CALIBPATH']
-        # define source and destination
-        source = str(calib_file)
-        dest = str(os.path.join(calib_dir, os.path.basename(calib_file)))
-        # log the copy
-        msg = (f'Copying TSOVORE calibration file to SOSSISSE calib dir: '
-               f'{os.path.basename(calib_file)}')
-        WLOG(params, '', msg)
-        # copy file
-        shutil.copy(source, dest)
-        # update the SOSSISSE wavelength solution file
-        sossisse_params['INPUTS.WAVEFILE'] = os.path.basename(calib_file)
-        # update the SOSSISSE wavelength solution file type
-        sossisse_params['INPUTS.WAVE_FILE_TYPE'] = 'ext_1d'
+        calib_files = str(tsovore_inst.variables['CALIBS']['X1D'])
+        # deal with string / list
+        if isinstance(calib_files, str):
+            calib_files = [calib_files]
+        # loop around and use the last one as the wave file
+        for calib_file in calib_files:
+            # get the sossisse calibration directory
+            calib_dir = sparams['PATHS.CALIBPATH']
+            # define source and destination
+            source = str(calib_file)
+            dest = str(os.path.join(calib_dir, os.path.basename(calib_file)))
+            # log the copy
+            msg = (f'Copying TSOVORE calibration file to SOSSISSE calib dir: '
+                   f'{os.path.basename(calib_file)}')
+            WLOG(params, '', msg)
+            # copy file
+            shutil.copy(source, dest)
+            # update the SOSSISSE wavelength solution file
+            sossisse_params['INPUTS.WAVEFILE'] = os.path.basename(calib_file)
+            # update the SOSSISSE wavelength solution file type
+            sossisse_params['INPUTS.WAVE_FILE_TYPE'] = 'ext_1d'
     # ---------------------------------------------------------------------
     # return params
     return sossisse_params
