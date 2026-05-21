@@ -193,10 +193,10 @@ def sossisse_input(params: ParamDict,
         # prepare input directory
         prepare_directories(params, method='WLCA', verbose=False)
         # get the sorbet input directory for WLCA
-        sorbet_wlcta_input_dir = sb_params['WLCA.INPUT_PATH']
+        sorbet_wlcta_indir = str(sb_params['WLCA.INPUT_PATH'])
+        sossisse_wlc_base = str(os.path.basename(sossisse_wlc_file))
         # get absolute path to
-        sorbet_file = str(os.path.join(sorbet_wlcta_input_dir,
-                                       os.path.basename(sossisse_wlc_file)))
+        sorbet_file = str(os.path.join(sorbet_wlcta_indir, sossisse_wlc_base))
         # copy linear recon coeffs csv file
         shutil.copy(sossisse_wlc_file, sorbet_file)
         # update params
@@ -208,10 +208,10 @@ def sossisse_input(params: ParamDict,
         # prepare input directory
         prepare_directories(params, method='SLCA', verbose=False)
         # get the sorbet input directory for SLCA
-        sorbet_slcta_input_dir = sb_params['SLCA.INPUT_PATH']
+        sorbet_slcta_indir = str(sb_params['SLCA.INPUT_PATH'])
+        sossisse_spec_lc_base = str(os.path.basename(sossisse_spec_lc_file))
         # get absolute path to
-        sorbet_file = str(os.path.join(sorbet_slcta_input_dir,
-                                       os.path.basename(sossisse_spec_lc_file)))
+        sorbet_file = str(os.path.join(sorbet_slcta_indir, sossisse_spec_lc_base))
         # copy linear recon coeffs csv file
         shutil.copy(sossisse_spec_lc_file, sorbet_file)
         # update params
