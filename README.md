@@ -156,6 +156,8 @@ Note for a new instrument/mode combined you will need to run `pogos_setup` first
 
 ## 6. Dev mode
 
+For digital network of alliance canada the instructions are below.
+
 For dev mode (editable install of both apero-core and sossisse) please run the following:
 
 ```bash
@@ -179,6 +181,31 @@ pip install -U -e './pogos[dev]'
 ```
 
 And then proceed with [Setup](#2-setting-up-pogos) and [Running](#3-running-pogos) POGOS.
+
+### For Alliance:
+
+```bash
+module load StdEnv/2023 python/3.12 hdf5 cmake/3.31.0
+mkdir pogos-bin
+cd pogos-bin
+virtualenv  pogos-env
+pip install --no-index --upgrade pip
+
+source pogos-env/bin/activate
+
+git clone git@github.com:njcuk9999/apero-drs.git -b v0.8.running
+git clone git@github.com:njcuk9999/pastasoss.git
+git clone git@github.com:njcuk9999/ExoTiC-LD.git
+git clone git@github.com:njcuk9999/sossisse.git -b developer
+git clone git@github.com:njcuk9999/pogos.git -b developer
+
+pip install -U -e './apero-drs/apero-core'
+pip install -U -e './pastasoss'
+pip install -U -e './ExoTiC-LD'
+pip install -U -e './sossisse[dev]'
+pip install -U -e './pogos[dev]'
+
+```
 
 
 **IMPORTANT NOTE:**
