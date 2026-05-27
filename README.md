@@ -185,7 +185,7 @@ And then proceed with [Setup](#2-setting-up-pogos) and [Running](#3-running-pogo
 ### For Alliance:
 
 ```bash
-module load StdEnv/2023 python/3.12 hdf5 cmake/3.31.0
+module load StdEnv/2023 python/3.12 hdf5 cmake/3.31.0 gcc opencv/4.13.0
 mkdir pogos-bin
 cd pogos-bin
 virtualenv  pogos-env
