@@ -15,7 +15,7 @@ license = {file = 'LICENSE'}
 requires-python = "==3.12.*"
 dependencies = [
         "juliet==2.2.10",
-        "jwst==1.20.2",
+        "jwst==2.0.1",
         # "crds==12.1.1",
         "numpy==2.3.3",
         "astropy==7.2.0",
@@ -54,5 +54,5 @@ full = ["aperocore @ git+https://github.com/njcuk9999/apero-drs.git@v0.8.running
         "pastasoss @ git+https://github.com/njcuk9999/pastasoss.git",
         "exotic_ld @ git+https://github.com/njcuk9999/ExoTiC-LD.git",
         "sossisse @ git+https://github.com/njcuk9999/sossisse.git@developer"]
-
-dev = ["aperocore", "sossisse", "pastasoss", "exotic_ld"]
+# Install aperocore, pastasoss, expotic_ld and sossisse before installing pogos
+dev = []

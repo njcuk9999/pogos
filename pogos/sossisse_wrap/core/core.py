@@ -13,15 +13,20 @@ import os
 import shutil
 from typing import Any, Dict, Optional
 
-import sossisse
 from aperocore.constants.param_functions import ParamDict
 from aperocore.core import drs_log
 from aperocore.core import drs_misc
 from pogos.core import base
 from pogos.tsovore.instruments import default as ts_default
-from sossisse.core import const_funcs
-from sossisse.core.exceptions import SossisseFileException
-from sossisse.recipes import run_sossisse as sossisse_run
+
+try:
+    import sossisse
+    from sossisse.core import const_funcs
+    from sossisse.core.exceptions import SossisseFileException
+    from sossisse.recipes import run_sossisse as sossisse_run
+except ImportError:
+    emsg = 'Please install sossisse'
+    raise base.PogosException(emsg)
 
 # =============================================================================
 # Define variables

@@ -47,6 +47,8 @@ All other issues should be reported to the [GitHub issues page](https://github.c
 
 Note if you are a developer please see [Dev mode](#4-dev-mode)
 
+If you are using Alliance please follow the Alliance developer steps.
+
 #### Step 1: Download the GitHub repository
 
 ```bash
