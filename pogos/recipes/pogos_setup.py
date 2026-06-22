@@ -28,6 +28,7 @@ from pogos import tsovore
 from pogos import sossisse_wrap
 from pogos import miriam
 from pogos import sorbet
+from pogos import eureka_wrap
 
 # =============================================================================
 # Define variables
@@ -76,11 +77,19 @@ def __main__(**kwargs):
     # setup using parameters
     cdict = startup.setup(params)
     # -------------------------------------------------------------------------
-    # setup individual modules
+    # setup pre-extract modules
     params = tsovore.setup_tsovore_module(params)
+    params = eureka_wrap.setup_eureka_pre_extract(params)
+
+    # setup extract modules
     sossisse_wrap.setup_sossisse_module(params, cdict)
     params = miriam.setup_miriam_module(params)
+    params = eureka_wrap.setup_eureka_extract(params)
+
+    # setup post-extract modules
     params = sorbet.setup_sorbet_module(params)
+    params = eureka_wrap.setup_eureka_post_extract(params)
+
     # -------------------------------------------------------------------------
     # get the demo local value
     demolocal = params.get('GLOBAL.LOCAL_DOWNLOAD_DATA', None)
