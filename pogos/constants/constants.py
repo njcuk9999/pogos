@@ -100,6 +100,42 @@ CDict.add('DEMO_SYMLINK_DATA', value=False, dtype=bool, source=__NAME__,
           description='if downloading demo data, symlink the data from the '
                       'local download location rather than copying it.')
 
+# Pre-answer the instrument selection prompt (1-based index into the
+#   instrument list) - skips the interactive prompt in core_setup
+CDict.add('INSTRUMENT_SELECT', value=None, dtype=int, source=__NAME__,
+          user=False, active=False, cmd_arg='instrument_select', group=cgroup,
+          description='Pre-answer the "Select instrument" prompt with the '
+                      '1-based option number (skips the interactive prompt).')
+
+# Pre-answer the instrument mode prompt (1-based index into the mode list for
+#   the selected instrument) - skips the interactive prompt in core_setup
+CDict.add('INSTRUMENT_MODE', value=None, dtype=int, source=__NAME__,
+          user=False, active=False, cmd_arg='instrument_mode', group=cgroup,
+          description='Pre-answer the "Select instrument mode" prompt with the '
+                      '1-based option number (skips the interactive prompt).')
+
+# Pre-answer the Pre-extraction reduction step prompt (0=Skip, else the option
+#   number shown) - skips the interactive prompt in ask_reduction_steps
+CDict.add('PREEXTRACT_STEP', value=None, dtype=int, source=__NAME__,
+          user=False, active=False, cmd_arg='preextract_step', group=cgroup,
+          description='Pre-answer the Pre-extraction step prompt with the '
+                      'option number (0=Skip).')
+
+# Pre-answer the Extraction reduction step prompt (0=Skip, else the option
+#   number shown) - skips the interactive prompt in ask_reduction_steps
+CDict.add('EXTRACT_STEP', value=None, dtype=int, source=__NAME__,
+          user=False, active=False, cmd_arg='extract_step', group=cgroup,
+          description='Pre-answer the Extraction step prompt with the option '
+                      'number (0=Skip).')
+
+# Pre-answer the Post-extraction reduction step prompt - comma separated option
+#   numbers as this step allows multiple choices (0=Skip) - skips the
+#   interactive prompt in ask_reduction_steps
+CDict.add('POSTEXTRACT_STEP', value=None, dtype=str, source=__NAME__,
+          user=False, active=False, cmd_arg='postextract_step', group=cgroup,
+          description='Pre-answer the Post-extraction step prompt with comma '
+                      'separated option number(s) (0=Skip), e.g. "1,2".')
+
 # =============================================================================
 # Switches to turn of major features
 # =============================================================================

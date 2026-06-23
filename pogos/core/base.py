@@ -98,7 +98,7 @@ INST_MODES['JWST.MIRI']['WFSS'] = None
 # define the submodules in POGOS
 SUBMODULES = ['TSOVORE', 'PRE_NAMELESS', 'PRE_EUREKA', 'PRE_JWST',
               'SOSSISSE', 'MIRIAM', 'EXT_NAMELESS', 'EXT_EUREKA', 'EXT_JWST', 'EXT_BOX',
-              'SORBET.WLCA', 'SORBET.SLCA']
+              'SORBET.WLCA', 'SORBET.SLCA', 'POST_EUREKA']
 
 # define the reduction steps (pre-extraction, extraction, post extraction)
 #  then which sub module and a list of instruments supported per sub-module
@@ -119,7 +119,20 @@ RED_STEPS['Pre-extraction']['TSOVORE'] = ['JWST.NIRISS.SOSS',
                                           # 'JWST.NIRCAM.MULTISTRIPE',
                                           'JWST.MIRI.IMAGING']
 RED_STEPS['Pre-extraction']['PRE_NAMELESS'] = None
-RED_STEPS['Pre-extraction']['PRE_EUREKA'] = None
+RED_STEPS['Pre-extraction']['PRE_EUREKA'] = ['JWST.NIRISS.SOSS',
+                                             # 'JWST.NIRISS.SOSS.SUPERSTRIPE',
+                                             'JWST.NIRSPEC.BOTS.PRISM',
+                                             'JWST.NIRSPEC.BOTS.G395M',
+                                             'JWST.NIRSPEC.BOTS.G235M',
+                                             'JWST.NIRSPEC.BOTS.G140M',
+                                             'JWST.NIRSPEC.BOTS.G395H',
+                                             'JWST.NIRSPEC.BOTS.G235H',
+                                             'JWST.NIRSPEC.BOTS.G140H',
+                                             'JWST.NIRCAM.IMAGING',
+                                             'JWST.NIRCAM.WFSS',
+                                             # 'JWST.NIRCAM.MULTISTRIPE',
+                                             'JWST.MIRI.IMAGING',
+                                             'JWST.MIRI.LRS']
 # RED_STEPS['Pre-extraction']['exoTEFRF'] = None
 RED_STEPS['Pre-extraction']['PRE_JWST'] = None
 
@@ -131,7 +144,20 @@ RED_STEPS['Extraction']['SOSSISSE'] = ['JWST.NIRISS.SOSS',
                                        'JWST.NIRSPEC.G140']
 RED_STEPS['Extraction']['MIRIAM'] = ['JWST.MIRI.IMAGING']
 RED_STEPS['Extraction']['EXT_NAMELESS'] = None
-RED_STEPS['Extraction']['EXT_EUREKA'] = None
+RED_STEPS['Extraction']['EXT_EUREKA'] = ['JWST.NIRISS.SOSS',
+                                         # 'JWST.NIRISS.SOSS.SUPERSTRIPE',
+                                         'JWST.NIRSPEC.BOTS.PRISM',
+                                         'JWST.NIRSPEC.BOTS.G395M',
+                                         'JWST.NIRSPEC.BOTS.G235M',
+                                         'JWST.NIRSPEC.BOTS.G140M',
+                                         'JWST.NIRSPEC.BOTS.G395H',
+                                         'JWST.NIRSPEC.BOTS.G235H',
+                                         'JWST.NIRSPEC.BOTS.G140H',
+                                         'JWST.NIRCAM.IMAGING',
+                                         'JWST.NIRCAM.WFSS',
+                                         # 'JWST.NIRCAM.MULTISTRIPE',
+                                         'JWST.MIRI.IMAGING',
+                                         'JWST.MIRI.LRS']
 # RED_STEPS['Extraction']['exoTEFRF'] = None
 RED_STEPS['Extraction']['EXT_BOX'] = None
 RED_STEPS['Extraction']['EXT_JWST'] = None
@@ -150,7 +176,20 @@ RED_STEPS['Post-extraction']['SORBET.SLCA'] = ['JWST.NIRISS.SOSS',
                                                'JWST.NIRSPEC.G140']
 # RED_STEPS['Post-extraction']['SORBET.TransitFit'] = None
 # RED_STEPS['Post-extraction']['SORBET.RVA'] = None
-
+RED_STEPS['Post-extraction']['POST_EUREKA'] = ['JWST.NIRISS.SOSS',
+                                               # 'JWST.NIRISS.SOSS.SUPERSTRIPE',
+                                               'JWST.NIRSPEC.BOTS.PRISM',
+                                               'JWST.NIRSPEC.BOTS.G395M',
+                                               'JWST.NIRSPEC.BOTS.G235M',
+                                               'JWST.NIRSPEC.BOTS.G140M',
+                                               'JWST.NIRSPEC.BOTS.G395H',
+                                               'JWST.NIRSPEC.BOTS.G235H',
+                                               'JWST.NIRSPEC.BOTS.G140H',
+                                               'JWST.NIRCAM.IMAGING',
+                                               'JWST.NIRCAM.WFSS',
+                                               # 'JWST.NIRCAM.MULTISTRIPE',
+                                               'JWST.MIRI.IMAGING',
+                                               'JWST.MIRI.LRS']
 
 # Define whether the user is allowed to run multiple flavours of these
 # steps (e.g. multiple extraction methods) - if False, then only one method
@@ -175,6 +214,7 @@ RUN_KEYS['RUN.EXT_JWST'] = 'EXT_JWST'
 RUN_KEYS['RUN.EXT_BOX'] = 'EXT_BOX'
 RUN_KEYS['RUN.SORBET.WLCA'] = 'SORBET.WLCA'
 RUN_KEYS['RUN.SORBET.SLCA'] = 'SORBET.SLCA'
+RUN_KEYS['RUN.POST_EUREKA'] = 'POST_EUREKA'
 
 # Define the first path to create (in setup) for each module
 #   when it isn't just the module name (as in RUN_KEYS)

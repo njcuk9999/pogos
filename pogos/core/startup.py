@@ -28,7 +28,7 @@ from aperocore.constants import load_functions
 from aperocore.constants import param_functions
 from aperocore.core import drs_log
 from aperocore.core import drs_text
-from pogos import constants
+from pogos import constants, eureka_wrap
 
 # =============================================================================
 # Define variables
@@ -78,7 +78,8 @@ def setup(params: ParamDict, start_from_demo: bool = True):
         # deal with start point (setup only) - ask user to start from demo
         # or blank
         params = load_functions.starting_point(params, 'GLOBAL.INSTRUMENTMODE',
-                                               demo_list)
+                                               demo_list,
+                                               ask_for_missing_on_no_demo=False)
 
     # now set up yaml file name
     params = core_yaml_setup(params)
@@ -278,23 +279,34 @@ def core_setup(params: ParamDict, demo_mod: Any,
     else:
         imode = params['GLOBAL.INSTRUMENTMODE']
     # -------------------------------------------------------------------------
+    # pre-answers from the command line (skip the interactive prompts)
+    preset_inst = params['GLOBAL.INSTRUMENT_SELECT']
+    preset_imode = params['GLOBAL.INSTRUMENT_MODE']
+    # -------------------------------------------------------------------------
     while imode is None:
         insts = list(instrument_modes.keys())
         ivalues = list(range(1, len(insts) + 1))
-        # ask user for instrument
-        question = 'Select instrument:'
-        inst_choice = drs_text.user_input(question, dtype=int, options=ivalues,
-                                          optiondescs=insts)
+        # ask user for instrument (or use the command line pre-answer)
+        if preset_inst is not None:
+            inst_choice = preset_inst
+        else:
+            question = 'Select instrument:'
+            inst_choice = drs_text.user_input(question, dtype=int,
+                                              options=ivalues,
+                                              optiondescs=insts)
         instrument = insts[inst_choice - 1]
         # ---------------------------------------------------------------------
         # set the instrument modes
         imodes = list(instrument_modes[instrument])
         imode_values = list(range(1, len(imodes) + 1))
-        # ask user for instrument mode
-        question = 'Select instrument mode:'
-        imode_choice = drs_text.user_input(question, dtype=int,
-                                           options=imode_values,
-                                           optiondescs=imodes)
+        # ask user for instrument mode (or use the command line pre-answer)
+        if preset_imode is not None:
+            imode_choice = preset_imode
+        else:
+            question = 'Select instrument mode:'
+            imode_choice = drs_text.user_input(question, dtype=int,
+                                               options=imode_values,
+                                               optiondescs=imodes)
         instrument_mode = imodes[imode_choice - 1]
         # ---------------------------------------------------------------------
         # deal with instrument mode not supported
@@ -302,6 +314,12 @@ def core_setup(params: ParamDict, demo_mod: Any,
             msg = ('{0}:{1} is not yet supported, please choose another')
             margs = [instrument, instrument_mode]
             WLOG(params, '', msg.format(*margs), colour='magenta')
+            # a command line pre-answer cannot be re-asked - stop here
+            if preset_inst is not None or preset_imode is not None:
+                emsg = ('Command line instrument selection {0}:{1} is not '
+                        'supported. Please correct --instrument_select / '
+                        '--instrument_mode.')
+                WLOG(params, 'error', emsg.format(*margs))
             continue
         # ---------------------------------------------------------------------
         # set imode
@@ -321,6 +339,10 @@ def core_setup(params: ParamDict, demo_mod: Any,
     # deal with no demo modes selected
     if len(demo_modes) == 0:
         return params, dict()
+    # -------------------------------------------------------------------------
+    # Push True into the run keys for demo_modes (this will decide what we
+    #  ask the user about later)
+    params = update_run_after_demo_modes(params, demo_modes)
     # -------------------------------------------------------------------------
     # now we want to cut down demo_mod.DEMOS to only those selected
     demo_dict = dict()
@@ -394,8 +416,15 @@ def ask_reduction_steps(params: ParamDict, imode: str) -> List[str]:
     # -------------------------------------------------------------------------
     # storage for output
     demo_modes = []
+    run_values = []
+    # command line pre-answers for each core step (skip interactive prompts)
+    step_presets = {'Pre-extraction': params['GLOBAL.PREEXTRACT_STEP'],
+                    'Extraction': params['GLOBAL.EXTRACT_STEP'],
+                    'Post-extraction': params['GLOBAL.POSTEXTRACT_STEP']}
     # loop around supported steps and ask user which they want to use
     for step in supported_steps:
+        # get the command line pre-answer for this step (None = ask the user)
+        preset = step_presets.get(step, None)
         # deal with no supported steps for this step
         if len(supported_steps[step]) == 0:
             msg = 'No supported steps for {0} for instrument mode: {1}.'
@@ -416,8 +445,12 @@ def ask_reduction_steps(params: ParamDict, imode: str) -> List[str]:
                 question += '\n\t{0}: {1}'.format(oit, option)
             # add input
             while True:
-                uinput = input(question +
-                               '\n\nEnter all numbers (comma separated):\t\t')
+                # use the command line pre-answer if given, else ask the user
+                if preset is not None:
+                    uinput = str(preset)
+                else:
+                    uinput = input(question + '\n\nEnter all numbers (comma '
+                                              'separated):\t\t')
                 # zero means skip
                 if '0' in uinput:
                     break
@@ -448,11 +481,19 @@ def ask_reduction_steps(params: ParamDict, imode: str) -> List[str]:
                         _demo_modes.append(demo_mode)
                 # ask the question again
                 if not valid:
+                    # a command line pre-answer cannot be re-asked
+                    if preset is not None:
+                        emsg = ('Command line --postextract_step={0} is not '
+                                'valid for {1}.')
+                        WLOG(params, 'error', emsg.format(preset, step))
                     continue
                 else:
                     demo_modes += _demo_modes
                 # if we have some modes we break
                 if len(demo_modes) > 0:
+                    break
+                # a command line pre-answer cannot be re-asked
+                if preset is not None:
                     break
                 # otherwise we ask again
                 drs_text.cprint('No valid selection made, please try again.',
@@ -466,10 +507,13 @@ def ask_reduction_steps(params: ParamDict, imode: str) -> List[str]:
             # set up options and option descriptions (add skip as first option)
             optiondescs = ['Skip'] + supported_steps[step]
             options = list(range(len(optiondescs)))
-            # ask user question about this reduction step
-            uinput = drs_text.user_input(question, dtype='options',
-                                         options=options,
-                                         optiondescs=optiondescs)
+            # use the command line pre-answer if given, else ask the user
+            if preset is not None:
+                uinput = str(preset)
+            else:
+                uinput = drs_text.user_input(question, dtype='options',
+                                             options=options,
+                                             optiondescs=optiondescs)
             # deal with skipping and adding to available demo modes
             if uinput.strip() == '0':
                 continue
@@ -480,6 +524,35 @@ def ask_reduction_steps(params: ParamDict, imode: str) -> List[str]:
                     demo_modes.append(demo_mode)
     # return the demo modes
     return demo_modes
+
+
+def update_run_after_demo_modes(params: ParamDict,
+                                demo_modes: List[str]) -> ParamDict:
+    """
+    Update
+
+    :param params:
+    :param demo_modes:
+    :return:
+    """
+    # set the function name
+    func_name = f'{__NAME__}.update_run_after_demo_modes()'
+    # get the run keys
+    run_keys = pogos_base.RUN_KEYS
+    # invert run keys
+    irun_keys = dict(zip(run_keys.values(), run_keys.keys()))
+
+    for demo_mode in demo_modes:
+        # get the flavour our
+        step, flavour = demo_mode.split(':')
+        # only update RUN.{run_key} if its present in our RUN_KEYS
+        if flavour in irun_keys:
+            # get the run key
+            run_key = irun_keys[flavour]
+            # set the run value to True
+            params.set(run_key, value=True, source=func_name)
+    # return the updated params
+    return params
 
 
 def core_yaml_setup(params: ParamDict):
@@ -562,6 +635,7 @@ def initial_setup():
     # define which constant lists we should be using
     const_list = dict()
     const_list['TSOVORE'] = constants.TSOVORE_CDict
+    const_list['EUREKA'] = eureka_wrap.Eureka_CDict
     const_list['MIRIAM'] = constants.MIRIAM_CDict
     const_list['SORBET'] = constants.SORBET_CDict
 
