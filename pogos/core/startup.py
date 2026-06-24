@@ -98,7 +98,18 @@ def setup(params: ParamDict, start_from_demo: bool = True):
         # if False turn off the section
         if not params[run_key]:
             for key in params.keys():
-                if key.startswith(pogos_base.RUN_KEYS[run_key]):
+                # condition 1: prefix is in RUN_KEYs
+                cond1 = key.startswith(pogos_base.RUN_KEYS[run_key])
+                # condition 2: prefix is in a list of keys in SUB_RUN_KEYS
+                cond2 = False
+                if run_key in pogos_base.SUB_RUN_KEYS:
+                    for subkey in pogos_base.SUB_RUN_KEYS[run_key]:
+                        if key.startswith(subkey):
+                            cond2 = True
+                # if either of the above is true don't add to yaml and don't
+                #   ask user for value
+                #   (this is done by setting user=False and not_none=False)
+                if cond1 or cond2:
                     # TODO: remove this if statement
                     # skip keys that are None (shouldn't be here so this is
                     # just for debugging)
@@ -108,6 +119,7 @@ def setup(params: ParamDict, start_from_demo: bool = True):
                     # otherwise set user and not_none to False
                     params.instances[key].user = False
                     params.instances[key].not_none = False
+
     # -------------------------------------------------------------------------
     # create paths to sub modules
     for run_key in pogos_base.RUN_KEYS:

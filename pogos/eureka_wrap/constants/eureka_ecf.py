@@ -86,7 +86,24 @@ OPTION_OVERRIDES['STAGE5']['compute_ltt'] = [True, False]
 # Eureka_CDict.add(...) call (i.e. the user must provide a value).
 NOT_NONE_OVERRIDE = dict()
 for _stage_name in ('STAGE1', 'STAGE2', 'STAGE3', 'STAGE4', 'STAGE5', 'STAGE6'):
-    NOT_NONE_OVERRIDE[_stage_name] = ['topdir', 'inputdir', 'outputdir']
+    NOT_NONE_OVERRIDE[_stage_name] = ['inputdir', 'outputdir']
+
+# Per-stage/per-parameter default value overrides for generated constants.
+# Any entry here replaces the value parsed from the ecf files.
+DEFAULT_VALUES = dict()
+DEFAULT_VALUES['STAGE1'] = dict()
+DEFAULT_VALUES['STAGE1']['inputdir'] = 'Uncalibrated'
+
+# Per-stage/per-parameter "active" overrides for generated constants.
+# Any entry here replaces the default active=True in the generated add() call.
+ACTIVE_OVERRIDE = dict()
+for _stage_name in ('STAGE1', 'STAGE2', 'STAGE3', 'STAGE4', 'STAGE5', 'STAGE6'):
+    ACTIVE_OVERRIDE[_stage_name] = dict()
+    ACTIVE_OVERRIDE[_stage_name]['topdir'] = False
+
+# Per-stage/per-parameter "user" overrides for generated constants.
+# Any entry here replaces the default user=True in the generated add() call.
+USER_OVERRIDE = dict()
 
 
 # Define which S1 ecf files go to which instrument
@@ -727,8 +744,8 @@ def _format_add_call(rec: Dict[str, Any]) -> List[str]:
         'dtype={0}'.format(_format_dtype(rec['dtype'])),
         'options={0!r}'.format(rec['options']),
         'source=__NAME__',
-        'user=True',
-        'active=True',
+        'user={0}'.format(rec.get('user', True)),
+        'active={0}'.format(rec.get('active', True)),
     ]
     # set not_none when requested via NOT_NONE_OVERRIDE
     if rec.get('not_none'):
@@ -811,9 +828,18 @@ def _generate_constant_block(
             if rec_out['name'] in stage_overrides:
                 override = stage_overrides[rec_out['name']]
                 rec_out['options'] = override
+            # override the value from DEFAULT_VALUES (replaces the ecf value)
+            stage_defaults = DEFAULT_VALUES.get(cgroup_name, {})
+            if rec_out['name'] in stage_defaults:
+                rec_out['value'] = stage_defaults[rec_out['name']]
             # mark not_none parameters for this stage
             notnone_names = NOT_NONE_OVERRIDE.get(cgroup_name, [])
             rec_out['not_none'] = rec_out['name'] in notnone_names
+            # override active/user flags for this stage (default True)
+            stage_active = ACTIVE_OVERRIDE.get(cgroup_name, {})
+            rec_out['active'] = stage_active.get(rec_out['name'], True)
+            stage_user = USER_OVERRIDE.get(cgroup_name, {})
+            rec_out['user'] = stage_user.get(rec_out['name'], True)
             lines.extend(_format_add_call(rec_out))
     lines.append(END_MARKER)
     return lines
@@ -862,8 +888,9 @@ def _format_ecf_value(value: Any, dtype: Optional[Union[Type, str]]) -> str:
 # Main code here
 if __name__ == "__main__":
     # ----------------------------------------------------------------------
-    # print 'Hello World!'
-    print("Hello World!")
+    # Run the code to update eureka_constants.py via downloading standard ecf
+    # files
+    update_constants_from_ecfs()
 
 # =============================================================================
 # End of code

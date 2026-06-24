@@ -201,6 +201,10 @@ RED_STEPS_MULTI['Post-extraction'] = True
 
 # Define the prefix for constants from each module
 #   in form RUN.XXXX = PREFIX    (usually prefix is TSOVORE)
+# Used in two ways:
+# 1. if RUN.XXX = False --> don't put these variables in yaml
+# 2. inversed if STEP.{VALUE} not setup selectiong set RUN.XXX = False
+#    (used to turn off steps when demo not used)
 RUN_KEYS = dict()
 RUN_KEYS['RUN.TSOVORE'] = 'TSOVORE'
 RUN_KEYS['RUN.PRE_NAMELESS'] = 'PRE_NAMELESS'
@@ -215,6 +219,16 @@ RUN_KEYS['RUN.EXT_BOX'] = 'EXT_BOX'
 RUN_KEYS['RUN.SORBET.WLCA'] = 'SORBET.WLCA'
 RUN_KEYS['RUN.SORBET.SLCA'] = 'SORBET.SLCA'
 RUN_KEYS['RUN.POST_EUREKA'] = 'POST_EUREKA'
+
+
+# Special sub_run_keys
+# Used to turn off sub keys when RUN_KEYS is not enough
+# Only used when CDict is shared between RUN.XXX keys
+#  e.g.  if RUN.XXX = False   don't put these variables in yaml
+SUB_RUN_KEYS = dict()
+SUB_RUN_KEYS['RUN.PRE_EUREKA'] = ['EUREKA.STAGE1', 'EUREKA.STAGE2']
+SUB_RUN_KEYS['RUN.EXT_EUREKA'] = ['EUREKA.STAGE3']
+SUB_RUN_KEYS['RUN.POST_EUREKA'] = ['EUREKA.STAGE4', 'EUREKA.STAGE5', 'EUREKA.STAGE6']
 
 # Define the first path to create (in setup) for each module
 #   when it isn't just the module name (as in RUN_KEYS)
