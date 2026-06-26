@@ -83,8 +83,8 @@ def run_eureka_pre_extract(params: ParamDict) -> ParamDict:
     params, eplots, s1, s2, s3, s4, s5, s6 = import_eureka(params)
     # deal with user (or pogos) not running pre-extract Eureka steps
     if not params['RUN.PRE_EUREKA']:
-        # return updated params
-        return params
+        # nothing produced -> no instance to pass on
+        return None
     # -------------------------------------------------------------------------
     # Make the directories
     make_eureka_dirs(params, stage=1)
@@ -97,26 +97,31 @@ def run_eureka_pre_extract(params: ParamDict) -> ParamDict:
 
     # deal with test mode (return here)
     if params['EUREKA.GENERAL.TESTMODE']:
-        return params
+        return _eureka_result(params, stage=2)
     # -------------------------------------------------------------------------
     # Run the Stage 1 + Stage 2 steps from Eureka
     # -------------------------------------------------------------------------
     meta = s1.rampfitJWST(eventlabel, ecf_path=ecf_path)
     meta = s2.calibrateJWST(eventlabel, ecf_path=ecf_path)
-    # return params
-    return params
+    # return the Stage 2 result (the input for the extraction step)
+    return _eureka_result(params, stage=2)
 
 
-def run_eureka_extract(params: ParamDict) -> ParamDict:
+def run_eureka_extract(params: ParamDict, pre_inst=None) -> ParamDict:
     # Try importing Eureka
     params, eplots, s1, s2, s3, s4, s5, s6 = import_eureka(params)
     # deal with user (or pogos) not running pre-extract Eureka steps
     if not params['RUN.EXT_EUREKA']:
-        # return updated params
-        return params
+        # nothing produced -> no instance to pass on
+        return None
     # -------------------------------------------------------------------------
     # Make the directories
     make_eureka_dirs(params, stage=3)
+    # -------------------------------------------------------------------------
+    # push the outputs from the pre-extraction step into the Stage 3 input
+    #   directory (mirrors TSOVORE -> SOSSISSE/MIRIAM)
+    pogos_general.route_step_inputs(params, pre_inst,
+                                    params.get('EUREKA.PATHS.IN_S3_PATH'))
     # -------------------------------------------------------------------------
     # get the event label and ecf_path + generate ecf_file
     eventlabel = params['EUREKA.GENERAL.EVENTLABEL']
@@ -124,26 +129,31 @@ def run_eureka_extract(params: ParamDict) -> ParamDict:
 
     # deal with test mode (return here)
     if params['EUREKA.GENERAL.TESTMODE']:
-        return params
+        return _eureka_result(params, stage=3)
     # -------------------------------------------------------------------------
     # Run the Stage 3 steps from Eureka
     # -------------------------------------------------------------------------
     spec, meta = s3.reduce(eventlabel, ecf_path=ecf_path)
-    # return params
-    return params
+    # return the Stage 3 result (the input for the post-extraction step)
+    return _eureka_result(params, stage=3)
 
 
-def run_eureka_post_extract(params: ParamDict) -> ParamDict:
+def run_eureka_post_extract(params: ParamDict, ext_inst=None) -> ParamDict:
     # Try importing Eureka
     params, eplots, s1, s2, s3, s4, s5, s6 = import_eureka(params)
     # deal with user (or pogos) not running pre-extract Eureka steps
     if not params['RUN.POST_EUREKA']:
-        # return updated params
-        return params
+        # nothing produced -> no instance to pass on
+        return None
     # Make the directories
     make_eureka_dirs(params, stage=4)
     make_eureka_dirs(params, stage=5)
     make_eureka_dirs(params, stage=6)
+    # -------------------------------------------------------------------------
+    # push the outputs from the extraction step into the Stage 4 input
+    #   directory (mirrors EXTRACT -> POST_EXTRACT for SOSSISSE/MIRIAM -> SORBET)
+    pogos_general.route_step_inputs(params, ext_inst,
+                                    _eureka_stage_input_dir(params, stage=4))
     # -------------------------------------------------------------------------
     # get the event label and ecf_path + generate ecf_file
     eventlabel = params['EUREKA.GENERAL.EVENTLABEL']
@@ -152,20 +162,68 @@ def run_eureka_post_extract(params: ParamDict) -> ParamDict:
     _ = ecf.ecf_from_params(params.get('EUREKA.STAGE6'), stage=6)
     # deal with test mode (return here)
     if params['EUREKA.GENERAL.TESTMODE']:
-        return params
+        return _eureka_result(params, stage=6, output_dir=
+                              _eureka_stage_output_dir(params, stage=6))
     # -------------------------------------------------------------------------
     # Run the Stage 4+5+6 steps from Eureka
     # -------------------------------------------------------------------------
     spec, lc, meta = s4.genlc(eventlabel, ecf_path=ecf_path)
     meta = s5.fitlc(eventlabel, ecf_path=ecf_path)
     meta, lc = s6.plot_spectra(eventlabel, ecf_path=ecf_path)
-    # return params
-    return params
+    # return the Stage 6 result
+    return _eureka_result(params, stage=6,
+                          output_dir=_eureka_stage_output_dir(params, stage=6))
 
 
 # =============================================================================
 # Define worker function
 # =============================================================================
+def _eureka_topdir(params: ParamDict) -> str:
+    """Return the absolute Eureka top directory for this run."""
+    return os.path.join(params['GLOBAL.DATA_PATH'], 'eureka',
+                        str(params['EUREKA.GENERAL.SUBDIRECTORY']))
+
+
+def _eureka_stage_input_dir(params: ParamDict, stage: int) -> str:
+    """Return the absolute input directory for a given Eureka stage."""
+    # stages 1-3 have explicit POGOS path constants
+    inkey = f'EUREKA.PATHS.IN_S{stage}_PATH'
+    if inkey in params and params[inkey] is not None:
+        return str(params[inkey])
+    # stages 4-6 use {topdir}/{inputdir}
+    inputdir = str(params[f'EUREKA.STAGE{stage}.inputdir'])
+    return os.path.join(_eureka_topdir(params), inputdir)
+
+
+def _eureka_stage_output_dir(params: ParamDict, stage: int) -> str:
+    """Return the absolute output directory for a given Eureka stage."""
+    # stages 1-3 have explicit POGOS path constants
+    outkey = f'EUREKA.PATHS.OUT_S{stage}_PATH'
+    if outkey in params and params[outkey] is not None:
+        return str(params[outkey])
+    # stages 4-6 use {topdir}/{outputdir}
+    outputdir = str(params[f'EUREKA.STAGE{stage}.outputdir'])
+    return os.path.join(_eureka_topdir(params), outputdir)
+
+
+def _eureka_result(params: ParamDict, stage: int,
+                   output_dir: str = None) -> dict:
+    """
+    Build a uniform POGOS step-result for a Eureka stage so the next reduction
+    level can pick up its outputs (mirrors the TSOVORE/SOSSISSE instances).
+
+    :param params: ParamDict, the parameter dictionary of constants
+    :param stage: int, the Eureka stage that produced the outputs
+    :param output_dir: str or None, override the output directory
+    :return: dict, the step result
+    """
+    # get the output directory for this stage
+    if output_dir is None:
+        output_dir = _eureka_stage_output_dir(params, stage)
+    # build and return the uniform step result
+    return pogos_general.make_step_result('eureka', output_dir, stage=stage)
+
+
 def import_eureka(params: ParamDict):
     # set function name
     func_name = f'{__NAME__}.import_eureka()'

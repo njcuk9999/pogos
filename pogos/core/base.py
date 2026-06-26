@@ -98,7 +98,11 @@ INST_MODES['JWST.MIRI']['WFSS'] = None
 # define the submodules in POGOS
 SUBMODULES = ['TSOVORE', 'PRE_NAMELESS', 'PRE_EUREKA', 'PRE_JWST',
               'SOSSISSE', 'MIRIAM', 'EXT_NAMELESS', 'EXT_EUREKA', 'EXT_JWST', 'EXT_BOX',
-              'SORBET.WLCA', 'SORBET.SLCA', 'POST_EUREKA']
+              'SORBET.WLCA', 'SORBET.SLCA', 'POST_EUREKA', 'POST_JWST']
+
+# instrument modes supported by the JWST "standard pipeline" wrapper
+#   (jwst_wrap maps every POGOS instrument mode onto a standard JWST pipeline)
+JWST_MODES = list(INSTRUMENTS)
 
 # define the reduction steps (pre-extraction, extraction, post extraction)
 #  then which sub module and a list of instruments supported per sub-module
@@ -118,7 +122,7 @@ RED_STEPS['Pre-extraction']['TSOVORE'] = ['JWST.NIRISS.SOSS',
                                           'JWST.NIRCAM.WFSS',
                                           # 'JWST.NIRCAM.MULTISTRIPE',
                                           'JWST.MIRI.IMAGING']
-RED_STEPS['Pre-extraction']['PRE_NAMELESS'] = None
+RED_STEPS['Pre-extraction']['PRE_NAMELESS'] = ['JWST.NIRISS.SOSS']
 RED_STEPS['Pre-extraction']['PRE_EUREKA'] = ['JWST.NIRISS.SOSS',
                                              # 'JWST.NIRISS.SOSS.SUPERSTRIPE',
                                              'JWST.NIRSPEC.BOTS.PRISM',
@@ -134,7 +138,7 @@ RED_STEPS['Pre-extraction']['PRE_EUREKA'] = ['JWST.NIRISS.SOSS',
                                              'JWST.MIRI.IMAGING',
                                              'JWST.MIRI.LRS']
 # RED_STEPS['Pre-extraction']['exoTEFRF'] = None
-RED_STEPS['Pre-extraction']['PRE_JWST'] = None
+RED_STEPS['Pre-extraction']['PRE_JWST'] = JWST_MODES
 
 RED_STEPS['Extraction'] = dict()
 RED_STEPS['Extraction']['SOSSISSE'] = ['JWST.NIRISS.SOSS',
@@ -143,7 +147,7 @@ RED_STEPS['Extraction']['SOSSISSE'] = ['JWST.NIRISS.SOSS',
                                        'JWST.NIRSPEC.G253',
                                        'JWST.NIRSPEC.G140']
 RED_STEPS['Extraction']['MIRIAM'] = ['JWST.MIRI.IMAGING']
-RED_STEPS['Extraction']['EXT_NAMELESS'] = None
+RED_STEPS['Extraction']['EXT_NAMELESS'] = ['JWST.NIRISS.SOSS']
 RED_STEPS['Extraction']['EXT_EUREKA'] = ['JWST.NIRISS.SOSS',
                                          # 'JWST.NIRISS.SOSS.SUPERSTRIPE',
                                          'JWST.NIRSPEC.BOTS.PRISM',
@@ -160,7 +164,7 @@ RED_STEPS['Extraction']['EXT_EUREKA'] = ['JWST.NIRISS.SOSS',
                                          'JWST.MIRI.LRS']
 # RED_STEPS['Extraction']['exoTEFRF'] = None
 RED_STEPS['Extraction']['EXT_BOX'] = None
-RED_STEPS['Extraction']['EXT_JWST'] = None
+RED_STEPS['Extraction']['EXT_JWST'] = JWST_MODES
 
 RED_STEPS['Post-extraction'] = dict()
 RED_STEPS['Post-extraction']['SORBET.WLCA'] = ['JWST.NIRISS.SOSS',
@@ -191,6 +195,9 @@ RED_STEPS['Post-extraction']['POST_EUREKA'] = ['JWST.NIRISS.SOSS',
                                                'JWST.MIRI.IMAGING',
                                                'JWST.MIRI.LRS']
 
+# JWST standard pipeline post-extraction (reserved for additional steps)
+RED_STEPS['Post-extraction']['POST_JWST'] = JWST_MODES
+
 # Define whether the user is allowed to run multiple flavours of these
 # steps (e.g. multiple extraction methods) - if False, then only one method
 # can be run for that step
@@ -219,6 +226,7 @@ RUN_KEYS['RUN.EXT_BOX'] = 'EXT_BOX'
 RUN_KEYS['RUN.SORBET.WLCA'] = 'SORBET.WLCA'
 RUN_KEYS['RUN.SORBET.SLCA'] = 'SORBET.SLCA'
 RUN_KEYS['RUN.POST_EUREKA'] = 'POST_EUREKA'
+RUN_KEYS['RUN.POST_JWST'] = 'POST_JWST'
 
 
 # Special sub_run_keys
@@ -229,6 +237,11 @@ SUB_RUN_KEYS = dict()
 SUB_RUN_KEYS['RUN.PRE_EUREKA'] = ['EUREKA.STAGE1', 'EUREKA.STAGE2']
 SUB_RUN_KEYS['RUN.EXT_EUREKA'] = ['EUREKA.STAGE3']
 SUB_RUN_KEYS['RUN.POST_EUREKA'] = ['EUREKA.STAGE4', 'EUREKA.STAGE5', 'EUREKA.STAGE6']
+SUB_RUN_KEYS['RUN.PRE_JWST'] = ['JWST.STAGE1', 'JWST.STAGE2']
+SUB_RUN_KEYS['RUN.EXT_JWST'] = ['JWST.STAGE3']
+SUB_RUN_KEYS['RUN.PRE_NAMELESS'] = ['NAMELESS.S1_SETTINGS', 'NAMELESS.S2_SETTINGS',
+                                    'NAMELESS.PREP_SETTINGS', 'NAMELESS.CST_SETTINGS']
+SUB_RUN_KEYS['RUN.EXT_NAMELESS'] = ['NAMELESS.EXT_SETTINGS']
 
 # Define the first path to create (in setup) for each module
 #   when it isn't just the module name (as in RUN_KEYS)
@@ -268,6 +281,7 @@ REQ_MODULE_PARAMS['EXT_NAMELESS'] = []
 REQ_MODULE_PARAMS['EXT_EUREKA'] = []
 REQ_MODULE_PARAMS['EXT_JWST'] = []
 REQ_MODULE_PARAMS['EXT_BOX'] = []
+REQ_MODULE_PARAMS['POST_JWST'] = []
 REQ_MODULE_PARAMS['SORBET'] = []
 
 # list of sorbet sub-modules

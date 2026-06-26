@@ -28,6 +28,9 @@ from pogos import tsovore
 from pogos import sossisse_wrap
 from pogos import miriam
 from pogos import sorbet
+from pogos import jwst_wrap
+from pogos import nameless_wrap
+from pogos import eureka_wrap
 from pogos.core import startup
 
 # =============================================================================
@@ -103,22 +106,19 @@ def main(**kwargs):
     # -------------------------------------------------------------------------
     # run pre-eureka
     if params['RUN.PRE_EUREKA']:
-        # pre_inst['pre_eureka'] = eureka.run_pre_eureka(params)
-        pre_inst['pre_eureka'] = None
+        pre_inst['pre_eureka'] = eureka_wrap.run_eureka_pre_extract(params)
     else:
         pre_inst['pre_eureka'] = None
     # -------------------------------------------------------------------------
     # run pre jwst
     if params['RUN.PRE_JWST']:
-        # pre_inst['v'] = jwst.run_pre_jwst(params)
-        pre_inst['pre_jwst'] = None
+        pre_inst['pre_jwst'] = jwst_wrap.run_jwst_pre_extract(params)
     else:
         pre_inst['pre_jwst'] = None
     # -------------------------------------------------------------------------
     # run NAMELESS
     if params['RUN.PRE_NAMELESS']:
-        # pre_inst['pre_nameless'] = nameless.run_pre_nameless(params)
-        pre_inst['pre_nameless'] = None
+        pre_inst['pre_nameless'] = nameless_wrap.run_nameless_pre_extract(params)
     else:
         pre_inst['pre_nameless'] = None
 
@@ -138,22 +138,21 @@ def main(**kwargs):
     # -------------------------------------------------------------------------
     # run eureka
     if params['RUN.EXT_EUREKA']:
-        # ext_inst['ext_eureka'] = eureka_wrap.extract(params, **pre_inst)
-        ext_inst['ext_eureka'] = None
+        ext_inst['ext_eureka'] = eureka_wrap.run_eureka_extract(params,
+                                                                pre_inst)
     else:
         ext_inst['ext_eureka'] = None
     # -------------------------------------------------------------------------
     # run jwst
     if params['RUN.EXT_JWST']:
-        # ext_inst['ext_jwst'] = jwst_wrap.extract(params, **pre_inst)
-        ext_inst['ext_jwst']  = None
+        ext_inst['ext_jwst'] = jwst_wrap.run_jwst_extract(params, pre_inst)
     else:
         ext_inst['ext_jwst']  = None
     # -------------------------------------------------------------------------
     # run nameless
     if params['RUN.EXT_NAMELESS']:
-        # ext_inst['ext_nameless'] = nameless_wrap.extract(params, **pre_inst)
-        ext_inst['ext_nameless']  = None
+        ext_inst['ext_nameless'] = nameless_wrap.run_nameless_extract(params,
+                                                                      pre_inst)
     else:
         ext_inst['ext_nameless']  = None
     # -------------------------------------------------------------------------
@@ -175,6 +174,14 @@ def main(**kwargs):
     # run sorbet
     if sorbet.any_sorbet_run(params):
         sorbet.run_sorbet(params, ext_inst)
+    # -------------------------------------------------------------------------
+    # run eureka post-extraction steps
+    if params['RUN.POST_EUREKA']:
+        eureka_wrap.run_eureka_post_extract(params, ext_inst)
+    # -------------------------------------------------------------------------
+    # run jwst post-extraction steps
+    if params['RUN.POST_JWST']:
+        jwst_wrap.run_jwst_post_extract(params, ext_inst)
     # -------------------------------------------------------------------------
     # print splash
     general.end_splash()

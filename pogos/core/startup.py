@@ -28,7 +28,7 @@ from aperocore.constants import load_functions
 from aperocore.constants import param_functions
 from aperocore.core import drs_log
 from aperocore.core import drs_text
-from pogos import constants, eureka_wrap
+from pogos import constants, eureka_wrap, jwst_wrap, nameless_wrap
 
 # =============================================================================
 # Define variables
@@ -648,6 +648,8 @@ def initial_setup():
     const_list = dict()
     const_list['TSOVORE'] = constants.TSOVORE_CDict
     const_list['EUREKA'] = eureka_wrap.Eureka_CDict
+    const_list['JWST'] = jwst_wrap.JWST_CDict
+    const_list['NAMELESS'] = nameless_wrap.NAMELESS_CDict
     const_list['MIRIAM'] = constants.MIRIAM_CDict
     const_list['SORBET'] = constants.SORBET_CDict
 

@@ -13,8 +13,10 @@ import os
 import random
 import string
 import time
-from typing import Tuple
+from typing import Any, Dict, List, Optional, Tuple
 
+import glob
+import shutil
 import numpy as np
 from astropy.time import Time
 
@@ -128,6 +130,114 @@ def prepare_directory(params: ParamDict, pkind: str, sid_path: str,
         os.makedirs(my_path)
     # update output path
     params.set(file_path, value=my_path, source=func_name)
+
+# =============================================================================
+# Step input/output routing (PRE_EXTRACT -> EXTRACT -> POST_EXTRACT)
+# =============================================================================
+def make_step_result(module: str, output_dir: Optional[str],
+                     output_files: Optional[List[str]] = None,
+                     **extra: Any) -> Dict[str, Any]:
+    """
+    Build a uniform "step result" describing the outputs of a reduction step.
+
+    This is the object a step (e.g. a pre-extraction or extraction flavour)
+    returns so that the next step (e.g. extraction or post-extraction) can pick
+    up its outputs - this mirrors the way TSOVORE/SOSSISSE/MIRIAM instances are
+    passed between steps via pre_inst / ext_inst.
+
+    :param module: str, the name of the module/flavour (e.g. 'eureka', 'jwst')
+    :param output_dir: str or None, the directory the step wrote its outputs to
+    :param output_files: list of str or None, explicit output files (if known)
+    :param extra: any additional keys to store on the result
+    :return: dict, the step result
+    """
+    result = dict(module=module, output_dir=output_dir,
+                  output_files=list(output_files) if output_files else [])
+    result.update(extra)
+    return result
+
+
+def step_output_files(instance: Any) -> Tuple[Optional[str], List[str]]:
+    """
+    Best-effort extraction of the output directory and files from a step
+    instance/result.
+
+    Currently understands the uniform ``make_step_result`` dictionaries (used
+    by the file-based flavours eureka/jwst). Other instance types (e.g. the
+    in-memory TSOVORE/NAMELESS objects) are routed by their own dedicated
+    helpers and are safely ignored here (returns no files).
+
+    :param instance: the step instance/result to inspect
+    :return: tuple (output_dir, output_files)
+    """
+    # uniform step-result dictionaries
+    if isinstance(instance, dict) and 'output_dir' in instance:
+        out_dir = instance.get('output_dir')
+        files = list(instance.get('output_files') or [])
+        # fall back to globbing the output directory if no explicit files
+        if not files and out_dir is not None and os.path.exists(out_dir):
+            files = sorted(glob.glob(os.path.join(out_dir, '*.fits')))
+        return out_dir, files
+    # unknown instance type -> no routable files
+    return None, []
+
+
+def route_step_inputs(params: ParamDict, instances: Optional[Dict[str, Any]],
+                      dest_dir: Optional[str]):
+    """
+    Copy the outputs of predecessor step instances into a destination input
+    directory.
+
+    This is the generic equivalent of sossisse's ``tsovore_input`` /
+    sorbet's ``sossisse_input``: it takes the instances produced by the
+    previous reduction level (pre_inst for extraction, ext_inst for
+    post-extraction) and copies their output files into the current step's
+    input directory so the current step can find them.
+
+    Copying is skipped when the source directory IS the destination directory
+    (i.e. when the flavours already chain their directories internally, such as
+    eureka/jwst Stage 2 output == Stage 3 input).
+
+    :param params: ParamDict, the parameter dictionary of constants
+    :param instances: dict or None, the predecessor step instances
+    :param dest_dir: str or None, the destination input directory
+    :return: None
+    """
+    # set function name
+    func_name = f'{__NAME__}.route_step_inputs()'
+    # deal with nothing to do
+    if dest_dir is None or not instances:
+        return
+    # loop around the predecessor instances
+    for key in instances:
+        instance = instances[key]
+        # skip empty instances
+        if instance is None:
+            continue
+        # get the output directory and files from the instance
+        out_dir, files = step_output_files(instance)
+        # skip instances that don't expose routable files
+        if len(files) == 0:
+            continue
+        # skip if the source directory is already the destination (internal
+        #   directory chaining, e.g. within a single flavour)
+        if out_dir is not None:
+            if os.path.realpath(out_dir) == os.path.realpath(dest_dir):
+                continue
+        # make sure the destination exists
+        if not os.path.exists(dest_dir):
+            os.makedirs(dest_dir)
+        # copy each output file into the destination directory
+        for src in files:
+            dst = os.path.join(dest_dir, os.path.basename(src))
+            # skip copying a file onto itself
+            if os.path.realpath(src) == os.path.realpath(dst):
+                continue
+            # log the copy
+            msg = 'Copying {0} output to next step input: {1}'
+            WLOG(params, '', msg.format(key, os.path.basename(src)))
+            # copy the file
+            shutil.copy(src, dst)
 
 # =============================================================================
 # Start of code

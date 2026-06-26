@@ -218,6 +218,11 @@ CDict.add('POST_EUREKA', value=False, dtype=bool, source=__NAME__,
           user=True, active=True, group=group, not_none=True,
           description='Run Eureka post-extraction steps')
 
+# Run default JWST post-extraction steps
+CDict.add('POST_JWST', value=False, dtype=bool, source=__NAME__,
+          user=True, active=True, group=group, not_none=True,
+          description='Run default JWST post-extraction steps')
+
 
 # =============================================================================
 # Start of code
