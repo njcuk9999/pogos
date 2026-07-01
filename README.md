@@ -9,6 +9,7 @@ PrOcessing General ObServations: A wrapper for TSOVORE, SOSSISSE, MIRIAM and SOR
 4. [Running POGOS](#4-running-pogos)
 5. [Running POGOS with your own data](#5-running-pogos-with-your-own-data)
 6. [Dev mode](#6-dev-mode)
+7. [Running tests](#7-running-tests)
 
 ---
 
@@ -94,6 +95,7 @@ if you are in the directory where you did your `git clone` then you need to chan
 
 
 [Back to top](#table-of-contents)
+
 
 ---
 
@@ -219,4 +221,32 @@ installed packages (this includes the ones you cloned above).
 
 [Back to top](#table-of-contents)
 
+
 ---
+
+## 7. Running tests
+
+POGOS includes a unit test suite under `tests/` using `pytest`.
+
+From the repository root (inside your active `pogos-env` or equivalent):
+
+```bash
+cd {POGOS_ROOT}
+pytest -q
+```
+
+To run a single test file:
+
+```bash
+cd {POGOS_ROOT}
+pytest -q tests/test_tsovore_misc.py
+```
+
+To run tests matching a keyword:
+
+```bash
+cd {POGOS_ROOT}
+pytest -q -k sorbet
+```
+
+[Back to top](#table-of-contents)

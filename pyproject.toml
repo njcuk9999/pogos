@@ -55,4 +55,4 @@ full = ["aperocore @ git+https://github.com/njcuk9999/apero-drs.git@v0.8.running
         "exotic_ld @ git+https://github.com/njcuk9999/ExoTiC-LD.git",
         "sossisse @ git+https://github.com/njcuk9999/sossisse.git@developer"]
 # Install aperocore, pastasoss, expotic_ld and sossisse before installing pogos
-dev = []
+dev = ["pytest>=8.0"]
