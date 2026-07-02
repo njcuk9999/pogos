@@ -1,22 +1,28 @@
 #!/usr/bin/env python
 # -*- coding: utf-8 -*-
 """
-# CODE NAME HERE
+Top-level POGOS package.
 
-# CODE DESCRIPTION HERE
+Keep this module intentionally lightweight so command-line entrypoints do not
+pay the cost of importing plotting / astropy stacks before they are needed.
 
 Created on 2024-12-17 at 11:12
 
 @author: cook
 """
 
-import numpy as np
-import matplotlib.pyplot as plt
-from astropy.io import fits
-from astropy.table import Table
-from astropy import units as u
-from tqdm import tqdm
-import warnings
+from importlib import import_module
+
+__all__ = ['recipes', 'tsovore', 'sossisse_wrap', 'miriam', 'sorbet',
+           'eureka_wrap', 'jwst_wrap', 'nameless_wrap', 'constants']
+
+
+def __getattr__(name):
+    if name in __all__:
+        module = import_module(f'{__name__}.{name}')
+        globals()[name] = module
+        return module
+    raise AttributeError(f'module {__name__!r} has no attribute {name!r}')
 
 
 # =============================================================================
@@ -28,8 +34,7 @@ import warnings
 # =============================================================================
 # Define functions
 # =============================================================================
-def function1():
-    return 0
+
 
 
 # =============================================================================

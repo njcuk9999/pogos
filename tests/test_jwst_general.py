@@ -24,7 +24,7 @@ def test_get_pipeline_class_returns_none_for_unknown_mode():
 
 
 def test_jwst_result_builds_uniform_result_dict():
-    params = {"JWST.PATHS.OUT_S3_PATH": "/tmp/stage3"}
+    params = {"STD_JWST.PATHS.OUT_S3_PATH": "/tmp/stage3"}
 
     result = general._jwst_result(params, stage=3)
 

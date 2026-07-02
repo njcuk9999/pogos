@@ -10,6 +10,7 @@ Created on 2024-10-29 at 09:32
 @author: cook
 """
 import sys
+from importlib import import_module
 # Ensure we're importing the installed packages, not a local directory
 # Remove current directory from sys.path if present to avoid import confusion
 if '' in sys.path:
@@ -26,10 +27,6 @@ from pogos.constants.constants import CDict
 from pogos.core import base as pogos_base
 from pogos.core import general
 from pogos.core import startup
-from pogos import tsovore
-from pogos import sossisse_wrap
-from pogos import miriam
-from pogos import sorbet
 
 
 # =============================================================================
@@ -52,12 +49,37 @@ ConstDict = pogo_constants.ConstDict
 # get the logger
 WLOG = drs_log.wlog
 
+_LAZY_MODULES = {'tsovore', 'sossisse_wrap', 'miriam', 'sorbet',
+                 'eureka_wrap', 'jwst_wrap', 'nameless_wrap'}
+
+
+def __getattr__(name):
+    if name in _LAZY_MODULES:
+        module = import_module(f'pogos.{name}')
+        globals()[name] = module
+        return module
+    raise AttributeError(f'module {__name__!r} has no attribute {name!r}')
+
+
+def _get_module(name):
+    if name in globals():
+        return globals()[name]
+    return __getattr__(name)
+
+
+def _load_copy_modules():
+    names = ['tsovore', 'eureka_wrap', 'jwst_wrap', 'nameless_wrap',
+             'sossisse_wrap', 'miriam', 'sorbet']
+    return tuple(_get_module(name) for name in names)
+
 # =============================================================================
 # Define functions
 # =============================================================================
 def main(**kwargs):
     # print splash
     general.start_splash('POGOS Copy')
+    (tsovore, eureka_wrap, jwst_wrap, nameless_wrap,
+     sossisse_wrap, miriam, sorbet) = _load_copy_modules()
     # listing functionality
     if startup.quick_args(sys.argv): return
     # get other configs (either internal like SORBET or external like SOSSISSE)
@@ -125,9 +147,19 @@ def main(**kwargs):
     # -------------------------------------------------------------------------
     # setup individual modules (same as pogos_setup)
     params = tsovore.setup_tsovore_module(params)
+    params = eureka_wrap.setup_eureka_pre_extract(params)
+    params = jwst_wrap.setup_jwst_pre_extract(params)
+    params = nameless_wrap.setup_nameless_pre_extract(params)
+
     sossisse_wrap.setup_sossisse_module(params, cdict)
     params = miriam.setup_miriam_module(params)
+    params = eureka_wrap.setup_eureka_extract(params)
+    params = jwst_wrap.setup_jwst_extract(params)
+    params = nameless_wrap.setup_nameless_extract(params)
+
     params = sorbet.setup_sorbet_module(params)
+    params = eureka_wrap.setup_eureka_post_extract(params)
+    params = jwst_wrap.setup_jwst_post_extract(params)
 
     # -------------------------------------------------------------------------
     # Tell user where they may need to copy files

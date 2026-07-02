@@ -97,7 +97,7 @@ def run_jwst_pre_extract(params: ParamDict) -> ParamDict:
     make_jwst_dirs(params, stage=2)
     # -------------------------------------------------------------------------
     # deal with test mode (return here)
-    if params['JWST.GENERAL.TESTMODE']:
+    if params['STD_JWST.GENERAL.TESTMODE']:
         return _jwst_result(params, stage=2)
     # -------------------------------------------------------------------------
     # Run Stage 1 (calwebb_detector1) + Stage 2 (calwebb_spec2/image2)
@@ -122,10 +122,10 @@ def run_jwst_extract(params: ParamDict, pre_inst=None) -> ParamDict:
     # push the outputs from the pre-extraction step into the Stage 3 input
     #   directory (mirrors TSOVORE -> SOSSISSE/MIRIAM)
     pogos_general.route_step_inputs(params, pre_inst,
-                                    params.get('JWST.PATHS.IN_S3_PATH'))
+                                    params.get('STD_JWST.PATHS.IN_S3_PATH'))
     # -------------------------------------------------------------------------
     # deal with test mode (return here)
-    if params['JWST.GENERAL.TESTMODE']:
+    if params['STD_JWST.GENERAL.TESTMODE']:
         return _jwst_result(params, stage=3)
     # -------------------------------------------------------------------------
     # Run Stage 3 (calwebb_tso3/spec3/image3)
@@ -144,7 +144,7 @@ def run_jwst_post_extract(params: ParamDict, ext_inst=None) -> ParamDict:
         return None
     # -------------------------------------------------------------------------
     # deal with test mode (return here)
-    if params['JWST.GENERAL.TESTMODE']:
+    if params['STD_JWST.GENERAL.TESTMODE']:
         return None
     # -------------------------------------------------------------------------
     # The standard JWST pipeline ends after Stage 3 (handled by the extraction
@@ -171,7 +171,7 @@ def _jwst_result(params: ParamDict, stage: int) -> dict:
     :return: dict, the step result
     """
     # get the output directory for this stage
-    output_dir = params.get(f'JWST.PATHS.OUT_S{stage}_PATH', None)
+    output_dir = params.get(f'STD_JWST.PATHS.OUT_S{stage}_PATH', None)
     # build and return the uniform step result
     return pogos_general.make_step_result('jwst', output_dir, stage=stage)
 
@@ -198,7 +198,7 @@ def import_jwst(params: ParamDict):
         return params, pipelines
     except ImportError:
         # turn off the JWST steps if the package is not installed
-        if not params['JWST.GENERAL.TESTMODE']:
+        if not params['STD_JWST.GENERAL.TESTMODE']:
             params.set('RUN.PRE_JWST', value=False, source=func_name)
             params.set('RUN.EXT_JWST', value=False, source=func_name)
             params.set('RUN.POST_JWST', value=False, source=func_name)
@@ -229,10 +229,10 @@ def run_jwst_stage(params: ParamDict, pipelines: dict, stage: int):
         return
     # -------------------------------------------------------------------------
     # get the input/output paths and the suffix we are looking for
-    inpath = params[f'JWST.PATHS.IN_S{stage}_PATH']
-    outpath = params[f'JWST.PATHS.OUT_S{stage}_PATH']
-    suffix = params[f'JWST.STAGE{stage}.input_suffix']
-    save_results = params[f'JWST.STAGE{stage}.save_results']
+    inpath = params[f'STD_JWST.PATHS.IN_S{stage}_PATH']
+    outpath = params[f'STD_JWST.PATHS.OUT_S{stage}_PATH']
+    suffix = params[f'STD_JWST.STAGE{stage}.input_suffix']
+    save_results = params[f'STD_JWST.STAGE{stage}.save_results']
     # -------------------------------------------------------------------------
     # find the input files for this stage
     pattern = os.path.join(inpath, f'*_{suffix}.fits')
@@ -299,7 +299,7 @@ def build_stage3_association(params: ParamDict, files: list,
     from jwst.associations.asn_from_list import asn_from_list
     from jwst.associations.lib.rules_level3_base import DMS_Level3_Base
     # get the product name
-    product_name = params['JWST.STAGE3.product_name']
+    product_name = params['STD_JWST.STAGE3.product_name']
     # build the association
     asn = asn_from_list(files, rule=DMS_Level3_Base, product_name=product_name)
     # serialise to json
@@ -324,7 +324,7 @@ def make_jwst_dirs(params: ParamDict, stage: int = None):
     # set the function name
     func_name = f'{__NAME__}.make_jwst_dirs()'
     # set basic prepare-directory parameters
-    sid_path = 'JWST.GENERAL.SUBDIRECTORY'
+    sid_path = 'STD_JWST.GENERAL.SUBDIRECTORY'
     sid_null = jwst_unique_id()
     mode = 'jwst'
     # set topdir
@@ -333,11 +333,11 @@ def make_jwst_dirs(params: ParamDict, stage: int = None):
     for _stage in [1, 2, 3]:
         if stage in [None, _stage]:
             # set the absolute pogos in/out path keys
-            pogos_inkey = f'JWST.PATHS.IN_S{_stage}_PATH'
-            pogos_outkey = f'JWST.PATHS.OUT_S{_stage}_PATH'
+            pogos_inkey = f'STD_JWST.PATHS.IN_S{_stage}_PATH'
+            pogos_outkey = f'STD_JWST.PATHS.OUT_S{_stage}_PATH'
             # get the relative in/out directory names from the constants
-            j_inpath = str(params[f'JWST.STAGE{_stage}.inputdir'])
-            j_outpath = str(params[f'JWST.STAGE{_stage}.outputdir'])
+            j_inpath = str(params[f'STD_JWST.STAGE{_stage}.inputdir'])
+            j_outpath = str(params[f'STD_JWST.STAGE{_stage}.outputdir'])
             # starting point is setting the pogos in/out keys to these
             params.set(pogos_inkey, value=j_inpath, source=func_name)
             params.set(pogos_outkey, value=j_outpath, source=func_name)
@@ -347,7 +347,7 @@ def make_jwst_dirs(params: ParamDict, stage: int = None):
             pogos_general.prepare_directory(params, 'output', sid_path,
                                             sid_null, pogos_outkey, mode)
             # set the top path
-            params.set(f'JWST.STAGE{_stage}.topdir', value=topdir,
+            params.set(f'STD_JWST.STAGE{_stage}.topdir', value=topdir,
                        source=func_name)
 
 

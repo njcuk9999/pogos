@@ -11,6 +11,7 @@ Created on 2024-10-29 at 09:32
 """
 import os
 import sys
+from importlib import import_module
 # Ensure we're importing the installed packages, not a local directory
 # Remove current directory from sys.path if present to avoid import confusion
 if '' in sys.path:
@@ -24,13 +25,6 @@ from aperocore.constants import load_functions
 from pogos.constants.constants import CDict
 from pogos.core import base as pogos_base
 from pogos.core import general
-from pogos import tsovore
-from pogos import sossisse_wrap
-from pogos import miriam
-from pogos import sorbet
-from pogos import jwst_wrap
-from pogos import nameless_wrap
-from pogos import eureka_wrap
 from pogos.core import startup
 
 # =============================================================================
@@ -50,6 +44,29 @@ __inputs__ = ['GLOBAL.YAML_FILE', 'GLOBAL.LIST_YAMLS']
 # get the logger
 WLOG = drs_log.wlog
 
+_LAZY_MODULES = {'tsovore', 'sossisse_wrap', 'miriam', 'sorbet',
+                 'jwst_wrap', 'nameless_wrap', 'eureka_wrap'}
+
+
+def __getattr__(name):
+    if name in _LAZY_MODULES:
+        module = import_module(f'pogos.{name}')
+        globals()[name] = module
+        return module
+    raise AttributeError(f'module {__name__!r} has no attribute {name!r}')
+
+
+def _get_module(name):
+    if name in globals():
+        return globals()[name]
+    return __getattr__(name)
+
+
+def _load_run_modules():
+    names = ['tsovore', 'sossisse_wrap', 'miriam', 'sorbet',
+             'jwst_wrap', 'nameless_wrap', 'eureka_wrap']
+    return tuple(_get_module(name) for name in names)
+
 
 # =============================================================================
 # Define functions
@@ -57,6 +74,8 @@ WLOG = drs_log.wlog
 def main(**kwargs):
     # print splash
     general.start_splash('POGOS')
+    (tsovore, sossisse_wrap, miriam, sorbet,
+     jwst_wrap, nameless_wrap, eureka_wrap) = _load_run_modules()
     # quick_args functionality
     if startup.quick_args(sys.argv): return
     # get other configs (either internal like SORBET or external like SOSSISSE)

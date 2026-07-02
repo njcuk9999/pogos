@@ -10,25 +10,22 @@ Created on 2024-10-29 at 10:16
 @author: cook
 """
 import glob
+import fnmatch
 import os
 import string
 import sys
 import time
-from typing import Any, List
+from typing import Any, List, Optional, Tuple
 
-from crds.client import api as crds_api
-from crds.core import utils as crds_utils
-from astropy.time import Time
 from pogos.constants import constants as pogo_constants
 from pogos.core import base as pogos_base
-from pogos.resources import demos as demo_mod
 
 from aperocore.base import base as aperocore_base
 from aperocore.constants import load_functions
 from aperocore.constants import param_functions
 from aperocore.core import drs_log
 from aperocore.core import drs_text
-from pogos import constants, eureka_wrap, jwst_wrap, nameless_wrap
+from pogos import constants
 
 # =============================================================================
 # Define variables
@@ -61,6 +58,30 @@ INPUTARGS['pogos.recipes.test_run'] = ['GLOBAL.YAML_FILE']
 VALID_PUNC = ['-', '+', '.', '_']
 
 
+def _load_demo_module():
+    from pogos.resources import demos as demo_module
+    return demo_module
+
+
+def _load_time_class():
+    from astropy.time import Time
+    return Time
+
+
+def _load_crds_runtime():
+    from crds.client import api as crds_api
+    from crds.core import utils as crds_utils
+    return crds_api, crds_utils
+
+
+def _load_initial_setup_modules():
+    from pogos import eureka_wrap
+    from pogos import jwst_wrap
+    from pogos import nameless_wrap
+    from sossisse.core.constants import CDict as sossisse_cdict
+    return eureka_wrap, jwst_wrap, nameless_wrap, sossisse_cdict
+
+
 # =============================================================================
 # Define functions
 # =============================================================================
@@ -72,7 +93,8 @@ def setup(params: ParamDict, start_from_demo: bool = True):
     """
     # ------------------------------------------------------------------------
     # deal with user selecting instrument, mode and reduction steps
-    params, demo_list = core_setup(params, demo_mod, start_from_demo)
+    demo_module = _load_demo_module() if start_from_demo else None
+    params, demo_list = core_setup(params, demo_module, start_from_demo)
     # if we are starting from a demo (i.e. no previous yaml)
     if start_from_demo:
         # deal with start point (setup only) - ask user to start from demo
@@ -94,31 +116,44 @@ def setup(params: ParamDict, start_from_demo: bool = True):
     params = load_functions.ask_for_missing_args(params, include_keys=run_keys)
     # -------------------------------------------------------------------------
     # Deal with disabling sections we don't need in the yaml
+    disable_prefixes = set()
+    sub_run_keys = pogos_base.SUB_RUN_KEYS
+    wildcard_sub_run = dict()
+
+    # split exact and wildcard sub-run mappings
+    for sub_key, prefixes in sub_run_keys.items():
+        if '*' in sub_key or '?' in sub_key or '[' in sub_key:
+            wildcard_sub_run[sub_key] = prefixes
+
     for run_key in run_keys:
-        # if False turn off the section
         if not params[run_key]:
-            for key in params.keys():
-                # condition 1: prefix is in RUN_KEYs
-                cond1 = key.startswith(pogos_base.RUN_KEYS[run_key])
-                # condition 2: prefix is in a list of keys in SUB_RUN_KEYS
-                cond2 = False
-                if run_key in pogos_base.SUB_RUN_KEYS:
-                    for subkey in pogos_base.SUB_RUN_KEYS[run_key]:
-                        if key.startswith(subkey):
-                            cond2 = True
-                # if either of the above is true don't add to yaml and don't
-                #   ask user for value
-                #   (this is done by setting user=False and not_none=False)
-                if cond1 or cond2:
-                    # TODO: remove this if statement
-                    # skip keys that are None (shouldn't be here so this is
-                    # just for debugging)
-                    if params.instances[key] is None:
-                        print('Skipping key {0} (no instance)'.format(key))
-                        continue
-                    # otherwise set user and not_none to False
-                    params.instances[key].user = False
-                    params.instances[key].not_none = False
+            disable_prefixes.add(pogos_base.RUN_KEYS[run_key])
+            for subkey in sub_run_keys.get(run_key, []):
+                disable_prefixes.add(subkey)
+
+    # wildcard sub-run mappings are only disabled when every matching RUN key
+    # is disabled (e.g. disable EUREKA.GENERAL only if all RUN.*_EUREKA=False)
+    for pattern, prefixes in wildcard_sub_run.items():
+        matched_run_keys = [rkey for rkey in run_keys
+                            if fnmatch.fnmatch(rkey, pattern)]
+        if len(matched_run_keys) == 0:
+            continue
+        if all(not params[rkey] for rkey in matched_run_keys):
+            for prefix in prefixes:
+                disable_prefixes.add(prefix)
+
+    for key in params.keys():
+        if not any(key.startswith(prefix) for prefix in disable_prefixes):
+            continue
+        # TODO: remove this if statement
+        # skip keys that are None (shouldn't be here so this is
+        # just for debugging)
+        if params.instances[key] is None:
+            print('Skipping key {0} (no instance)'.format(key))
+            continue
+        # otherwise set user and not_none to False
+        params.instances[key].user = False
+        params.instances[key].not_none = False
 
     # -------------------------------------------------------------------------
     # create paths to sub modules
@@ -128,6 +163,10 @@ def setup(params: ParamDict, start_from_demo: bool = True):
             continue
         # don't create if RUN = False
         if not params[run_key]:
+            continue
+        # wrappers with shared roots (eureka/nameless/jwst) manage their own
+        # directory trees, so avoid creating empty generic stage folders.
+        if run_key in pogos_base.SKIP_GENERIC_RUN_DIRS:
             continue
         # get run value
         run_value = pogos_base.RUN_KEYS[run_key]
@@ -181,7 +220,7 @@ def setup(params: ParamDict, start_from_demo: bool = True):
     msg = 'Saving constants to yaml file: {0}'
     WLOG(params, '', msg.format(os.path.realpath(yaml_file)))
     # add to the title
-    time_now = Time.now().iso
+    time_now = _load_time_class().now().iso
     cdict.title += '\n Yaml created on {0}'.format(time_now)
     # deal with adding from demo (if required)
     # Form demos we do not need to ask the user
@@ -240,8 +279,8 @@ def test_yamlfile(params: ParamDict):
         raise pogos_base.PogosException(emsg.format(*eargs))
 
 
-def core_setup(params: ParamDict, demo_mod: Any,
-               start_from_demo: bool = True) -> (ParamDict, dict):
+def core_setup(params: ParamDict, demo_mod: Optional[Any],
+               start_from_demo: bool = True) -> Tuple[ParamDict, dict]:
     """
     Deal with user selecting instrument, mode and reduction steps
 
@@ -283,6 +322,7 @@ def core_setup(params: ParamDict, demo_mod: Any,
     # -------------------------------------------------------------------------
     instrument_modes = pogos_base.INST_MODES
     # -------------------------------------------------------------------------
+    imode: Optional[str]
     if params['GLOBAL.INSTRUMENTMODE'] is None:
         WLOG(params, 'info', params['LOG.HEADER'])
         WLOG(params, 'info', 'Checking GLOBAL.INSTRUMENTMODE')
@@ -343,11 +383,14 @@ def core_setup(params: ParamDict, demo_mod: Any,
     # if we are not in start_from_demo return here
     if not start_from_demo:
         return params, dict()
+    if imode is None:
+        raise pogos_base.PogosException('GLOBAL.INSTRUMENTMODE could not be resolved.')
     # --------------------------------------------------------------------------
     # now ask about reduction steps
     # -------------------------------------------------------------------------
     # now ask user to select which steps to use
-    demo_modes = ask_reduction_steps(params, imode)
+    resolved_imode = str(imode)
+    demo_modes = ask_reduction_steps(params, resolved_imode)
     # deal with no demo modes selected
     if len(demo_modes) == 0:
         return params, dict()
@@ -644,16 +687,21 @@ def initial_setup():
     # -------------------------------------------------------------------------
     # Deal with internal first
     # -------------------------------------------------------------------------
+    eureka_wrap, jwst_wrap, nameless_wrap, sossisse_cdict = (
+        _load_initial_setup_modules())
     # define which constant lists we should be using
     const_list = dict()
     const_list['TSOVORE'] = constants.TSOVORE_CDict
     const_list['EUREKA'] = eureka_wrap.Eureka_CDict
-    const_list['JWST'] = jwst_wrap.JWST_CDict
+    const_list['STD_JWST'] = jwst_wrap.JWST_CDict
     const_list['NAMELESS'] = nameless_wrap.NAMELESS_CDict
     const_list['MIRIAM'] = constants.MIRIAM_CDict
     const_list['SORBET'] = constants.SORBET_CDict
 
-    # add those external ones
+    # add lazy-loaded external constants
+    const_list['SOSSISSE'] = sossisse_cdict
+
+    # add any additional external ones
     const_list.update(pogos_base.EXTERNAL_CONST)
 
     # return the updated extenral constants list
@@ -725,6 +773,7 @@ def _propagate_crds_setup(crds_path: str, server_url: str):
     :param server_url: str, CRDS server URL
     :return: tuple[str, str], normalized path and server URL
     """
+    crds_api, crds_utils = _load_crds_runtime()
     # normalize inputs
     crds_path = os.path.realpath(crds_path)
     server_url = server_url.rstrip('/')

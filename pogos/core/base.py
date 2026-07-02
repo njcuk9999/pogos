@@ -12,8 +12,6 @@ Created on 2024-10-29 at 09:35
 from pathlib import Path
 import yaml
 
-from sossisse.core.constants import CDict as SCdict
-
 # =============================================================================
 # Define variables
 # =============================================================================
@@ -237,11 +235,16 @@ SUB_RUN_KEYS = dict()
 SUB_RUN_KEYS['RUN.PRE_EUREKA'] = ['EUREKA.STAGE1', 'EUREKA.STAGE2']
 SUB_RUN_KEYS['RUN.EXT_EUREKA'] = ['EUREKA.STAGE3']
 SUB_RUN_KEYS['RUN.POST_EUREKA'] = ['EUREKA.STAGE4', 'EUREKA.STAGE5', 'EUREKA.STAGE6']
-SUB_RUN_KEYS['RUN.PRE_JWST'] = ['JWST.STAGE1', 'JWST.STAGE2']
-SUB_RUN_KEYS['RUN.EXT_JWST'] = ['JWST.STAGE3']
+SUB_RUN_KEYS['RUN.PRE_JWST'] = ['STD_JWST.STAGE1', 'STD_JWST.STAGE2']
+SUB_RUN_KEYS['RUN.EXT_JWST'] = ['STD_JWST.STAGE3']
 SUB_RUN_KEYS['RUN.PRE_NAMELESS'] = ['NAMELESS.S1_SETTINGS', 'NAMELESS.S2_SETTINGS',
                                     'NAMELESS.PREP_SETTINGS', 'NAMELESS.CST_SETTINGS']
 SUB_RUN_KEYS['RUN.EXT_NAMELESS'] = ['NAMELESS.EXT_SETTINGS']
+# Wildcard entries are applied when all matching RUN keys are False.
+SUB_RUN_KEYS['RUN.*_EUREKA'] = ['EUREKA.GENERAL']
+SUB_RUN_KEYS['RUN.*_JWST'] = ['STD_JWST.GENERAL']
+SUB_RUN_KEYS['RUN.*_NAMELESS'] = ['NAMELESS.GENERAL']
+SUB_RUN_KEYS['RUN.SORBET.*'] = ['SORBET.GENERAL', 'SORBET.PLOTS']
 
 # Define the first path to create (in setup) for each module
 #   when it isn't just the module name (as in RUN_KEYS)
@@ -258,6 +261,15 @@ RUN_DIRS['RUN.SOSSISSE'] = 'SOSSISSE.INPUTS.SOSSIOPATH'
 # RUN_DIRS['RUN.EXT_BOX'] = 'EXT_BOX.INPUTS.PATH'
 # RUN_DIRS['RUN.SORBET.WLCA'] = 'SORBET.WLCA.INPUT_PATH'
 # RUN_DIRS['RUN.SORBET.SLCA'] = 'SORBET.SLCA.INPUT_PATH'
+
+# Run keys that should NOT create a generic {GLOBAL.DATA_PATH}/{run_value.lower()}
+# directory in startup.setup(). These wrappers manage their own canonical roots
+# (e.g. eureka/, nameless/, jwst/) based on module SUBDIRECTORY settings.
+SKIP_GENERIC_RUN_DIRS = {
+    'RUN.PRE_EUREKA', 'RUN.EXT_EUREKA', 'RUN.POST_EUREKA',
+    'RUN.PRE_JWST', 'RUN.EXT_JWST', 'RUN.POST_JWST',
+    'RUN.PRE_NAMELESS', 'RUN.EXT_NAMELESS'
+}
 
 # Define the file paths for each module that may need clearing on copying a yaml
 # should be in format: FILE_PATHS[<constant name>] = <path to directory constant>
@@ -305,7 +317,8 @@ SORBET_DATE = __YAML__['SORBET.DATE']
 
 # set up external modules (still using apero-core)
 EXTERNAL_CONST = dict()
-EXTERNAL_CONST['SOSSISSE'] = SCdict
+# Filled lazily in startup.initial_setup() to avoid importing sossisse at
+# module import time.
 
 
 # =============================================================================

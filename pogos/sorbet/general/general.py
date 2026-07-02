@@ -24,8 +24,6 @@ from pogos.core import base as pogos_base
 from pogos.core import general as pogos_general
 from pogos.core import io as pogos_io
 from pogos.sorbet.core import core as sorbet_core
-from pogos.sorbet.general import science as sorbet_science
-from pogos.sorbet.general import plots as sorbet_plots
 from sossisse.core import misc
 from sossisse.instruments import default as sdefault
 
@@ -50,6 +48,12 @@ WLOG = drs_log.wlog
 RUN_CONSTANTS = ['RUN.SORBET.WLCA', 'RUN.SORBET.SLCA']  # , 'SORBET.TFIT.RUN', 'SORBET.RV.RUN']
 # get all chars
 CHARS = string.ascii_uppercase + string.digits
+
+
+def _load_sorbet_runtime_modules():
+    from pogos.sorbet.general import science as sorbet_science
+    from pogos.sorbet.general import plots as sorbet_plots
+    return sorbet_science, sorbet_plots
 
 
 # =============================================================================
@@ -233,13 +237,14 @@ def miriam_input(params: ParamDict,
     # deal with no MIRIAM WLC file
     if miriam_wlc_file is None:
         return params
+    miriam_wlc_file = str(miriam_wlc_file)
     # ---------------------------------------------------------------------
     # deal with WLCA files
     if sb_params['WLCA.RUN']:
         # prepare input directory
         prepare_directories(params, method='WLCA', verbose=False)
         # get the sorbet input directory for WLCA
-        sorbet_wlcta_input_dir = sb_params['WLCA.INPUT_PATH']
+        sorbet_wlcta_input_dir = str(sb_params['WLCA.INPUT_PATH'])
         # get absolute path to
         sorbet_file = str(os.path.join(sorbet_wlcta_input_dir,
                                        os.path.basename(miriam_wlc_file)))
@@ -262,6 +267,7 @@ def run_sorbet_wlcta(params: ParamDict):
     """
     # set the function name
     func_name = f'{__NAME__}.run_sorbet_wlcta'
+    sorbet_science, sorbet_plots = _load_sorbet_runtime_modules()
     # print the white light curve splash
     print(misc.art('SORBET WLC Transit Analysis', 'yellow', 'CYAN'))
     # --------------------------------------------------------------------------
@@ -320,6 +326,7 @@ def run_sorbet_slcta(params: ParamDict):
     """
     # set the function name
     func_name = f'{__NAME__}.run_sorbet_slcta'
+    sorbet_science, sorbet_plots = _load_sorbet_runtime_modules()
     # print the spectral light curve splash
     print(misc.art('SORBET SLC Transit Analysis', 'blue', 'CYAN'))
     # get the sorbet parameters
