@@ -51,9 +51,10 @@ pogos_copy = "pogos.recipes.pogos_copy:run"
 
 [project.optional-dependencies]
 full = ["aperocore @ git+https://github.com/njcuk9999/apero-drs.git@v0.8.running#subdirectory=apero-core",
-        "pastasoss @ git+https://github.com/njcuk9999/pastasoss.git",
-        "exotic_ld @ git+https://github.com/njcuk9999/ExoTiC-LD.git",
-        "sossisse @ git+https://github.com/njcuk9999/sossisse.git@developer",
-        "eureka @ git+git@github.com:kevin218/Eureka.git@miri_firstframe"]
-# Install aperocore, pastasoss, expotic_ld and sossisse before installing pogos
+        # fleck required until updated to support numpy 2.x
+        "fleck @ git+https://github.com/njcuk9999/fleck.git",
+        # eureka miri_firstframe deals with exotic-ld and pastasoss dependencies with numpy 2.x
+        "eureka-bang @ git+https://github.com/kevin218/Eureka.git@miri_firstframe",
+        "sossisse @ git+https://github.com/njcuk9999/sossisse.git@developer"]
+# dev assumes you are installing aperocore, fleck, eureka and sossisse in editable mode and so does not install them
 dev = ["pytest>=8.0"]

@@ -12,6 +12,7 @@ Created on 2024-12-17 at 11:12
 """
 
 from importlib import import_module
+from pogos.core.base import __version__, __authors__, __date__, __release__
 
 __all__ = ['recipes', 'tsovore', 'sossisse_wrap', 'miriam', 'sorbet',
            'eureka_wrap', 'jwst_wrap', 'nameless_wrap', 'constants']
