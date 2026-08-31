@@ -18,7 +18,7 @@ from pogos.core import base
 try:
     import eureka
     eversion = eureka.__version__
-    edate = eureka.__date__
+    edate = 'Unknown'
 
 except ImportError:
     eversion  = 'Unknown'
