@@ -100,12 +100,12 @@ SORBET_CDict.add_group(cgroup, description='Configs for SORBET.WLCA: White '
                                           'light curve transit analysis',
                 source=__NAME__, user=True, active=True)
 # Input data path
-SORBET_CDict.add('INPUT_PATH', value=f'wlcta{os.sep}inputs',
+SORBET_CDict.add('INPUT_PATH', value=f'wlca{os.sep}inputs',
                  dtype=str, source=__NAME__,
                  user=True, active=True, group=cgroup,
                  description='Input data path. If not absolute path'
                              ' it will be set to GLOBAL.DATA_PATH/'
-                             'sorbet/{SUBDIRECTORY}/wlcta/{INPUT_PATH}/')
+                             'sorbet/{SUBDIRECTORY}/wlca/{INPUT_PATH}/')
 # Input data file
 SORBET_CDict.add('INPUT_FILE', value='white_light_curve.fits', dtype=str,
                  source=__NAME__, user=True, active=True, group=cgroup,
@@ -116,14 +116,14 @@ SORBET_CDict.add('OUTPUT_SUBPATH', value=None, dtype=str, source=__NAME__,
                 description='Output sub-directory path for channel/bin. '
                             '(set internally)')
 # Output results folder
-SORBET_CDict.add('OUTPUT_PATH', value=f'wlcta{os.sep}outputs', dtype=str,
+SORBET_CDict.add('OUTPUT_PATH', value=f'wlca{os.sep}outputs', dtype=str,
                 source=__NAME__,
                 user=True, active=True, group=cgroup,
                 description='Output result folder or path to the output folder.'
                             '\nIf this is an aboslute path it will be used as is'
                             '\n otherwise it will be relative to '
                             'GLOBAL.DATA_PATH/sorbet/'
-                            '{SUBDIRECTORY}/wlcta/{OUTPUT_PATH}/')
+                            '{SUBDIRECTORY}/wlca/{OUTPUT_PATH}/')
 
 # Whether to use previous juliet files (warning this will mean juliet ignores
 # any updates to parameters set here)
@@ -138,14 +138,14 @@ SORBET_CDict.add('USE_PREV_JULIET', value=False, dtype=bool, source=__NAME__,
                              'faster but use at your own risk!')
 
 # Plot path
-SORBET_CDict.add('PLOT_PATH', value=f'wlcta{os.sep}plots', dtype=str,
+SORBET_CDict.add('PLOT_PATH', value=f'wlca{os.sep}plots', dtype=str,
                 source=__NAME__,
                 user=True, active=True, group=cgroup,
                 description='Output plot folder or path to the output folder.'
                             '\nIf this is an aboslute path it will be used as is'
                             '\n otherwise it will be relative to '
                             'GLOBAL.PLOT_PATH/sorbet/'
-                            '{SUBDIRECTORY}/wlcta/{PLOT_PATH}/')
+                            '{SUBDIRECTORY}/wlca/{PLOT_PATH}/')
 
 # Juliet parameters
 jps_desc = """
@@ -300,7 +300,7 @@ SORBET_CDict.add_group(cgroup, description='Configs for SORBET.SLCA: '
                                           'analysis',
                 source=__NAME__, user=True, active=True)
 # Input data path
-SORBET_CDict.add('INPUT_PATH', value=f'slcta{os.sep}inputs',
+SORBET_CDict.add('INPUT_PATH', value=f'slca{os.sep}inputs',
                  dtype=str, source=__NAME__,
                  user=True, active=True, group=cgroup,
                  description='Input data path. If not absolute path'
@@ -327,14 +327,14 @@ SORBET_CDict.add('OUTPUT_SUBPATH', value=None, dtype=str, source=__NAME__,
                 description='Output sub-directory path for channel/bin. '
                             '(set internally)')
 # Output results folder
-SORBET_CDict.add('OUTPUT_PATH', value=f'slcta{os.sep}outputs',
+SORBET_CDict.add('OUTPUT_PATH', value=f'slca{os.sep}outputs',
                  dtype=str, source=__NAME__,
                  user=True, active=True, group=cgroup,
                  description='Output result folder or path to the output folder.'
                              '\nIf this is an aboslute path it will be used as is'
                              '\n otherwise it will be relative to '
                              'GLOBAL.DATA_PATH/sorbet/'
-                             '{SUBDIRECTORY}/slcta/{OUTPUT_PATH}/')
+                             '{SUBDIRECTORY}/slca/{OUTPUT_PATH}/')
 
 # Whether to use previous juliet files (warning this will mean juliet ignores
 # any updates to parameters set here)
@@ -349,14 +349,14 @@ SORBET_CDict.add('USE_PREV_JULIET', value=False, dtype=bool, source=__NAME__,
                              'faster but use at your own risk!')
 
 # Plot path
-SORBET_CDict.add('PLOT_PATH', value=f'slcta{os.sep}plots',  dtype=str,
+SORBET_CDict.add('PLOT_PATH', value=f'slca{os.sep}plots',  dtype=str,
                 source=__NAME__,
                 user=True, active=True, group=cgroup,
                 description='Output plot folder or path to the output folder.'
                             '\nIf this is an aboslute path it will be used as is'
                             '\n otherwise it will be relative to '
                             'GLOBAL.PLOT_PATH/sorbet/'
-                            '{SUBDIRECTORY}/wlcta/{PLOT_PATH}/')
+                            '{SUBDIRECTORY}/wlca/{PLOT_PATH}/')
 
 # Resolution to bin the spectral light curves
 SORBET_CDict.add('RESOLUTION_BIN', value=100, dtype=int, source=__NAME__,

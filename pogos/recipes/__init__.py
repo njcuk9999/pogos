@@ -12,7 +12,7 @@ Created on 2024-10-29 at 09:21
 """
 from importlib import import_module
 
-__all__ = ['pogos_run', 'pogos_setup', 'pogos_copy']
+__all__ = ['pogos_run', 'pogos_setup', 'pogos_copy', 'pogos_config']
 
 
 def __getattr__(name):

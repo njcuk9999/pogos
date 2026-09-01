@@ -23,7 +23,7 @@ from pogos import tsovore
 # =============================================================================
 # Define variables
 # =============================================================================
-__NAME__ = 'pogos.tsovore.recipes.run_sorbet_slcta'
+__NAME__ = 'pogos.tsovore.recipes.run_sorbet_slca'
 __PACKAGE__ = base.__PACKAGE__
 __version__ = base.__version__
 __authors__ = base.__authors__

@@ -20,6 +20,7 @@ if '.' in sys.path:
     sys.path.remove('.')
 
 from aperocore.core import drs_log
+from aperocore.core import drs_text
 from aperocore.constants import load_functions
 
 from pogos.constants.constants import CDict
@@ -41,6 +42,12 @@ __description__ = ('Run the POGOS recipe using a configuration (yaml) file.'
                    'file given and all data and plots will be saved in the '
                    'outpaths given in the input yaml file.')
 __inputs__ = ['GLOBAL.YAML_FILE', 'GLOBAL.LIST_YAMLS']
+# version error text
+verr = ('The POGOS version of the {0} is not compatible with '
+        'the current version of the code ({1}). '
+        'Please update the config file to be compatible with the '
+        'current version of the code.'
+        ' You can use pogos_config to update an old config file.')
 # get the logger
 WLOG = drs_log.wlog
 
@@ -71,6 +78,38 @@ def _load_run_modules():
 # =============================================================================
 # Define functions
 # =============================================================================
+def _allow_stale_yaml_version(params, yaml_file: str) -> bool:
+    """
+    Check yaml version and ask user whether to continue if it is stale.
+    """
+    version_ok = load_functions._check_yaml_version(yaml_file,
+                                                    __version__,
+                                                    verr,
+                                                    raise_exception=False)
+    if version_ok:
+        return True
+
+    # always show the compatibility warning
+    WLOG(params, 'warning', verr.format(yaml_file, __version__))
+
+    # allow non-interactive override for scripted runs
+    override = os.environ.get('POGOS_ACCEPT_OLD_YAML', '').strip().lower()
+    if override in ['1', 'true', 'yes', 'y']:
+        WLOG(params, 'warning', 'Continuing with stale yaml because '
+                                'POGOS_ACCEPT_OLD_YAML is set.')
+        return True
+
+    # if not interactive, require explicit env override
+    if not sys.stdin.isatty():
+        emsg = ('Yaml version mismatch detected in non-interactive mode. '
+                'Set POGOS_ACCEPT_OLD_YAML=1 to continue anyway.')
+        WLOG(params, 'error', emsg)
+
+    question = ('\nYaml version appears to be incompatible and something '
+                'could break.\nDo you want to continue anyway?')
+    return drs_text.user_input(question, dtype='YN', required=True)
+
+
 def main(**kwargs):
     # print splash
     general.start_splash('POGOS')
@@ -86,11 +125,26 @@ def main(**kwargs):
                                            inputargs=__inputs__,
                                            param_file_path='GLOBAL.YAML_FILE',
                                            config_list=[CDict],
+                                           from_file=False,
                                            external_const=other_const,
                                            kwargs=kwargs)
-    # -------------------------------------------------------------------------
+    # get yaml path and run interactive version check gate
+    yaml_file = load_functions.get_param_file(params, 'GLOBAL.YAML_FILE',
+                                              __NAME__)
+    yaml_file = os.path.realpath(yaml_file)
+    if not _allow_stale_yaml_version(params, yaml_file):
+        WLOG(params, 'warning', 'User declined to continue with stale yaml.')
+        general.end_splash()
+        return
+
+    # load yaml after version acknowledgement
+    largs = dict(files=[yaml_file], params=params,
+                 version=None, version_err=None)
+    params = load_functions.load_from_yaml(**largs)
+    # mirror get_all_params behavior after file load
+    params = WLOG.minimal_params(params)
     # print yaml file used
-    msg = f'Using yaml file: {os.path.realpath(params["GLOBAL.YAML_FILE"])}'
+    msg = f'Using yaml file: {yaml_file}'
     WLOG(params, 'info', msg)
     # -------------------------------------------------------------------------
     # Check CRDS setup

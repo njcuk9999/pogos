@@ -23,7 +23,7 @@ from pogos import sorbet
 # =============================================================================
 # Define variables
 # =============================================================================
-__NAME__ = 'pogos.sorbet.recipes.run_sorbet_wlcta'
+__NAME__ = 'pogos.sorbet.recipes.run_sorbet_wlca'
 __PACKAGE__ = base.__PACKAGE__
 __version__ = base.__version__
 __authors__ = base.__authors__

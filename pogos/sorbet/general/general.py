@@ -71,12 +71,12 @@ def setup_sorbet_module(params: ParamDict):
     if not any_sorbet_run(params):
         return params
     # ----------------------------------------------------------------------
-    # setup the wlcta  input and output directories
+    # setup the wlca  input and output directories
     if params['RUN.SORBET.WLCA']:
         # prepare directories
         prepare_directories(params, method='WLCA')
     # ----------------------------------------------------------------------
-    # setup the slcta  input and output directories
+    # setup the slca  input and output directories
     if params['RUN.SORBET.SLCA']:
         # prepare directories
         prepare_directories(params, method='SLCA')
@@ -266,7 +266,7 @@ def run_sorbet_wlcta(params: ParamDict):
     :return: Updated params, runs sorbet recipes
     """
     # set the function name
-    func_name = f'{__NAME__}.run_sorbet_wlcta'
+    func_name = f'{__NAME__}.run_sorbet_wlca'
     sorbet_science, sorbet_plots = _load_sorbet_runtime_modules()
     # print the white light curve splash
     print(misc.art('SORBET WLC Transit Analysis', 'yellow', 'CYAN'))
@@ -325,7 +325,7 @@ def run_sorbet_slcta(params: ParamDict):
     :return: Updated params, runs sorbet recipes
     """
     # set the function name
-    func_name = f'{__NAME__}.run_sorbet_slcta'
+    func_name = f'{__NAME__}.run_sorbet_slca'
     sorbet_science, sorbet_plots = _load_sorbet_runtime_modules()
     # print the spectral light curve splash
     print(misc.art('SORBET SLC Transit Analysis', 'blue', 'CYAN'))

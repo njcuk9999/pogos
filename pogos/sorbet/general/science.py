@@ -136,6 +136,12 @@ def load_slc(params: ParamDict, input_file: str,
                f'\n\tFunction = {func_name}')
         raise sorbet_base.SorbetException(msg)
 
+    # deal with wave being 1D or 2D (we just take the first row)
+    # TODO: is this the right thing to do?
+    if wave.shape != flux.shape:
+        # we take the first wave solution and apply it to all integrations
+        wave = np.tile(wave[0], flux.shape[0]).reshape(flux.shape)
+
     # determine order (NIRISS SOSS)
     if params['GLOBAL.INSTRUMENTMODE'] == 'JWST.NIRISS.SOSS':
         valid = np.isfinite(flux)
@@ -649,10 +655,13 @@ def prepare_dataset(params: ParamDict, data_table: Table,
         if os.path.isdir(out_folder):
             out_folder = os.path.join(out_folder, suffix)
         else:
-            os.mkdir(out_folder)
             out_folder = os.path.join(out_folder, suffix)
         # update the output path
         sparams['OUTPUT_SUBPATH'] = out_folder
+
+    # make directories if they do not exists
+    if not os.path.exists(out_folder):
+        os.makedirs(out_folder, exist_ok=True)
 
     # Deal with having temporary files
     deal_with_previous_juilet_files(params, sparams, out_folder)

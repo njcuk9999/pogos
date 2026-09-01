@@ -318,7 +318,7 @@ def plot_transmission_spectrum(params: ParamDict,
     title = 'Transmission Spectrum'
     description = 'Plot showing the transmission spectrum from the SLCA'
     # -------------------------------------------------------------------------
-    # get slcta parameters
+    # get slca parameters
     slcta_params = params.get('SORBET.SLCA')
     # load the transmission spectrum
     filename = slcta_params['TRANSMISSION_SPECTRUM_FILE']
