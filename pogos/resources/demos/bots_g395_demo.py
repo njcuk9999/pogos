@@ -34,9 +34,9 @@ class BotsG395Demo_WASP39b(demos.PogoDemo):
     author = 'Loic Albert'
 
     def __init__(self):
-        self.title = 'JWST.NIRSPEC.G395M WASP 39b transit [{tflavours}]'
+        self.title = 'JWST.NIRSPEC.BOTS.G395M WASP 39b transit [{tflavours}]'
         # in form DEMO_{OBJNAME}.{date}.{telescope}.{inst}.{mode}.{flavours}
-        self.id = 'DEMO_WASP39b.20220710.JWST.NIRSPEC.G395.{tflavours}'
+        self.id = 'DEMO_WASP39b.20220710.JWST.NIRSPEC.BOTS.G395.{tflavours}'
         # define the flavours selected by the user
         self.flavours = []
         # define the string flavours (shortened versions of flavours for
