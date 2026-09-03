@@ -37,7 +37,7 @@ for instrument in base.INSTRUMENTS:
 # # JWST.NIRISS.SOSS demos
 DEMOS[soss]['t1b.sossisse'] = soss_demo.SossTrappist1bDemo
 
-# # JWST.NIRSPEC.PRISM demos
+# # JWST.NIRSPEC.BOTS.PRISM demos
 DEMOS[prism]['wasp39b.sossisse'] = prism_demo.BotsPrismDemo_WASP39b
 DEMOS[g395]['wasp39b.sossisse'] = g395_demo.BotsG395Demo_WASP39b
 

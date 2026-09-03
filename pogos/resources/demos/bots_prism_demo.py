@@ -34,9 +34,9 @@ class BotsPrismDemo_WASP39b(demos.PogoDemo):
     author = 'Neil Cook'
 
     def __init__(self):
-        self.title = 'JWST.NIRSPEC.PRISM WASP 39b transit [{tflavours}]'
+        self.title = 'JWST.NIRSPEC.BOTS.PRISM WASP 39b transit [{tflavours}]'
         # in form DEMO_{OBJNAME}.{date}.{telescope}.{inst}.{mode}.{flavours}
-        self.id = 'DEMO_WASP39b.20220710.JWST.NIRSPEC.PRISM.{tflavours}'
+        self.id = 'DEMO_WASP39b.20220710.JWST.NIRSPEC.BOTS.PRISM.{tflavours}'
         # define the flavours selected by the user
         self.flavours = []
         # define the string flavours (shortened versions of flavours for
@@ -62,7 +62,7 @@ class BotsPrismDemo_WASP39b(demos.PogoDemo):
         # =====================================================================
         cgroup = 'GLOBAL'
 
-        # Instrument mode i.e. JWST.NIRISS.SOSS or JWST.NIRSPEC.PRISM
+        # Instrument mode i.e. JWST.NIRISS.SOSS or JWST.NIRSPEC.BOTS.PRISM
         self.cdict.set('INSTRUMENTMODE', group=cgroup, source=__NAME__,
                        value=self.instrument)
         # =====================================================================

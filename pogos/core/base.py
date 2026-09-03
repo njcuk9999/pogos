@@ -166,16 +166,16 @@ RED_STEPS['Extraction']['EXT_JWST'] = JWST_MODES
 
 RED_STEPS['Post-extraction'] = dict()
 RED_STEPS['Post-extraction']['SORBET.WLCA'] = ['JWST.NIRISS.SOSS',
-                                               'JWST.NIRSPEC.PRISM',
-                                               'JWST.NIRSPEC.G395',
-                                               'JWST.NIRSPEC.G253',
-                                               'JWST.NIRSPEC.G140',
+                                               'JWST.NIRSPEC.BOTS.PRISM',
+                                               'JWST.NIRSPEC.BOTS.G395',
+                                               'JWST.NIRSPEC.BOTS.G253',
+                                               'JWST.NIRSPEC.BOTS.G140',
                                                'JWST.MIRI.IMAGING']
 RED_STEPS['Post-extraction']['SORBET.SLCA'] = ['JWST.NIRISS.SOSS',
-                                               'JWST.NIRSPEC.PRISM',
-                                               'JWST.NIRSPEC.G395',
-                                               'JWST.NIRSPEC.G253',
-                                               'JWST.NIRSPEC.G140']
+                                               'JWST.NIRSPEC.BOTS.PRISM',
+                                               'JWST.NIRSPEC.BOTS.G395',
+                                               'JWST.NIRSPEC.BOTS.G253',
+                                               'JWST.NIRSPEC.BOTS.G140']
 # RED_STEPS['Post-extraction']['SORBET.TransitFit'] = None
 # RED_STEPS['Post-extraction']['SORBET.RVA'] = None
 RED_STEPS['Post-extraction']['POST_EUREKA'] = ['JWST.NIRISS.SOSS',

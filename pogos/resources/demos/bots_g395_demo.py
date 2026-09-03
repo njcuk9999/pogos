@@ -62,7 +62,7 @@ class BotsG395Demo_WASP39b(demos.PogoDemo):
         # =====================================================================
         cgroup = 'GLOBAL'
 
-        # Instrument mode i.e. JWST.NIRISS.SOSS or JWST.NIRSPEC.PRISM
+        # Instrument mode i.e. JWST.NIRISS.SOSS or JWST.NIRSPEC.BOTS.PRISM
         self.cdict.set('INSTRUMENTMODE', group=cgroup, source=__NAME__,
                        value=self.instrument)
         # =====================================================================

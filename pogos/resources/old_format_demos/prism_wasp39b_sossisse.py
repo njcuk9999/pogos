@@ -28,14 +28,14 @@ Cdict.add_sub_cdict('SOSSISSE', S_Cdict, source=__NAME__)
 # Define info (must contain "title")
 # =============================================================================
 INFO = dict()
-INFO['title'] = 'JWST.NIRSPEC.PRISM WASP 39b transit [SOSSISSE]'
+INFO['title'] = 'JWST.NIRSPEC.BOTS.PRISM WASP 39b transit [SOSSISSE]'
 INFO['object'] = 'WASP 39b'
 INFO['instrument'] = 'JWST.NIRSPEC.BOTS.PRISM'
 INFO['description'] = 'WASP 39b transit observed on 2022-07-10'
 INFO['date'] = '2025-12-08'
 INFO['author'] = 'Neil Cook'
 INFO['red_steps'] = ['Extraction:SOSSISSE']
-INFO['id'] = 'DEMO_WASP39b_JWST.NIRSPEC.PRISM_SOSSISSE_20220710'
+INFO['id'] = 'DEMO_WASP39b_JWST.NIRSPEC.BOTS.PRISM_SOSSISSE_20220710'
 INFO['keywords'] = ['transit']
 # url for data download
 URL = 'http://206.12.93.77/ari/data/pogos/demos/nirspec/'
@@ -51,7 +51,7 @@ DOWNLOAD['SOSSISSE.GENERAL.POS_FILE'] = 'SOSSISSE.PATHS.CALIBPATH'
 # =============================================================================
 cgroup = 'GLOBAL'
 
-# Instrument mode i.e. JWST.NIRISS.SOSS or JWST.NIRSPEC.PRISM
+# Instrument mode i.e. JWST.NIRISS.SOSS or JWST.NIRSPEC.BOTS.PRISM
 Cdict.set('INSTRUMENTMODE', group=cgroup, source=__NAME__,
           value=INFO['instrument'])
 
