@@ -641,14 +641,31 @@ def core_yaml_setup(params: ParamDict):
                     WLOG(params, '', msg.format(yaml_path))
                     # break the loop
                     break
-        # get the desription of the yaml file from the constant instance
+        # ---------------------------------------------------------------------
+        # get the description of the yaml file from the constant instance
         description = params.instances['GLOBAL.YAML_FILE'].description
         # ask user for yaml file
         question = '\nPlease enter {0}'
         question += ('\n\nNote if no path is given the yaml file will '
                      'be put in the {1} directory.')
-        question = question.format(description, yamldir)
-        yaml_file = drs_text.user_input(question, dtype=str, required=True)
+        yaml_file = ''
+        while len(yaml_file) < 3:
+            question = question.format(description, yamldir)
+            yaml_file = drs_text.user_input(question, dtype=str, required=True)
+            # deal with no yaml file given
+            if len(yaml_file) >= 3:
+                # deal with no .yaml
+                if not yaml_file.endswith('.yaml'):
+                    yaml_file += '.yaml'
+
+                break
+            else:
+                WLOG(params, 'warning', 'You need to at least name the '
+                                        'yaml file with 3 characters,'
+                                        ' please try again.')
+                continue
+        # ---------------------------------------------------------------------
+        # set yaml file
         params['GLOBAL.YAML_FILE'] = yaml_file
         params.set_source('GLOBAL.YAML_FILE', func_name)
         # test yaml file
@@ -1039,29 +1056,37 @@ def copy_ask_description(params: ParamDict):
         # skip if not running
         if not params['RUN.{0}'.format(submodule)]:
             continue
-        # get sub-params
-        subparams = params.get(submodule)
-        # define sub-directory path
-        desc_key = None
-        if 'GENERAL.DESCRIPTION' in subparams:
-            desc_key = 'GENERAL.DESCRIPTION'
-        elif 'INPUTS.DESCRIPTION' in subparams:
-            desc_key = 'INPUTS.DESCRIPTION'
-        # skip if no description
-        if desc_key is None:
-            continue
-        # skip if no value set
-        if subparams[desc_key] is None:
-            continue
-        # add a sub-dictionary
-        descriptions[submodule] = dict()
-        # save the key for params
-        descriptions[submodule]['key'] = f'{submodule}.{desc_key}'
-        # save the value from params
-        descriptions[submodule]['value'] = subparams[desc_key]
-        # save the description from the params instance
-        desc_inst = params.instances[f'{submodule}.{desc_key}']
-        descriptions[submodule]['desc'] = desc_inst.description
+        # need to figure out if we are dealing with a submodule with multiple
+        # parts
+        if 'RUN.{0}'.format(submodule) in pogos_base.SUB_RUN_KEYS:
+            subkeys = pogos_base.SUB_RUN_KEYS['RUN.{0}'.format(submodule)]
+        else:
+            subkeys = [submodule]
+        # need to loop around submodules (subkeys may have multiple submodules)
+        for subkey in subkeys:
+            # get sub-params
+            subparams = params.get(subkey)
+            # define sub-directory path
+            desc_key = None
+            if 'GENERAL.DESCRIPTION' in subparams:
+                desc_key = 'GENERAL.DESCRIPTION'
+            elif 'INPUTS.DESCRIPTION' in subparams:
+                desc_key = 'INPUTS.DESCRIPTION'
+            # skip if no description
+            if desc_key is None:
+                continue
+            # skip if no value set
+            if subparams[desc_key] is None:
+                continue
+            # add a sub-dictionary
+            descriptions[submodule] = dict()
+            # save the key for params
+            descriptions[submodule]['key'] = f'{submodule}.{desc_key}'
+            # save the value from params
+            descriptions[submodule]['value'] = subparams[desc_key]
+            # save the description from the params instance
+            desc_inst = params.instances[f'{submodule}.{desc_key}']
+            descriptions[submodule]['desc'] = desc_inst.description
     # ---------------------------------------------------------------------
     # ask question
     question = ('Please enter a description for this POGOS yaml file.')
@@ -1105,86 +1130,95 @@ def copy_ask_subdirectories(params: ParamDict):
         # skip if not running
         if not params['RUN.{0}'.format(submodule)]:
             continue
-        # get sub-params
-        subparams = params.get(submodule)
-        # define sub-directory path
-        subdir, subdir_key, desc_key = None, None, None
-        if 'GENERAL.SUBDIRECTORY' in subparams:
-            subdir_key = 'GENERAL.SUBDIRECTORY'
-        elif 'INPUTS.SUBDIRECTORY' in subparams:
-            subdir_key = 'INPUTS.SUBDIRECTORY'
-        # skip if no sub-directory
-        if subdir_key is None:
-            continue
-        # set the sub-directory value
-        subdir = subparams[subdir_key]
-        # get the description from the params instance
-        subdir_inst = params.instances[f'{submodule}.{subdir_key}']
-        if subdir_inst is not None:
-            subdir_desc = subdir_inst.description
+        # need to figure out if we are dealing with a submodule with multiple
+        # parts
+        if 'RUN.{0}'.format(submodule) in pogos_base.SUB_RUN_KEYS:
+            subkeys = pogos_base.SUB_RUN_KEYS['RUN.{0}'.format(submodule)]
         else:
-            subdir_desc = None
-        # ---------------------------------------------------------------------
-        # print process
-        WLOG(params, 'info', '*'*50)
-        subtitle = ('Setting up new sub-directory for '
-                    '{0} module').format(submodule)
-        WLOG(params, 'info', subtitle)
-        WLOG(params, 'info', '*'*50)
-        time.sleep(0.1)
-        # ---------------------------------------------------------------------
-        # ask question
-        question = ('For the {0} module, Please enter a new value for {1}  '
-                    '\n\nPrevious value = {2}'
-                    ).format(submodule, subdir_key, subdir)
-        if subdir_desc is not None:
-            question += '\n\n' + subdir_desc
-        # ---------------------------------------------------------------------
-        # loop and ask the question
-        while True:
-            if prev is None:
-                required = True
+            subkeys = [submodule]
+        # need to loop around submodules (subkeys may have multiple submodules)
+        for subkey in subkeys:
+            # get sub-params
+            subparams = params.get(subkey)
+            # define sub-directory path
+            subdir, subdir_key, desc_key = None, None, None
+            if 'GENERAL.SUBDIRECTORY' in subparams:
+                subdir_key = 'GENERAL.SUBDIRECTORY'
+            elif 'INPUTS.SUBDIRECTORY' in subparams:
+                subdir_key = 'INPUTS.SUBDIRECTORY'
+            # skip if no sub-directory
+            if subdir_key is None:
+                continue
+            # set the sub-directory value
+            subdir = subparams[subdir_key]
+            # get the description from the params instance
+            subdir_inst = params.instances[f'{submodule}.{subdir_key}']
+            if subdir_inst is not None:
+                subdir_desc = subdir_inst.description
             else:
-                required = False
-
-            value = drs_text.user_input(question, dtype=str, required=required,
-                                        default=prev)
+                subdir_desc = None
             # -----------------------------------------------------------------
-            # make sure there are no white spaces
-            if any([c.isspace() for c in value]):
-                WLOG(params, '',
-                     'The value cannot contain any white spaces. Please '
-                     'try again.', no_timestamp=True, colour='yellow')
-                continue
-
-            if len(value) == 0:
-                WLOG(params, '',
-                     'The value cannot be empty. Please try again.',
-                     no_timestamp=True, colour='yellow')
-                continue
+            # print process
+            WLOG(params, 'info', '*'*50)
+            subtitle = ('Setting up new sub-directory for '
+                        '{0} module').format(submodule)
+            WLOG(params, 'info', subtitle)
+            WLOG(params, 'info', '*'*50)
+            time.sleep(0.1)
             # -----------------------------------------------------------------
-            # make sure there are no special characters other than underscores
-            char_passed = True
-            for char in string.punctuation:
-                if char not in VALID_PUNC and char in value:
-                    msg = ('The value cannot contain special characters '
-                           'other than {0}. Please try again.')
-                    margs = [', '.join(VALID_PUNC)]
-                    WLOG(params, '', msg.format(*margs),
+            # ask question
+            question = ('For the {0} module, Please enter a new value for {1}  '
+                        '\n\nPrevious value = {2}'
+                        ).format(submodule, subdir_key, subdir)
+            if subdir_desc is not None:
+                question += '\n\n' + subdir_desc
+            # -----------------------------------------------------------------
+            # loop and ask the question
+            while True:
+                if prev is None:
+                    required = True
+                else:
+                    required = False
+
+                value = drs_text.user_input(question, dtype=str,
+                                            required=required, default=prev)
+                # -------------------------------------------------------------
+                # make sure there are no white spaces
+                if any([c.isspace() for c in value]):
+                    WLOG(params, '',
+                         'The value cannot contain any white spaces. Please '
+                         'try again.', no_timestamp=True, colour='yellow')
+                    continue
+
+                if len(value) == 0:
+                    WLOG(params, '',
+                         'The value cannot be empty. Please try again.',
                          no_timestamp=True, colour='yellow')
-                    char_passed = False
-                    break
-            # re-check and ask the question again
-            if not char_passed:
-                continue
-            # -----------------------------------------------------------------
-            # break the loop
-            break
-        # set the new value
-        params.set(key=f'{submodule}.{subdir_key}', value=value,
-                   source='user input')
-        # update prev
-        prev = str(value)
+                    continue
+                # -------------------------------------------------------------
+                # make sure there are no special characters other
+                # than underscores
+                char_passed = True
+                for char in string.punctuation:
+                    if char not in VALID_PUNC and char in value:
+                        msg = ('The value cannot contain special characters '
+                               'other than {0}. Please try again.')
+                        margs = [', '.join(VALID_PUNC)]
+                        WLOG(params, '', msg.format(*margs),
+                             no_timestamp=True, colour='yellow')
+                        char_passed = False
+                        break
+                # re-check and ask the question again
+                if not char_passed:
+                    continue
+                # -------------------------------------------------------------
+                # break the loop
+                break
+            # set the new value
+            params.set(key=f'{submodule}.{subdir_key}', value=value,
+                       source='user input')
+            # update prev
+            prev = str(value)
 
     return params
 
