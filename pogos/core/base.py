@@ -141,9 +141,12 @@ RED_STEPS['Pre-extraction']['PRE_JWST'] = JWST_MODES
 RED_STEPS['Extraction'] = dict()
 RED_STEPS['Extraction']['SOSSISSE'] = ['JWST.NIRISS.SOSS',
                                        'JWST.NIRSPEC.BOTS.PRISM',
-                                       'JWST.NIRSPEC.BOTS.G395',
-                                       'JWST.NIRSPEC.BOTS.G253',
-                                       'JWST.NIRSPEC.BOTS.G140']
+                                       'JWST.NIRSPEC.BOTS.G395M',
+                                       'JWST.NIRSPEC.BOTS.G253M',
+                                       'JWST.NIRSPEC.BOTS.G140M',
+                                       'JWST.NIRSPEC.BOTS.G395H',
+                                       'JWST.NIRSPEC.BOTS.G253H',
+                                       'JWST.NIRSPEC.BOTS.G140H']
 RED_STEPS['Extraction']['MIRIAM'] = ['JWST.MIRI.IMAGING']
 RED_STEPS['Extraction']['EXT_NAMELESS'] = ['JWST.NIRISS.SOSS']
 RED_STEPS['Extraction']['EXT_EUREKA'] = ['JWST.NIRISS.SOSS',
@@ -167,15 +170,21 @@ RED_STEPS['Extraction']['EXT_JWST'] = JWST_MODES
 RED_STEPS['Post-extraction'] = dict()
 RED_STEPS['Post-extraction']['SORBET.WLCA'] = ['JWST.NIRISS.SOSS',
                                                'JWST.NIRSPEC.BOTS.PRISM',
-                                               'JWST.NIRSPEC.BOTS.G395',
-                                               'JWST.NIRSPEC.BOTS.G253',
-                                               'JWST.NIRSPEC.BOTS.G140',
+                                               'JWST.NIRSPEC.BOTS.G395M',
+                                               'JWST.NIRSPEC.BOTS.G253M',
+                                               'JWST.NIRSPEC.BOTS.G140M',
+                                               'JWST.NIRSPEC.BOTS.G395H',
+                                               'JWST.NIRSPEC.BOTS.G253H',
+                                               'JWST.NIRSPEC.BOTS.G140H',
                                                'JWST.MIRI.IMAGING']
 RED_STEPS['Post-extraction']['SORBET.SLCA'] = ['JWST.NIRISS.SOSS',
                                                'JWST.NIRSPEC.BOTS.PRISM',
-                                               'JWST.NIRSPEC.BOTS.G395',
-                                               'JWST.NIRSPEC.BOTS.G253',
-                                               'JWST.NIRSPEC.BOTS.G140']
+                                               'JWST.NIRSPEC.BOTS.G395M',
+                                               'JWST.NIRSPEC.BOTS.G253M',
+                                               'JWST.NIRSPEC.BOTS.G140M',
+                                               'JWST.NIRSPEC.BOTS.G395H',
+                                               'JWST.NIRSPEC.BOTS.G253H',
+                                               'JWST.NIRSPEC.BOTS.G140H']
 # RED_STEPS['Post-extraction']['SORBET.TransitFit'] = None
 # RED_STEPS['Post-extraction']['SORBET.RVA'] = None
 RED_STEPS['Post-extraction']['POST_EUREKA'] = ['JWST.NIRISS.SOSS',

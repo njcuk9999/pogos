@@ -24,11 +24,11 @@ __NAME__ = 'bots_g395_demo.py'
 # =============================================================================
 # Define demo classes
 # =============================================================================
-class BotsG395Demo_WASP39b(demos.PogoDemo):
+class BotsG395HDemo_WASP39b(demos.PogoDemo):
     classname = 'BotsG395Demo_WASP39b'
     object = 'WASP 39b'
     keywords = ['transit']
-    instrument = 'JWST.NIRSPEC.BOTS.G395M'
+    instrument = 'JWST.NIRSPEC.BOTS.G395H'
     description = 'WASP 39b transit observed on 2022-07-10'
     date = '2025-03-25'
     author = 'Loic Albert'

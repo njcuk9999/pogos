@@ -20,7 +20,7 @@ from pogos.resources.demos import bots_prism_demo as prism_demo
 # =============================================================================
 soss = 'JWST.NIRISS.SOSS'
 prism = 'JWST.NIRSPEC.BOTS.PRISM'
-g395 = 'JWST.NIRSPEC.BOTS.G395M'
+g395 = 'JWST.NIRSPEC.BOTS.G395H'
 miri_im = 'JWST.MIRI.IMAGING'
 
 # =============================================================================
@@ -39,7 +39,7 @@ DEMOS[soss]['t1b.sossisse'] = soss_demo.SossTrappist1bDemo
 
 # # JWST.NIRSPEC.BOTS.PRISM demos
 DEMOS[prism]['wasp39b.sossisse'] = prism_demo.BotsPrismDemo_WASP39b
-DEMOS[g395]['wasp39b.sossisse'] = g395_demo.BotsG395Demo_WASP39b
+DEMOS[g395]['wasp39b.sossisse'] = g395_demo.BotsG395HDemo_WASP39b
 
 # JWST.MIRI.IMAGING demo
 DEMOS[miri_im]['miri.im.lhs1140'] = miri_demo.MiriImagingDemo_LHS1140
