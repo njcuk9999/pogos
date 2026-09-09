@@ -11,13 +11,15 @@ Created on 2026-09-01 at 09:05
 """
 import os
 import sys
+from pathlib import Path
 
-# Ensure we're importing the installed packages, not a local directory
-# Remove current directory from sys.path if present to avoid import confusion
-if '' in sys.path:
-    sys.path.remove('')
-if '.' in sys.path:
-    sys.path.remove('.')
+# Fail fast if local folders would shadow installed packages.
+_shadow_dirs = ('aperocore', 'pogos', 'sossisse')
+if any((Path.cwd() / name).exists() for name in _shadow_dirs):
+    raise SystemExit(
+        f'Error: Current directory contains one of {"/".join(_shadow_dirs)}; '
+        'please run pogos_setup from another directory.'
+    )
 
 from aperocore.constants import load_functions
 from aperocore.core import drs_log

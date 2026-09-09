@@ -211,7 +211,7 @@ class BotsG395HDemo_WASP39b(demos.PogoDemo):
         # define the width for masking the white light curve trace
         #         Default
         self.cdict.set('TRACE_WIDTH_MASKING', group=cgroup, source=__NAME__,
-                       value=5)
+                       value=15)
         # Set the range of dys to scan over number of -nbypix/trace_y_scale to
         #     +nbyix/trace_y_scale
         self.cdict.set('TRACE_Y_SCALE', group=cgroup, source=__NAME__,
