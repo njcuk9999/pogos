@@ -12,7 +12,8 @@ Created on 2024-10-29 at 09:21
 """
 from importlib import import_module
 
-__all__ = ['pogos_run', 'pogos_setup', 'pogos_copy', 'pogos_config']
+__all__ = ['pogos_run', 'pogos_setup', 'pogos_copy', 'pogos_config',
+           'pogos_help']
 
 
 def __getattr__(name):

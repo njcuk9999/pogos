@@ -139,3 +139,34 @@ def test_pogos_run_main_routes_instances_between_steps(monkeypatch):
     assert ("check_red_steps", True) in calls
     assert ("end", None) in calls
 
+
+def test_pogos_help_main_prints_beginner_friendly_command_guide(monkeypatch):
+    from pogos.recipes import pogos_help
+
+    calls = []
+
+    monkeypatch.setattr(pogos_help.general, "start_splash",
+                        lambda name: calls.append(("start", name)))
+    monkeypatch.setattr(pogos_help.general, "end_splash",
+                        lambda: calls.append(("end", None)))
+    monkeypatch.setattr(pogos_help.startup, "quick_args", lambda argv: False)
+    monkeypatch.setattr(
+        pogos_help,
+        "WLOG",
+        lambda params, level, message, **kwargs: calls.append(
+            ("log", level, message)
+        ),
+    )
+
+    pogos_help.main()
+
+    messages = [entry[2] for entry in calls if entry[0] == "log"]
+    assert ("start", "POGOS Help") in calls
+    assert ("end", None) in calls
+    assert "POGOS command guide" in messages
+    assert "Recommended first steps" in messages
+    assert "pogos_setup" in messages
+    assert "pogos_copy" in messages
+    assert "pogos_config" in messages
+    assert "pogos_run" in messages
+    assert "Available reduction stages" in messages
