@@ -10,6 +10,8 @@ Created on 2025-02-19 at 13:43
 
 No imports from sorbet.general.general
 """
+from radvel import posterior
+
 from pogos.core.external_imports import juliet, StellarLimbDarkening
 from pogos.core.external_imports import JULIET_IMPORT_MESSAGES
 from pogos.core.external_imports import EXOTIC_LD_IMPORT_MESSAGES
@@ -987,11 +989,28 @@ def append_transmission_spec(params: ParamDict, results: juliet.fit,
     :return: spec_tbl: astropy.table.Table, the updated transmission spectrum table
     """
     # append transit depth to the transmission spectrum table
-    p = results.posteriors['posterior_samples']['p_p1']
-    delta = np.median(p ** 2)
-    delta_ci = np.percentile(p ** 2, [16, 84])
-    delta_err = (delta_ci[1] - delta_ci[0]) / 2
-    spec_tbl['transit_depth'][wb] = delta
-    spec_tbl['transit_depth_err'][wb] = delta_err
+    #
+    # NOTE. In Juliet's parameters definition, one can use the Espinoza 2018
+    # prescription of r1 and r2 instead of b (impact parameter) and p (depth).
+    # The following checks if that prescription was used and returns the depth
+    # accordingly.
+    import sys
+    tmp = results.posteriors['posterior_samples']
+    if 'p_p1' in tmp:
+        p = results.posteriors['posterior_samples']['p_p1']
+        delta = np.median(p ** 2)
+        delta_ci = np.percentile(p ** 2, [16, 84])
+        delta_err = (delta_ci[1] - delta_ci[0]) / 2
+        spec_tbl['transit_depth'][wb] = delta
+        spec_tbl['transit_depth_err'][wb] = delta_err
+    elif ('r1_p1' in tmp) and ('r2_p1' in tmp):
+        #TODO: fill this
+        #spec_tbl['transit_depth'][wb] = 1
+        #spec_tbl['transit_depth_err'][wb] = 0.1
+        print('The Espinoza+2018 r1,r2 formulation is not supported by pogos. Use the depth (p_p1) an impact parameter (b_p1).')
+        sys.exit()
+    else:
+        print('The transit depth is undefined, i.e. neither p_p1 nor r1_p1+r2_p2.')
+        sys.exit()
 
     return spec_tbl
