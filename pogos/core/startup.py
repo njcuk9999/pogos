@@ -872,7 +872,7 @@ def quick_args(cmd_args: List[str], listing: bool = True):
 
 def set_yaml_file(cmd_args):
     # if we have no arguments skip this
-    if len(cmd_args) == 0:
+    if len(cmd_args) <= 1:
         return
     # if we have only options skip this
     if cmd_args[1].startswith('-'):
