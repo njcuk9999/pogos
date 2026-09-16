@@ -987,9 +987,9 @@ def append_transmission_spec(params: ParamDict, results: juliet.fit,
     :return: spec_tbl: astropy.table.Table, the updated transmission spectrum table
     """
     # append transit depth to the transmission spectrum table
-    period = results.posteriors['posterior_samples']['P_p1']
-    delta = np.median(period ** 2)
-    delta_ci = np.percentile(period ** 2, [16, 84])
+    p = results.posteriors['posterior_samples']['p_p1']
+    delta = np.median(p ** 2)
+    delta_ci = np.percentile(p ** 2, [16, 84])
     delta_err = (delta_ci[1] - delta_ci[0]) / 2
     spec_tbl['transit_depth'][wb] = delta
     spec_tbl['transit_depth_err'][wb] = delta_err
