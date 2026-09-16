@@ -57,7 +57,6 @@ INPUTARGS['pogos.recipes.test_run'] = ['GLOBAL.YAML_FILE']
 # Define allowed punctuation for sub-directory names
 VALID_PUNC = ['-', '+', '.', '_']
 
-
 def _load_demo_module():
     from pogos.resources import demos as demo_module
     return demo_module
@@ -779,6 +778,120 @@ def check_red_steps(params: ParamDict):
 
             margs = [step]
             raise pogos_base.PogosException(emsg.format(*margs))
+
+
+def _load_fits_header(filename: str):
+    """
+    Load a primary FITS header without importing Astropy during setup.
+
+    :param filename: str, FITS filename
+    :return: astropy.io.fits.Header, primary header
+    """
+    from astropy.io import fits
+    return fits.getheader(filename, ext=0)
+
+
+def _raw_input_source(params: ParamDict) -> Tuple[Optional[List[str]],
+                                                  Optional[str],
+                                                  Optional[str]]:
+    """
+    Return the raw-file list available before reduction modules run.
+
+    :param params: ParamDict, POGOS parameters
+    :return: tuple, input files, input directory, and source parameter key
+    """
+    # Find the earliest reduction level selected for this run. Inputs from
+    # later levels may be products that do not exist until this level finishes.
+    active_modules = []
+    for step in ['Pre-extraction', 'Extraction']:
+        # Collect enabled modules from this reduction level.
+        for module in pogos_base.RED_STEPS[step]:
+            if params.get(f'RUN.{module.upper()}', False):
+                active_modules.append(module.split('.')[0])
+        # Never fall through to downstream inputs when an earlier level runs.
+        if len(active_modules) > 0:
+            break
+    # Post-extraction products are not raw data and are not validated here.
+    if len(active_modules) == 0:
+        return None, None, None
+    # INPUT_FILES explicitly identifies startup-visible external input lists.
+    for module in active_modules:
+        # None means this module receives or discovers its inputs at run time.
+        input_definition = pogos_base.INPUT_FILES.get(module)
+        if input_definition is None:
+            continue
+        # Get the parameter names for the file list and its parent directory.
+        file_key = input_definition['files']
+        path_key = input_definition['path']
+        # Read the configured files and their associated directory values.
+        files = params.get(file_key)
+        path = params.get(path_key)
+        # Return the first explicit input source at this reduction level.
+        return files, path, file_key
+    # Other workflows obtain files internally and cannot be checked here.
+    return None, None, None
+
+
+def check_raw_data_headers(params: ParamDict):
+    """
+    Check configured JWST inputs against GLOBAL.INSTRUMENTMODE.
+
+    Files are checked sequentially and validation stops at the first missing
+    file, unreadable header, or mode mismatch.
+
+    :param params: ParamDict, POGOS parameters
+    :return: None, raises PogosException on validation failure
+    """
+    # Select the expected header values for this POGOS instrument mode.
+    instrument_mode = params['GLOBAL.INSTRUMENTMODE']
+    expected = pogos_base.MODE_HEADERS.get(instrument_mode)
+    # Warn rather than guessing when a future mode has no definition yet.
+    if expected is None:
+        msg = f'No raw-header validation is defined for {instrument_mode}.'
+        WLOG(params, 'warning', msg)
+        return
+    # Find the configured raw files available before module execution.
+    files, input_path, source_key = _raw_input_source(params)
+    # Some wrapper-only workflows do not expose their files at this point.
+    if files is None or len(files) == 0:
+        msg = ('No configured raw files were available for '
+               f'{instrument_mode} header validation.')
+        WLOG(params, 'warning', msg)
+        return
+    # Check one file at a time, proceeding only after the previous file passes.
+    for filename in files:
+        # Use absolute paths directly and resolve relative paths from input_path.
+        if os.path.isabs(filename):
+            absfile = filename
+        elif input_path is None:
+            emsg = f'{source_key} contains relative files but has no input path.'
+            raise pogos_base.PogosException(emsg)
+        else:
+            absfile = os.path.join(input_path, filename)
+        # Fail before opening the FITS file if the configured path is invalid.
+        if not os.path.isfile(absfile):
+            emsg = f'{source_key} file does not exist: {absfile}'
+            raise pogos_base.PogosException(emsg)
+        # Read only the primary header; no science data are loaded.
+        try:
+            header = _load_fits_header(absfile)
+        except Exception as error:
+            emsg = f'Cannot read JWST primary header: {absfile}\n{error}'
+            raise pogos_base.PogosException(emsg)
+        # Compare required keys case-insensitively against accepted values.
+        for key, accepted in expected.items():
+            value = header.get(key)
+            normalized = str(value).strip().upper() if value is not None else ''
+            if normalized in accepted:
+                continue
+            expected_text = ', '.join(sorted(accepted))
+            found_text = normalized if normalized else '<missing>'
+            emsg = (f'Raw data does not match {instrument_mode}: {absfile}\n'
+                    f'Header {key}={found_text}; expected {expected_text}.')
+            raise pogos_base.PogosException(emsg)
+    # Log one concise success message after every configured file has passed.
+    msg = f'Validated {len(files)} raw file(s) for {instrument_mode}'
+    WLOG(params, 'info', msg)
 
 
 def _propagate_crds_setup(crds_path: str, server_url: str):

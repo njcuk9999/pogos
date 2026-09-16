@@ -116,6 +116,7 @@ def test_pogos_run_main_routes_instances_between_steps(monkeypatch):
     monkeypatch.setattr(pogos_run.load_functions, "get_all_params", lambda **kwargs: params)
     monkeypatch.setattr(pogos_run.startup, "check_crds", lambda in_params: calls.append(("check_crds", in_params is params)))
     monkeypatch.setattr(pogos_run.startup, "check_red_steps", lambda in_params: calls.append(("check_red_steps", in_params is params)))
+    monkeypatch.setattr(pogos_run.startup, "check_raw_data_headers", lambda in_params: calls.append(("check_raw_data_headers", in_params is params)))
     monkeypatch.setattr(
         pogos_run.tsovore,
         "run_tsovore",
@@ -137,6 +138,7 @@ def test_pogos_run_main_routes_instances_between_steps(monkeypatch):
     assert ("run_sossisse", True, True) in calls
     assert ("check_crds", True) in calls
     assert ("check_red_steps", True) in calls
+    assert ("check_raw_data_headers", True) in calls
     assert ("end", None) in calls
 
 

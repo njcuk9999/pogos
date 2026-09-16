@@ -50,6 +50,80 @@ INSTRUMENTS = ['JWST.NIRISS.SOSS',
                'JWST.MIRI.IMAGING',
                'JWST.MIRI.LRS']
 
+# Required primary-header values for each supported observing mode.
+# Sets allow a mode to accept more than one valid header value. Although all
+# current entries are JWST modes, this mapping is intentionally mission-neutral.
+MODE_HEADERS = {
+    'JWST.NIRISS.SOSS': {
+        'INSTRUME': {'NIRISS'},
+        'DETECTOR': {'NIS'},
+        'EXP_TYPE': {'NIS_SOSS'},
+        'PUPIL': {'GR700XD'},
+    },
+    'JWST.NIRISS.FGS': {
+        'INSTRUME': {'FGS'},
+        'EXP_TYPE': {'FGS_IMAGE', 'FGS_FOCUS'},
+    },
+    'JWST.NIRSPEC.BOTS.PRISM': {
+        'INSTRUME': {'NIRSPEC'},
+        'DETECTOR': {'NRS1', 'NRS2'},
+        'EXP_TYPE': {'NRS_BRIGHTOBJ'},
+        'GRATING': {'PRISM'},
+    },
+    'JWST.NIRSPEC.BOTS.G395M': {
+        'INSTRUME': {'NIRSPEC'},
+        'DETECTOR': {'NRS1', 'NRS2'},
+        'EXP_TYPE': {'NRS_BRIGHTOBJ'},
+        'GRATING': {'G395M'},
+    },
+    'JWST.NIRSPEC.BOTS.G235M': {
+        'INSTRUME': {'NIRSPEC'},
+        'DETECTOR': {'NRS1', 'NRS2'},
+        'EXP_TYPE': {'NRS_BRIGHTOBJ'},
+        'GRATING': {'G235M'},
+    },
+    'JWST.NIRSPEC.BOTS.G140M': {
+        'INSTRUME': {'NIRSPEC'},
+        'DETECTOR': {'NRS1', 'NRS2'},
+        'EXP_TYPE': {'NRS_BRIGHTOBJ'},
+        'GRATING': {'G140M'},
+    },
+    'JWST.NIRSPEC.BOTS.G395H': {
+        'INSTRUME': {'NIRSPEC'},
+        'DETECTOR': {'NRS1', 'NRS2'},
+        'EXP_TYPE': {'NRS_BRIGHTOBJ'},
+        'GRATING': {'G395H'},
+    },
+    'JWST.NIRSPEC.BOTS.G235H': {
+        'INSTRUME': {'NIRSPEC'},
+        'DETECTOR': {'NRS1', 'NRS2'},
+        'EXP_TYPE': {'NRS_BRIGHTOBJ'},
+        'GRATING': {'G235H'},
+    },
+    'JWST.NIRSPEC.BOTS.G140H': {
+        'INSTRUME': {'NIRSPEC'},
+        'DETECTOR': {'NRS1', 'NRS2'},
+        'EXP_TYPE': {'NRS_BRIGHTOBJ'},
+        'GRATING': {'G140H'},
+    },
+    'JWST.NIRCAM.IMAGING': {
+        'INSTRUME': {'NIRCAM'},
+        'EXP_TYPE': {'NRC_IMAGE', 'NRC_TSIMAGE'},
+    },
+    'JWST.NIRCAM.WFSS': {
+        'INSTRUME': {'NIRCAM'},
+        'EXP_TYPE': {'NRC_WFSS', 'NRC_TSGRISM'},
+    },
+    'JWST.MIRI.IMAGING': {
+        'INSTRUME': {'MIRI'},
+        'EXP_TYPE': {'MIR_IMAGE'},
+    },
+    'JWST.MIRI.LRS': {
+        'INSTRUME': {'MIRI'},
+        'EXP_TYPE': {'MIR_LRS-FIXEDSLIT', 'MIR_LRS-SLITLESS'},
+    },
+}
+
 # =============================================================================
 # Define all instruments and their sub-modes (related to our instrument
 # names)
@@ -212,6 +286,30 @@ RED_STEPS_MULTI = dict()
 RED_STEPS_MULTI['Pre-extraction'] = False
 RED_STEPS_MULTI['Extraction'] = False
 RED_STEPS_MULTI['Post-extraction'] = True
+
+# Define explicit external input-file parameters for each reduction module.
+# None means that the module receives products from an earlier step, discovers
+# files internally, or has no raw-file list that can be checked at startup.
+INPUT_FILES = dict()
+for reduction_level in RED_STEPS:
+    for reduction_module in RED_STEPS[reduction_level]:
+        INPUT_FILES[reduction_module] = None
+
+# TSOVORE starts from the configured raw JWST exposure list.
+INPUT_FILES['TSOVORE'] = {
+    'files': 'TSOVORE.INPUTS.FILES',
+    'path': 'TSOVORE.PATHS.INPUT_PATH',
+}
+# SOSSISSE can be run directly from configured rateints files.
+INPUT_FILES['SOSSISSE'] = {
+    'files': 'SOSSISSE.GENERAL.FILES',
+    'path': 'SOSSISSE.PATHS.RAWPATH',
+}
+# MIRIAM can be run directly from configured imaging files.
+INPUT_FILES['MIRIAM'] = {
+    'files': 'MIRIAM.INPUTS.FILES',
+    'path': 'MIRIAM.PATHS.INPUT_PATH',
+}
 
 # Define the prefix for constants from each module
 #   in form RUN.XXXX = PREFIX    (usually prefix is TSOVORE)

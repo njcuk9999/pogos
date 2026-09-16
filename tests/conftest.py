@@ -226,6 +226,7 @@ stub_startup.initial_setup = lambda: {}
 stub_startup.setup = lambda params, start_from_demo=True: {"cdict": True}
 stub_startup.check_crds = lambda params: None
 stub_startup.check_red_steps = lambda params: None
+stub_startup.check_raw_data_headers = lambda params: None
 stub_startup.copy_ask_description = lambda params: params
 stub_startup.copy_ask_subdirectories = lambda params: params
 stub_startup.copy_clear_files = lambda params: {}

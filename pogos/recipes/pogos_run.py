@@ -168,6 +168,9 @@ def main(**kwargs):
     # Check that user is not trying to run multiple reduction steps from
     # the same level (unless this is allowed)
     startup.check_red_steps(params)
+    # -------------------------------------------------------------------------
+    # Check that the raw JWST headers match the selected instrument mode.
+    startup.check_raw_data_headers(params)
     # =========================================================================
     # Pre-extraction steps
     # =========================================================================
