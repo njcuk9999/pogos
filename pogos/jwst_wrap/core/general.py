@@ -24,6 +24,7 @@ from aperocore.core import drs_log
 from aperocore.core import drs_misc
 from pogos.core import base
 from pogos.core import general as pogos_general
+from pogos.core import input_validation
 from pogos.jwst_wrap.constants import jwst_pipelines
 
 # =============================================================================
@@ -229,7 +230,7 @@ def run_jwst_stage(params: ParamDict, pipelines: dict, stage: int):
         return
     # -------------------------------------------------------------------------
     # get the input/output paths and the suffix we are looking for
-    inpath = params[f'STD_JWST.PATHS.IN_S{stage}_PATH']
+    inpath = os.path.abspath(params[f'STD_JWST.PATHS.IN_S{stage}_PATH'])
     outpath = params[f'STD_JWST.PATHS.OUT_S{stage}_PATH']
     suffix = params[f'STD_JWST.STAGE{stage}.input_suffix']
     save_results = params[f'STD_JWST.STAGE{stage}.save_results']
@@ -239,9 +240,10 @@ def run_jwst_stage(params: ParamDict, pipelines: dict, stage: int):
     files = sorted(glob.glob(pattern))
     # deal with no files found
     if len(files) == 0:
-        wmsg = 'No Stage {0} input files found (looking for {1})'
-        WLOG(params, 'warning', wmsg.format(stage, pattern))
-        return
+        emsg = 'No Stage {0} input files found (looking for {1})'
+        raise base.PogosException(emsg.format(stage, pattern))
+    # The glob returns absolute stage inputs; validate before pipeline calls.
+    input_validation.check_input_data_headers(params, files)
     # -------------------------------------------------------------------------
     # print progress
     msg = 'Running JWST Stage {0} [{1}] on {2} file(s)'

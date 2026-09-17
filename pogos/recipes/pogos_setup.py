@@ -10,7 +10,6 @@ Created on 2024-10-29 at 09:32
 @author: cook
 """
 import sys
-from importlib import import_module
 from pathlib import Path
 
 # Fail fast if local folders would shadow installed packages.
@@ -28,6 +27,7 @@ from pogos.constants.constants import CDict
 from pogos.core import base
 from pogos.core import startup
 from pogos.core import general
+from pogos.core import recipe_helpers
 
 # =============================================================================
 # Define variables
@@ -49,29 +49,6 @@ __inputs__ = ['GLOBAL.YAML_FILE', 'GLOBAL.DATA_PATH',
               'GLOBAL.PREEXTRACT_STEP', 'GLOBAL.EXTRACT_STEP',
               'GLOBAL.POSTEXTRACT_STEP']
 
-_LAZY_MODULES = {'tsovore', 'eureka_wrap', 'jwst_wrap', 'nameless_wrap',
-                 'sossisse_wrap', 'miriam', 'sorbet'}
-
-
-def __getattr__(name):
-    if name in _LAZY_MODULES:
-        module = import_module(f'pogos.{name}')
-        globals()[name] = module
-        return module
-    raise AttributeError(f'module {__name__!r} has no attribute {name!r}')
-
-
-def _get_module(name):
-    if name in globals():
-        return globals()[name]
-    return __getattr__(name)
-
-
-def _load_setup_modules():
-    names = ['tsovore', 'eureka_wrap', 'jwst_wrap', 'nameless_wrap',
-             'sossisse_wrap', 'miriam', 'sorbet']
-    return tuple(_get_module(name) for name in names)
-
 # =============================================================================
 # Define functions
 # =============================================================================
@@ -89,7 +66,9 @@ def __main__(**kwargs):
     # print splash
     general.start_splash('POGOS Setup')
     (tsovore, eureka_wrap, jwst_wrap, nameless_wrap,
-     sossisse_wrap, miriam, sorbet) = _load_setup_modules()
+     sossisse_wrap, miriam, sorbet) = recipe_helpers.load_modules(
+        ['tsovore', 'eureka_wrap', 'jwst_wrap', 'nameless_wrap',
+         'sossisse_wrap', 'miriam', 'sorbet'])
     # get other configs (either internal like SORBET or external like SOSSISSE)
     other_const = startup.initial_setup()
     # get parameters
@@ -144,10 +123,6 @@ def __main__(**kwargs):
     # -------------------------------------------------------------------------
     # print splash
     general.end_splash()
-
-
-def run():
-    _ = main()
 
 # =============================================================================
 # Start of code

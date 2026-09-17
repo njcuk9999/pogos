@@ -63,8 +63,19 @@ def download_data(params, demolocal=None, demosymlink=False):
     return None
 
 
+def get_param_file(params, key, name):
+    return params[key]
+
+
+def load_from_yaml(**kwargs):
+    return kwargs['params']
+
+
 load_functions.get_all_params = get_all_params
 load_functions.download_data = download_data
+load_functions.get_param_file = get_param_file
+load_functions.load_from_yaml = load_from_yaml
+load_functions._check_yaml_version = lambda *args, **kwargs: True
 aperocore_constants.load_functions = load_functions
 
 
@@ -83,6 +94,7 @@ def wlog(params, level, message, **kwargs):
     return None
 
 
+wlog.minimal_params = lambda params: params
 drs_log.AperoCodedException = AperoCodedException
 drs_log.AperoCodedWarning = AperoCodedWarning
 drs_log.MPARAMS = {"LOG.HEADER": "=="}
@@ -226,7 +238,7 @@ stub_startup.initial_setup = lambda: {}
 stub_startup.setup = lambda params, start_from_demo=True: {"cdict": True}
 stub_startup.check_crds = lambda params: None
 stub_startup.check_red_steps = lambda params: None
-stub_startup.check_raw_data_headers = lambda params: None
+stub_startup.check_instrument_modes = lambda params: None
 stub_startup.copy_ask_description = lambda params: params
 stub_startup.copy_ask_subdirectories = lambda params: params
 stub_startup.copy_clear_files = lambda params: {}

@@ -28,6 +28,7 @@ from aperocore import math as mp
 from aperocore.constants.param_functions import ParamDict
 from aperocore.core import drs_log
 from pogos.core import base
+from pogos.core import input_validation
 from pogos.sorbet.core import base as sorbet_base
 from pogos.sorbet.core import core
 from sossisse.core import io
@@ -76,6 +77,12 @@ def load_wlc(params: ParamDict):
         inpath = params[f'SORBET.WLCA.INPUT_PATH']
         # construct full filename
         filename = os.path.join(inpath, input_file)
+    # Resolve and check the FITS product before reading its table extension.
+    filename = os.path.abspath(filename)
+    if not os.path.isfile(filename):
+        msg = f'SORBET.WLCA.INPUT_FILE="{filename}" does not exist.'
+        raise sorbet_base.SorbetException(msg)
+    input_validation.check_input_data_headers(params, [filename])
     # load the light curve table
     try:
         dataset = io.load_table(filename)
@@ -118,6 +125,9 @@ def load_slc(params: ParamDict, input_file: str,
         if not os.path.exists(filename):
             msg = f'SORBET.SLCA.INPUT_FILE="{filename}" does not exist.'
             raise sorbet_base.SorbetException(msg)
+    # Resolve and validate the FITS product before reading its extensions.
+    filename = os.path.abspath(filename)
+    input_validation.check_input_data_headers(params, [filename])
     # -------------------------------------------------------------------------
     # load the light curve data
     try:

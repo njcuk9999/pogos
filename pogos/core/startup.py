@@ -10,7 +10,6 @@ Created on 2024-10-29 at 10:16
 @author: cook
 """
 import glob
-import fnmatch
 import os
 import string
 import sys
@@ -19,6 +18,7 @@ from typing import Any, List, Optional, Tuple
 
 from pogos.constants import constants as pogo_constants
 from pogos.core import base as pogos_base
+from pogos.core import definitions
 
 from aperocore.base import base as aperocore_base
 from aperocore.constants import load_functions
@@ -111,35 +111,24 @@ def setup(params: ParamDict, start_from_demo: bool = True):
     WLOG(params, 'info', params['LOG.HEADER'])
     # -------------------------------------------------------------------------
     # ask user for run arguments
-    run_keys = list(pogos_base.RUN_KEYS.keys())
+    run_keys = [step.run_key for step in definitions.RED_STEPS]
     params = load_functions.ask_for_missing_args(params, include_keys=run_keys)
     # -------------------------------------------------------------------------
     # Deal with disabling sections we don't need in the yaml
     disable_prefixes = set()
-    sub_run_keys = pogos_base.SUB_RUN_KEYS
-    wildcard_sub_run = dict()
+    for step in definitions.RED_STEPS:
+        if not step.is_enabled(params):
+            disable_prefixes.add(step.parameter_prefix)
+            disable_prefixes.update(step.sub_prefixes)
 
-    # split exact and wildcard sub-run mappings
-    for sub_key, prefixes in sub_run_keys.items():
-        if '*' in sub_key or '?' in sub_key or '[' in sub_key:
-            wildcard_sub_run[sub_key] = prefixes
-
-    for run_key in run_keys:
-        if not params[run_key]:
-            disable_prefixes.add(pogos_base.RUN_KEYS[run_key])
-            for subkey in sub_run_keys.get(run_key, []):
-                disable_prefixes.add(subkey)
-
-    # wildcard sub-run mappings are only disabled when every matching RUN key
-    # is disabled (e.g. disable EUREKA.GENERAL only if all RUN.*_EUREKA=False)
-    for pattern, prefixes in wildcard_sub_run.items():
-        matched_run_keys = [rkey for rkey in run_keys
-                            if fnmatch.fnmatch(rkey, pattern)]
-        if len(matched_run_keys) == 0:
-            continue
-        if all(not params[rkey] for rkey in matched_run_keys):
-            for prefix in prefixes:
-                disable_prefixes.add(prefix)
+    # Disable shared configuration only when every owning step is disabled.
+    shared_prefixes = {prefix for step in definitions.RED_STEPS
+                       for prefix in step.shared_prefixes}
+    for prefix in shared_prefixes:
+        owners = [step for step in definitions.RED_STEPS
+                  if prefix in step.shared_prefixes]
+        if all(not step.is_enabled(params) for step in owners):
+            disable_prefixes.add(prefix)
 
     for key in params.keys():
         if not any(key.startswith(prefix) for prefix in disable_prefixes):
@@ -156,19 +145,19 @@ def setup(params: ParamDict, start_from_demo: bool = True):
 
     # -------------------------------------------------------------------------
     # create paths to sub modules
-    for run_key in pogos_base.RUN_KEYS:
+    for step in definitions.RED_STEPS:
         # don't create if we don't have the run key in params
-        if run_key not in params:
+        if step.run_key not in params:
             continue
         # don't create if RUN = False
-        if not params[run_key]:
+        if not step.is_enabled(params):
             continue
         # wrappers with shared roots (eureka/nameless/jwst) manage their own
         # directory trees, so avoid creating empty generic stage folders.
-        if run_key in pogos_base.SKIP_GENERIC_RUN_DIRS:
+        if not step.generic_run_dir:
             continue
         # get run value
-        run_value = pogos_base.RUN_KEYS[run_key]
+        run_value = step.name
         # get path to directory
         run_path = os.path.join(params['GLOBAL.DATA_PATH'], run_value.lower())
         # make directory if it doesn't already exist
@@ -178,8 +167,8 @@ def setup(params: ParamDict, start_from_demo: bool = True):
             # make directory
             os.makedirs(run_path)
         # update parameters
-        if run_key in pogos_base.RUN_DIRS:
-            params[pogos_base.RUN_DIRS[run_key]] = run_path
+        if step.run_dir_key is not None:
+            params[step.run_dir_key] = run_path
     # -------------------------------------------------------------------------
     # ask user for any missing arguments
     params = load_functions.ask_for_missing_args(params)
@@ -319,7 +308,7 @@ def core_setup(params: ParamDict, demo_mod: Optional[Any],
     # -------------------------------------------------------------------------
     # get instrument modes
     # -------------------------------------------------------------------------
-    instrument_modes = pogos_base.INST_MODES
+    instrument_modes = definitions.mode_choices()
     # -------------------------------------------------------------------------
     imode: Optional[str]
     if params['GLOBAL.INSTRUMENTMODE'] is None:
@@ -357,13 +346,14 @@ def core_setup(params: ParamDict, demo_mod: Optional[Any],
             question = 'Select instrument mode:'
             imode_choice = drs_text.user_input(question, dtype=int,
                                                options=imode_values,
-                                               optiondescs=imodes)
+                                               optiondescs=[mode.label
+                                                            for mode in imodes])
         instrument_mode = imodes[imode_choice - 1]
         # ---------------------------------------------------------------------
         # deal with instrument mode not supported
-        if instrument_modes[instrument][instrument_mode] is None:
+        if not instrument_mode.enabled:
             msg = ('{0}:{1} is not yet supported, please choose another')
-            margs = [instrument, instrument_mode]
+            margs = [instrument, instrument_mode.label]
             WLOG(params, '', msg.format(*margs), colour='magenta')
             # a command line pre-answer cannot be re-asked - stop here
             if preset_inst is not None or preset_imode is not None:
@@ -374,7 +364,7 @@ def core_setup(params: ParamDict, demo_mod: Optional[Any],
             continue
         # ---------------------------------------------------------------------
         # set imode
-        imode = instrument_modes[instrument][instrument_mode]
+        imode = instrument_mode.name
         # set instrument and mode in params
         params['GLOBAL.INSTRUMENTMODE'] = imode
         params.set_source('GLOBAL.INSTRUMENTMODE', func_name)
@@ -433,24 +423,15 @@ def core_setup(params: ParamDict, demo_mod: Optional[Any],
 
 
 def ask_reduction_steps(params: ParamDict, imode: str) -> List[str]:
-    # get the list of reduction steps
-    red_steps = pogos_base.RED_STEPS
-    # loop around red steps until we have all that are supported by this imode
+    # Resolve the serialized mode name to its authoritative definition.
+    instrument_mode = definitions.MODE_BY_NAME[imode]
+    # Group supported steps under their ordered reduction levels.
     supported_steps = dict()
-    # loop around reduction dictionary
-    for core_step in red_steps:
-        for mod_step in red_steps[core_step]:
-            # deal with step not supported
-            if red_steps[core_step][mod_step] is None:
-                continue
-            # deal with step not supported by this instrument mode
-            if imode not in red_steps[core_step][mod_step]:
-                continue
-            # add to supported steps
-            if core_step in supported_steps:
-                supported_steps[core_step].append(mod_step)
-            else:
-                supported_steps[core_step] = [mod_step]
+    for level in definitions.REDUCTION_LEVELS:
+        level_steps = [step for step in definitions.steps_for_level(level)
+                       if step.supports(instrument_mode)]
+        if len(level_steps) > 0:
+            supported_steps[level] = level_steps
     # -------------------------------------------------------------------------
     # deal with no supported steps
     if len(supported_steps) == 0:
@@ -476,24 +457,25 @@ def ask_reduction_steps(params: ParamDict, imode: str) -> List[str]:
                     'Extraction': params['GLOBAL.EXTRACT_STEP'],
                     'Post-extraction': params['GLOBAL.POSTEXTRACT_STEP']}
     # loop around supported steps and ask user which they want to use
-    for step in supported_steps:
+    for level in supported_steps:
         # get the command line pre-answer for this step (None = ask the user)
-        preset = step_presets.get(step, None)
+        preset = step_presets.get(level.name, None)
         # deal with no supported steps for this step
-        if len(supported_steps[step]) == 0:
+        if len(supported_steps[level]) == 0:
             msg = 'No supported steps for {0} for instrument mode: {1}.'
-            margs = [imode, step]
+            margs = [level.name, imode]
             drs_text.cprint(msg.format(*margs), colour='yellow')
         # ---------------------------------------------------------------------
         # Deal with allowing multiple options for this step
         # (e.g. for SORBET WLCA and SLCA)
-        if pogos_base.RED_STEPS_MULTI[step]:
+        if level.allow_multiple:
             # set the question for this step
             question = 'Please choose flavour(s) of {0} for {1} or skip it.'
-            question = question.format(step, imode)
+            question = question.format(level.name, imode)
 
             # set up options
-            optiondescs = ['Skip'] + supported_steps[step]
+            optiondescs = ['Skip'] + [step.name
+                                      for step in supported_steps[level]]
 
             for oit, option in enumerate(optiondescs):
                 question += '\n\t{0}: {1}'.format(oit, option)
@@ -530,7 +512,8 @@ def ask_reduction_steps(params: ParamDict, imode: str) -> List[str]:
                         valid = False
                         break
                     # add demo mode if it isn't already present
-                    demo_mode = '{0}:{1}'.format(step, optiondescs[unum])
+                    demo_mode = '{0}:{1}'.format(level.name,
+                                                 optiondescs[unum])
                     if demo_mode not in _demo_modes:
                         _demo_modes.append(demo_mode)
                 # ask the question again
@@ -539,7 +522,7 @@ def ask_reduction_steps(params: ParamDict, imode: str) -> List[str]:
                     if preset is not None:
                         emsg = ('Command line --postextract_step={0} is not '
                                 'valid for {1}.')
-                        WLOG(params, 'error', emsg.format(preset, step))
+                        WLOG(params, 'error', emsg.format(preset, level.name))
                     continue
                 else:
                     demo_modes += _demo_modes
@@ -557,9 +540,10 @@ def ask_reduction_steps(params: ParamDict, imode: str) -> List[str]:
         else:
             # set the question for this step
             question = 'Please choose a flavour of {0} for {1} or skip it.'
-            question = question.format(step, imode)
+            question = question.format(level.name, imode)
             # set up options and option descriptions (add skip as first option)
-            optiondescs = ['Skip'] + supported_steps[step]
+            optiondescs = ['Skip'] + [step.name
+                                      for step in supported_steps[level]]
             options = list(range(len(optiondescs)))
             # use the command line pre-answer if given, else ask the user
             if preset is not None:
@@ -573,7 +557,8 @@ def ask_reduction_steps(params: ParamDict, imode: str) -> List[str]:
                 continue
             else:
                 # add demo mode if it isn't already present
-                demo_mode = '{0}:{1}'.format(step, optiondescs[int(uinput)])
+                demo_mode = '{0}:{1}'.format(level.name,
+                                             optiondescs[int(uinput)])
                 if demo_mode not in demo_modes:
                     demo_modes.append(demo_mode)
     # return the demo modes
@@ -591,18 +576,13 @@ def update_run_after_demo_modes(params: ParamDict,
     """
     # set the function name
     func_name = f'{__NAME__}.update_run_after_demo_modes()'
-    # get the run keys
-    run_keys = pogos_base.RUN_KEYS
-    # invert run keys
-    irun_keys = dict(zip(run_keys.values(), run_keys.keys()))
-
     for demo_mode in demo_modes:
         # get the flavour our
         step, flavour = demo_mode.split(':')
         # only update RUN.{run_key} if its present in our RUN_KEYS
-        if flavour in irun_keys:
+        if flavour in definitions.STEP_BY_NAME:
             # get the run key
-            run_key = irun_keys[flavour]
+            run_key = definitions.STEP_BY_NAME[flavour].run_key
             # set the run value to True
             params.set(run_key, value=True, source=func_name)
     # return the updated params
@@ -734,164 +714,71 @@ def check_red_steps(params: ParamDict):
     :return: None, raises an error if more than one reduction step
              is being run for any
     """
-    # get red steps and flags from pogos base code
-    red_steps_multi = pogos_base.RED_STEPS_MULTI
-    red_steps = pogos_base.RED_STEPS
-
     # loop around all reduction steps and check that only one is being run f
     # or each step (if we have more than one step for this step we
     # raise an error)
-    for step in red_steps:
+    for level in definitions.REDUCTION_LEVELS:
         # start a counter
         counter = 0
         # do not check steps that are not in our multi flag list
-        if step not in red_steps_multi:
-            continue
-        # do not check steps that are True in our multi flag list
-        if red_steps_multi[step]:
+        if level.allow_multiple:
             continue
         # get the red steps
-        red_step_names = list(red_steps[step].keys())
+        red_steps = definitions.steps_for_level(level)
         # otherwise we check which steps are being run for this step
-        for mod_step in red_step_names:
+        for red_step in red_steps:
             # first check for standard RUN.XXX = False (or True)
-            run_step_str = f'RUN.{mod_step.upper()}'
+            run_step_str = red_step.run_key
             # we should check that the run step is defined
             if run_step_str in params:
-                if params[f'RUN.{mod_step.upper()}']:
+                if params[run_step_str]:
                     counter += 1
                     continue
             # if it isn't raise an error
             else:
-                emsg = (f'{run_step_str} [{step}] not defined in params. '
+                emsg = (f'{run_step_str} [{level.name}] not defined in params. '
                         f'This is a developer error and a mismatch '
-                        f'between parameters and pogos_base.RED_STEPS and/or'
-                        f'pogos_base.RED_STEPS_MULTI.')
+                        f'between parameters and the RedStep definitions.')
                 raise pogos_base.PogosException(emsg)
         # if we have more than one step for this step we raise an error
         if counter > 1:
             emsg = ('Multiple reduction steps selected for {0}, but only one '
                     'is allowed. Please set only one of the following to True'
                     ' in the yaml file')
-            for mod_step in red_step_names:
-                emsg += f'\n - RUN.{mod_step.upper()}'
+            for red_step in red_steps:
+                emsg += f'\n - {red_step.run_key}'
 
-            margs = [step]
+            margs = [level.name]
             raise pogos_base.PogosException(emsg.format(*margs))
 
 
-def _load_fits_header(filename: str):
+def check_instrument_modes(params: ParamDict):
     """
-    Load a primary FITS header without importing Astropy during setup.
-
-    :param filename: str, FITS filename
-    :return: astropy.io.fits.Header, primary header
-    """
-    from astropy.io import fits
-    return fits.getheader(filename, ext=0)
-
-
-def _raw_input_source(params: ParamDict) -> Tuple[Optional[List[str]],
-                                                  Optional[str],
-                                                  Optional[str]]:
-    """
-    Return the raw-file list available before reduction modules run.
+    Validate the global mode and synchronize active module mode parameters.
 
     :param params: ParamDict, POGOS parameters
-    :return: tuple, input files, input directory, and source parameter key
+    :return: None, raises PogosException for unknown or inconsistent modes
     """
-    # Find the earliest reduction level selected for this run. Inputs from
-    # later levels may be products that do not exist until this level finishes.
-    active_modules = []
-    for step in ['Pre-extraction', 'Extraction']:
-        # Collect enabled modules from this reduction level.
-        for module in pogos_base.RED_STEPS[step]:
-            if params.get(f'RUN.{module.upper()}', False):
-                active_modules.append(module.split('.')[0])
-        # Never fall through to downstream inputs when an earlier level runs.
-        if len(active_modules) > 0:
-            break
-    # Post-extraction products are not raw data and are not validated here.
-    if len(active_modules) == 0:
-        return None, None, None
-    # INPUT_FILES explicitly identifies startup-visible external input lists.
-    for module in active_modules:
-        # None means this module receives or discovers its inputs at run time.
-        input_definition = pogos_base.INPUT_FILES.get(module)
-        if input_definition is None:
+    mode_name = params['GLOBAL.INSTRUMENTMODE']
+    mode = definitions.MODE_BY_NAME.get(mode_name)
+    if mode is None or not mode.enabled:
+        raise pogos_base.PogosException(
+            f'Unsupported GLOBAL.INSTRUMENTMODE: {mode_name}')
+    for step in definitions.RED_STEPS:
+        if not step.is_enabled(params):
             continue
-        # Get the parameter names for the file list and its parent directory.
-        file_key = input_definition['files']
-        path_key = input_definition['path']
-        # Read the configured files and their associated directory values.
-        files = params.get(file_key)
-        path = params.get(path_key)
-        # Return the first explicit input source at this reduction level.
-        return files, path, file_key
-    # Other workflows obtain files internally and cannot be checked here.
-    return None, None, None
-
-
-def check_raw_data_headers(params: ParamDict):
-    """
-    Check configured JWST inputs against GLOBAL.INSTRUMENTMODE.
-
-    Files are checked sequentially and validation stops at the first missing
-    file, unreadable header, or mode mismatch.
-
-    :param params: ParamDict, POGOS parameters
-    :return: None, raises PogosException on validation failure
-    """
-    # Select the expected header values for this POGOS instrument mode.
-    instrument_mode = params['GLOBAL.INSTRUMENTMODE']
-    expected = pogos_base.MODE_HEADERS.get(instrument_mode)
-    # Warn rather than guessing when a future mode has no definition yet.
-    if expected is None:
-        msg = f'No raw-header validation is defined for {instrument_mode}.'
-        WLOG(params, 'warning', msg)
-        return
-    # Find the configured raw files available before module execution.
-    files, input_path, source_key = _raw_input_source(params)
-    # Some wrapper-only workflows do not expose their files at this point.
-    if files is None or len(files) == 0:
-        msg = ('No configured raw files were available for '
-               f'{instrument_mode} header validation.')
-        WLOG(params, 'warning', msg)
-        return
-    # Check one file at a time, proceeding only after the previous file passes.
-    for filename in files:
-        # Use absolute paths directly and resolve relative paths from input_path.
-        if os.path.isabs(filename):
-            absfile = filename
-        elif input_path is None:
-            emsg = f'{source_key} contains relative files but has no input path.'
+        if not step.supports(mode):
+            emsg = f'{step.name} does not support {mode.name}.'
             raise pogos_base.PogosException(emsg)
-        else:
-            absfile = os.path.join(input_path, filename)
-        # Fail before opening the FITS file if the configured path is invalid.
-        if not os.path.isfile(absfile):
-            emsg = f'{source_key} file does not exist: {absfile}'
+        if step.mode_key is None:
+            continue
+        module_mode = params.get(step.mode_key)
+        if module_mode is None:
+            params[step.mode_key] = mode.name
+        elif module_mode != mode.name:
+            emsg = (f'{step.mode_key}={module_mode} does not match '
+                    f'GLOBAL.INSTRUMENTMODE={mode.name}.')
             raise pogos_base.PogosException(emsg)
-        # Read only the primary header; no science data are loaded.
-        try:
-            header = _load_fits_header(absfile)
-        except Exception as error:
-            emsg = f'Cannot read JWST primary header: {absfile}\n{error}'
-            raise pogos_base.PogosException(emsg)
-        # Compare required keys case-insensitively against accepted values.
-        for key, accepted in expected.items():
-            value = header.get(key)
-            normalized = str(value).strip().upper() if value is not None else ''
-            if normalized in accepted:
-                continue
-            expected_text = ', '.join(sorted(accepted))
-            found_text = normalized if normalized else '<missing>'
-            emsg = (f'Raw data does not match {instrument_mode}: {absfile}\n'
-                    f'Header {key}={found_text}; expected {expected_text}.')
-            raise pogos_base.PogosException(emsg)
-    # Log one concise success message after every configured file has passed.
-    msg = f'Validated {len(files)} raw file(s) for {instrument_mode}'
-    WLOG(params, 'info', msg)
 
 
 def _propagate_crds_setup(crds_path: str, server_url: str):
@@ -1083,7 +970,8 @@ def list_yamls():
                 summary += f'\n - {vstr}'
                 summary += f'\n - Inst Mode: {instmode}'
                 # loop around modules a
-                for module in pogos_base.SUBMODULES:
+                for step in definitions.RED_STEPS:
+                    module = step.name
                     run_mod = ydict['RUN'].get(module, False)
                     if not run_mod:
                         continue
@@ -1162,17 +1050,18 @@ def copy_ask_description(params: ParamDict):
     # ---------------------------------------------------------------------
     descriptions = dict()
     # find a previous description if it exists
-    for submodule in pogos_base.SUBMODULES:
+    for step in definitions.RED_STEPS:
+        submodule = step.name
         # skip if we don't have this sub-module
-        if 'RUN.{0}'.format(submodule) not in params:
+        if step.run_key not in params:
             continue
         # skip if not running
-        if not params['RUN.{0}'.format(submodule)]:
+        if not step.is_enabled(params):
             continue
         # need to figure out if we are dealing with a submodule with multiple
         # parts
-        if 'RUN.{0}'.format(submodule) in pogos_base.SUB_RUN_KEYS:
-            subkeys = pogos_base.SUB_RUN_KEYS['RUN.{0}'.format(submodule)]
+        if len(step.sub_prefixes) > 0:
+            subkeys = step.sub_prefixes
         else:
             subkeys = [submodule]
         # need to loop around submodules (subkeys may have multiple submodules)
@@ -1236,17 +1125,18 @@ def copy_ask_subdirectories(params: ParamDict):
 
     prev = None
 
-    for submodule in pogos_base.SUBMODULES:
+    for step in definitions.RED_STEPS:
+        submodule = step.name
         # skip if we don't have this sub-module
-        if 'RUN.{0}'.format(submodule) not in params:
+        if step.run_key not in params:
             continue
         # skip if not running
-        if not params['RUN.{0}'.format(submodule)]:
+        if not step.is_enabled(params):
             continue
         # need to figure out if we are dealing with a submodule with multiple
         # parts
-        if 'RUN.{0}'.format(submodule) in pogos_base.SUB_RUN_KEYS:
-            subkeys = pogos_base.SUB_RUN_KEYS['RUN.{0}'.format(submodule)]
+        if len(step.sub_prefixes) > 0:
+            subkeys = step.sub_prefixes
         else:
             subkeys = [submodule]
         # need to loop around submodules (subkeys may have multiple submodules)
@@ -1384,15 +1274,16 @@ def copy_ask_req_module_params(params: ParamDict):
     func_name = f'{__NAME__}.copy_ask_req_module_params()'
     # -------------------------------------------------------------------------
     # loop around sub-modules
-    for submodule in pogos_base.REQ_MODULE_PARAMS:
+    for step in definitions.RED_STEPS:
+        submodule = step.name
         # skip question if we don't have this sub-module
-        if 'RUN.{0}'.format(submodule) not in params:
+        if step.run_key not in params:
             continue
         # skip if not running
-        if not params['RUN.{0}'.format(submodule)]:
+        if not step.is_enabled(params):
             continue
         # loop around required parameters
-        for req_param in pogos_base.REQ_MODULE_PARAMS[submodule]:
+        for req_param in step.required_params:
             # skip if we don't have this required parameter
             if req_param not in params:
                 continue

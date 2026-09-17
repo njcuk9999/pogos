@@ -10,12 +10,14 @@ Created on 2026-06-17 10:35:00
 @author: cook
 """
 import os
+import glob
 
 from aperocore.constants.param_functions import ParamDict
 from aperocore.core import drs_log
 from aperocore.core import drs_misc
 from pogos.core import base
 from pogos.core import general as pogos_general
+from pogos.core import input_validation
 from pogos.eureka_wrap.constants import eureka_ecf as ecf
 
 # =============================================================================
@@ -98,6 +100,8 @@ def run_eureka_pre_extract(params: ParamDict) -> ParamDict:
     # deal with test mode (return here)
     if params['EUREKA.GENERAL.TESTMODE']:
         return _eureka_result(params, stage=2)
+    # Resolve and validate Stage 1 inputs before Eureka loads them.
+    _validate_eureka_stage_inputs(params, stage=1)
     # -------------------------------------------------------------------------
     # Run the Stage 1 + Stage 2 steps from Eureka
     # -------------------------------------------------------------------------
@@ -130,6 +134,8 @@ def run_eureka_extract(params: ParamDict, pre_inst=None) -> ParamDict:
     # deal with test mode (return here)
     if params['EUREKA.GENERAL.TESTMODE']:
         return _eureka_result(params, stage=3)
+    # Resolve and validate routed Stage 3 inputs before Eureka loads them.
+    _validate_eureka_stage_inputs(params, stage=3)
     # -------------------------------------------------------------------------
     # Run the Stage 3 steps from Eureka
     # -------------------------------------------------------------------------
@@ -178,6 +184,18 @@ def run_eureka_post_extract(params: ParamDict, ext_inst=None) -> ParamDict:
 # =============================================================================
 # Define worker function
 # =============================================================================
+def _validate_eureka_stage_inputs(params: ParamDict, stage: int):
+    """Discover and validate absolute FITS inputs for an Eureka stage."""
+    input_dir = os.path.abspath(_eureka_stage_input_dir(params, stage))
+    suffix = params[f'EUREKA.STAGE{stage}.suffix']
+    pattern = os.path.join(input_dir, f'*{suffix}*.fits')
+    files = sorted(glob.glob(pattern))
+    if len(files) == 0:
+        emsg = f'No Eureka Stage {stage} input files found: {pattern}'
+        raise base.PogosException(emsg)
+    input_validation.check_input_data_headers(params, files)
+
+
 def _eureka_topdir(params: ParamDict) -> str:
     """Return the absolute Eureka top directory for this run."""
     return os.path.join(params['GLOBAL.DATA_PATH'], 'eureka',

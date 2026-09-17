@@ -61,14 +61,6 @@ def main(**kwargs):
     if params['RUN.SORBET.SLCA']:
         sorbet.general.run_sorbet_slcta(params)
 
-def run():
-    """
-    Wrapper script for command line - no return
-    :return:
-    """
-    _ = main()
-
-
 # =============================================================================
 # Start of code
 # =============================================================================

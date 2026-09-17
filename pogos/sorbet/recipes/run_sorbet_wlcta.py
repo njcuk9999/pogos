@@ -61,14 +61,6 @@ def main(**kwargs):
         sorbet.general.run_sorbet_wlcta(params)
 
 
-def run():
-    """
-    Wrapper script for command line - no return
-    :return:
-    """
-    _ = main()
-
-
 # =============================================================================
 # Start of code
 # =============================================================================

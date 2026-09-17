@@ -14,6 +14,7 @@ from aperocore.constants import constant_functions
 from aperocore.constants import param_functions
 from aperocore.core import drs_log
 from pogos.core import base as pogos_base
+from pogos.core import definitions
 
 
 # =============================================================================
@@ -51,7 +52,7 @@ class StepList:
 
     @staticmethod
     def all_modes():
-        return pogos_base.INSTRUMENTS
+        return list(definitions.ENABLED_INST_MODES)
 
     @staticmethod
     def not_modes(*reject_modes: str) -> List[str]:
@@ -63,7 +64,7 @@ class StepList:
         # loop around all modes and get the accepted modes
         for _mode in StepList.all_modes():
             # accepted if not in rejected
-            if _mode not in reject_modes:
+            if _mode.name not in reject_modes:
                 accept_modes.append(_mode)
         return accept_modes
 
@@ -109,16 +110,16 @@ class Step:
         self.kwargs = dict()
         # deal with modes
         if modes is None:
-            self.modes = pogos_base.INSTRUMENTS
-        elif modes == pogos_base.INSTRUMENTS:
-            self.modes = modes
+            self.modes = StepList.all_modes()
         else:
             # check that modes given are valid
             for mode in modes:
-                if mode not in pogos_base.INSTRUMENTS:
+                mode_name = mode.name if hasattr(mode, 'name') else mode
+                if mode_name not in definitions.MODE_BY_NAME:
                     emsg = f'Step {name} has unsupported mode {mode}'
                     raise pogos_base.PogosException(emsg)
-            self.modes = modes
+            self.modes = [definitions.MODE_BY_NAME[mode]
+                          if isinstance(mode, str) else mode for mode in modes]
         # deal with descs
         if descs is None:
             self.descs = dict()
@@ -134,7 +135,9 @@ class Step:
         self.kwargs = data['kwargs']
         self.fname = data['fname']
         self.ftype = data['ftype']
-        self.modes = data['modes']
+        self.modes = [definitions.MODE_BY_NAME[mode]
+                  if isinstance(mode, str) else mode
+                  for mode in data['modes']]
 
     def cdict_kwargs(self, source: str, group: str) -> Dict[str, str]:
         """
@@ -169,8 +172,8 @@ class Step:
         ckwargs['active'] = True
         ckwargs['tex_arg'] = True
         # only add modes if we aren't adding all of them
-        if len(self.modes) < len(set(pogos_base.INSTRUMENTS)):
-            ckwargs['modes'] = self.modes
+        if len(self.modes) < len(definitions.ENABLED_INST_MODES):
+            ckwargs['modes'] = [mode.name for mode in self.modes]
         # return the ckwargs for pushing to the cdict
         return ckwargs
 

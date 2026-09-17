@@ -51,6 +51,7 @@ from jwst.wfss_contam import WfssContamStep
 from aperocore.constants import param_functions
 from aperocore.core import drs_log
 from pogos.core import base as pogos_base
+from pogos.core import input_validation
 from pogos.core import io as pogos_io
 from pogos.tsovore.core import base as ts_base
 from pogos.core import flow as pogos_flow
@@ -1063,11 +1064,12 @@ class JWST(Instrument):
             else:
                 # construct absolute path
                 absfile = os.path.join(input_dir, filename)
-                # check that file is on disk
-                if not os.path.isfile(absfile):
-                    emsg = 'Input file {0} does not exist on disk'.format(
-                        absfile)
-                    raise ts_base.TSOvoreException(emsg)
+            # Normalize every resolved path before checking and validation.
+            absfile = os.path.abspath(absfile)
+            # check that absolute and relative input files are on disk
+            if not os.path.isfile(absfile):
+                emsg = 'Input file {0} does not exist on disk'.format(absfile)
+                raise ts_base.TSOvoreException(emsg)
             # append to list
             input_absfiles.append(absfile)
             # add basename to list
@@ -1075,6 +1077,8 @@ class JWST(Instrument):
             input_prefixes.append(basename.split('_uncal')[0])
         # get the number of segments
         nsegments = len(input_absfiles)
+        # Validate headers only after every configured path has been resolved.
+        input_validation.check_input_data_headers(self.params, input_absfiles)
         # ----------------------------------------------------------------------
         # deal with common prefix
         input_common_prefix = os.path.commonprefix(input_prefixes)

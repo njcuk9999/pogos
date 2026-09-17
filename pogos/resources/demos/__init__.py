@@ -10,6 +10,7 @@ Created on 2025-03-25 at 09:57
 @author: cook
 """
 from pogos.core import base
+from pogos.core import definitions
 from pogos.resources.demos import soss_demo
 from pogos.resources.demos import miri_demo
 from pogos.resources.demos import bots_g395_demo as g395_demo
@@ -28,8 +29,8 @@ miri_im = 'JWST.MIRI.IMAGING'
 # =============================================================================
 # fill this with the instrument modes
 DEMOS = dict()
-for instrument in base.INSTRUMENTS:
-    DEMOS[instrument] = dict()
+for instrument_mode in definitions.ENABLED_INST_MODES:
+    DEMOS[instrument_mode.name] = dict()
 
 # =============================================================================
 # Define usable demos

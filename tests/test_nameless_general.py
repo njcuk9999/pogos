@@ -12,7 +12,8 @@ def test_check_soss_returns_false_for_unsupported_mode():
     assert general.check_soss(params) is False
 
 
-def test_discover_files_autodetects_handle_segments_and_count(tmp_path):
+def test_discover_files_autodetects_handle_segments_and_count(tmp_path,
+                                                               monkeypatch):
     prefix = "P" * 29
     (tmp_path / f"{prefix}001_uncal.fits").write_text("a")
     (tmp_path / f"{prefix}002_uncal.fits").write_text("b")
@@ -21,12 +22,20 @@ def test_discover_files_autodetects_handle_segments_and_count(tmp_path):
         "NAMELESS.GENERAL.NSEG": None,
         "NAMELESS.GENERAL.SEGS": None,
     }
+    checked = []
+    monkeypatch.setattr(
+        general.input_validation,
+        'check_input_data_headers',
+        lambda in_params, files: checked.extend(files),
+    )
 
     handle, nseg, segs = general.discover_files(params, str(tmp_path))
 
     assert handle == "P" * 25
     assert nseg == 2
     assert segs == ["001", "002"]
+    assert checked == [str(tmp_path / f"{prefix}001_uncal.fits"),
+                       str(tmp_path / f"{prefix}002_uncal.fits")]
 
 
 def test_discover_files_returns_none_when_no_uncal_files(tmp_path):

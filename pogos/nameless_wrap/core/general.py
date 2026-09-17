@@ -36,6 +36,7 @@ from aperocore.core import drs_log
 from aperocore.core import drs_misc
 from pogos.core import base
 from pogos.core import general as pogos_general
+from pogos.core import input_validation
 
 # =============================================================================
 # Define variables
@@ -292,6 +293,15 @@ def discover_files(params: ParamDict, in_path: str):
     :param in_path: str, the path containing the *_uncal.fits files
     :return: tuple (handle, nseg, segs) or None if no files were found
     """
+    # Discover and validate the absolute uncal inputs even when handle/segment
+    # metadata was supplied explicitly by the user.
+    in_path = os.path.abspath(in_path)
+    uncal_files = sorted(glob.glob(os.path.join(in_path, '*uncal.fits')))
+    if len(uncal_files) == 0:
+        wmsg = 'No *_uncal.fits files found in {0}'
+        WLOG(params, 'warning', wmsg.format(in_path))
+        return None
+    input_validation.check_input_data_headers(params, uncal_files)
     # get the user-provided values (may be None)
     handle = params['NAMELESS.GENERAL.HANDLE']
     nseg = params['NAMELESS.GENERAL.NSEG']
@@ -304,13 +314,6 @@ def discover_files(params: ParamDict, in_path: str):
     # do we need to auto-detect anything?
     need_discovery = handle is None or nseg is None or segs is None
     if need_discovery:
-        # glob the uncal files (mirroring NAMELESS file naming)
-        uncal_files = sorted(glob.glob(os.path.join(in_path, '*uncal.fits')))
-        # deal with no files found
-        if len(uncal_files) == 0:
-            wmsg = 'No *_uncal.fits files found in {0}'
-            WLOG(params, 'warning', wmsg.format(in_path))
-            return None
         basenames = [os.path.basename(f) for f in uncal_files]
         # handle is the first 25 characters of the filename
         if handle is None:

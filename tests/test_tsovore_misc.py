@@ -1,5 +1,6 @@
 import pytest
 
+from pogos.core import definitions
 from pogos.tsovore.core import misc as ts_misc
 
 
@@ -14,8 +15,8 @@ class DummyConstDict:
 def test_step_list_not_modes_excludes_rejected_mode():
     modes = ts_misc.StepList.not_modes("JWST.NIRISS.SOSS")
 
-    assert "JWST.NIRISS.SOSS" not in modes
-    assert len(modes) == len(ts_misc.pogos_base.INSTRUMENTS) - 1
+    assert definitions.NIRISS_SOSS not in modes
+    assert len(modes) == len(definitions.ENABLED_INST_MODES) - 1
 
 
 def test_step_rejects_unknown_mode():

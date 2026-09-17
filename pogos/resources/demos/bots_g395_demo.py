@@ -11,7 +11,7 @@ Created on 2025-03-25 at 09:57
 """
 
 
-import pogos.core.base as pogos_base
+from pogos.core import definitions
 from pogos.resources.demos import demos
 from sossisse.core import constants as sconst
 from pogos.constants import constants as pconst
@@ -68,8 +68,8 @@ class BotsG395HDemo_WASP39b(demos.PogoDemo):
         # =====================================================================
         # Turn all modes off by default
         # =====================================================================
-        for submodule in pogos_base.SUBMODULES:
-            self.cdict.set(submodule, group='RUN', source=__NAME__,
+        for step in definitions.RED_STEPS:
+            self.cdict.set(step.name, group='RUN', source=__NAME__,
                            value=False)
 
     # TODO: Add tsovore

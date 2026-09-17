@@ -14,6 +14,7 @@ from stpipe.entry_points import STEPS_GROUP
 from aperocore.constants import constant_functions
 
 from pogos.core import base
+from pogos.core import definitions
 from pogos.tsovore.core import misc as ts_misc
 
 # =============================================================================
@@ -147,12 +148,13 @@ TSOVORE_CDict.add_group(cgroup, source=__NAME__, user=True, active=True,
                        description='Definition of inputs related to the data')
 # -----------------------------------------------------------------------------
 # Instrument mode i.e. JWST.NIRISS.SOSS or JWST.NIRISS.PRISM
+instrument_names = [mode.name for mode in definitions.ENABLED_INST_MODES]
 TSOVORE_CDict.add('INSTRUMENTMODE', value=None, dtype=str, not_none=True,
                   source=__NAME__, user=True, active=True,
-                  options=base.INSTRUMENTS,
+                  options=instrument_names,
                   cmd_arg='instmode', group=cgroup,
                   description='Instrument mode e.g. one of the following: {0}'
-                              ''.format('\n\t'.join(base.INSTRUMENTS)))
+                              ''.format('\n\t'.join(instrument_names)))
 # -----------------------------------------------------------------------------
 # Raw files
 fdesc = ('List of files to be processed in form: '

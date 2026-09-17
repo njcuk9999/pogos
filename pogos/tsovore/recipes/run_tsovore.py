@@ -61,14 +61,6 @@ def main(**kwargs):
         tsovore.general.run_tsovore(params)
 
 
-def run():
-    """
-    Wrapper script for command line - no return
-    :return:
-    """
-    _ = main()
-
-
 # =============================================================================
 # Start of code
 # =============================================================================

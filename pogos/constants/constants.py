@@ -13,6 +13,7 @@ Created on 2024-10-29 at 09:30
 from aperocore.constants import constant_functions
 
 from pogos.core import base
+from pogos.core import definitions
 
 # =============================================================================
 # Define variables
@@ -68,12 +69,13 @@ CDict.add('DATA_PATH', value=None, dtype=str,
                       '\nE.g. C:\\users\\bob\\pogo-data')
 
 # Instrument mode i.e. JWST.NIRISS.SOSS or JWST.NIRISS.PRISM
+instrument_names = [mode.name for mode in definitions.ENABLED_INST_MODES]
 CDict.add('INSTRUMENTMODE', value=None, dtype=str, not_none=True,
           source=__NAME__, user=True, active=True,
-          options=base.INSTRUMENTS,
+          options=instrument_names,
           cmd_arg='instmode', group=cgroup,
           description='instrument mode e.g. one of the following: {0}'
-                      ''.format('\n\t'.join(base.INSTRUMENTS)))
+                      ''.format('\n\t'.join(instrument_names)))
 
 # Only used for copying
 CDict.add('DEMO_FILE', value=None, dtype=str, source=__NAME__, user=False,
@@ -143,85 +145,13 @@ group = 'RUN'
 CDict.add_group(group, description='Switches to turn on major features',
                 source=__NAME__, user=True, active=True)
 
-# -----------------------------------------------------------------------------
-# Pre-extraction flavours
-# -----------------------------------------------------------------------------
-# Run
-# Run TSOVORE
-CDict.add('TSOVORE', value=False, dtype=bool, source=__NAME__,
-          user=True, active=True, group=group, not_none=True,
-          description='Run TSOVORE')
-
-# Run Eureka pre-extraction steps
-CDict.add('PRE_EUREKA', value=False, dtype=bool, source=__NAME__,
-          user=True, active=True, group=group, not_none=True,
-          description='Run Eureka pre-extraction steps')
-
-# Run default JWST pre-extraction steps
-CDict.add('PRE_JWST', value=False, dtype=bool, source=__NAME__,
-          user=True, active=True, group=group, not_none=True,
-          description='Run default JWST pre-extraction steps')
-
-# Run NAMELESS pre-extraction steps
-CDict.add('PRE_NAMELESS', value=False, dtype=bool, source=__NAME__,
-          user=True, active=True, group=group, not_none=True,
-          description='Run NAMELESS pre-extraction steps')
-
-# -----------------------------------------------------------------------------
-# Extraction flavours
-# -----------------------------------------------------------------------------
-# Run simple box extraction step
-CDict.add('EXT_BOX', value=False, dtype=bool, source=__NAME__,
-          user=True, active=True, group=group, not_none=True,
-          description='Run simple box extraction step')
-
-# Run Eureka extraction steps
-CDict.add('EXT_EUREKA', value=False, dtype=bool, source=__NAME__,
-          user=True, active=True, group=group, not_none=True,
-          description='Run Eureka extraction steps')
-
-# Run default JWST extraction step
-CDict.add('EXT_JWST', value=False, dtype=bool, source=__NAME__,
-          user=True, active=True, group=group, not_none=True,
-          description='Run default JWST extraction step')
-
-# Run NAMELESS extraction steps
-CDict.add('EXT_NAMELESS', value=False, dtype=bool, source=__NAME__,
-          user=True, active=True, group=group, not_none=True,
-          description='Run NAMELESS extraction steps')
-
-# Run SOSSISSE
-CDict.add('SOSSISSE', value=False, dtype=bool, source=__NAME__,
-          user=True, active=True, group=group, not_none=True,
-          description='Run SOSSISSE')
-
-# Run MIRIAM
-CDict.add('MIRIAM', value=False, dtype=bool, source=__NAME__,
-          user=True, active=True, group=group, not_none=True,
-          description='Run MIRIAM')
-
-# -----------------------------------------------------------------------------
-# Post-extraction flavours
-# -----------------------------------------------------------------------------
-# Run SORBET WLCA
-CDict.add('SORBET.WLCA', value=False, dtype=bool, source=__NAME__,
-          user=True, active=True, group=group, not_none=True,
-          description='Run SORBET white light curve analysis')
-
-# Run SORBET WLCA
-CDict.add('SORBET.SLCA', value=False, dtype=bool, source=__NAME__,
-          user=True, active=True, group=group, not_none=True,
-          description='Run SORBET Spectral light curve analysis')
-
-# Run Eureka extraction steps
-CDict.add('POST_EUREKA', value=False, dtype=bool, source=__NAME__,
-          user=True, active=True, group=group, not_none=True,
-          description='Run Eureka post-extraction steps')
-
-# Run default JWST post-extraction steps
-CDict.add('POST_JWST', value=False, dtype=bool, source=__NAME__,
-          user=True, active=True, group=group, not_none=True,
-          description='Run default JWST post-extraction steps')
+# Add one switch for every authoritative reduction-step definition.
+for reduction_step in definitions.RED_STEPS:
+    description = 'Run {0} [{1}]'.format(reduction_step.name,
+                                         reduction_step.level.name)
+    CDict.add(reduction_step.name, value=False, dtype=bool, source=__NAME__,
+              user=True, active=True, group=group, not_none=True,
+              description=description)
 
 
 # =============================================================================

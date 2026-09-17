@@ -25,6 +25,8 @@ Created on 2026-06-26
 @author: cook
 """
 from pogos.core import base
+from pogos.core import definitions
+from pogos.core.base_classes import InstMode
 
 # =============================================================================
 # Define variables
@@ -47,41 +49,31 @@ PIPELINE_MODULES['Image3Pipeline'] = 'jwst.pipeline'
 
 # Stage 1 (calwebb_detector1) - the same for every instrument mode
 S1_PIPELINES = dict()
-for _mode in base.INSTRUMENTS:
+for _mode in definitions.ENABLED_INST_MODES:
     S1_PIPELINES[_mode] = 'Detector1Pipeline'
 
 # Stage 2 (calwebb_spec2 / calwebb_image2)
 S2_PIPELINES = dict()
-S2_PIPELINES['JWST.NIRISS.SOSS'] = 'Spec2Pipeline'
-S2_PIPELINES['JWST.NIRISS.FGS'] = 'Image2Pipeline'
-S2_PIPELINES['JWST.NIRSPEC.BOTS.PRISM'] = 'Spec2Pipeline'
-S2_PIPELINES['JWST.NIRSPEC.BOTS.G395M'] = 'Spec2Pipeline'
-S2_PIPELINES['JWST.NIRSPEC.BOTS.G235M'] = 'Spec2Pipeline'
-S2_PIPELINES['JWST.NIRSPEC.BOTS.G140M'] = 'Spec2Pipeline'
-S2_PIPELINES['JWST.NIRSPEC.BOTS.G395H'] = 'Spec2Pipeline'
-S2_PIPELINES['JWST.NIRSPEC.BOTS.G235H'] = 'Spec2Pipeline'
-S2_PIPELINES['JWST.NIRSPEC.BOTS.G140H'] = 'Spec2Pipeline'
-S2_PIPELINES['JWST.NIRCAM.IMAGING'] = 'Image2Pipeline'
-S2_PIPELINES['JWST.NIRCAM.WFSS'] = 'Spec2Pipeline'
-S2_PIPELINES['JWST.MIRI.IMAGING'] = 'Image2Pipeline'
-S2_PIPELINES['JWST.MIRI.LRS'] = 'Spec2Pipeline'
+S2_PIPELINES[definitions.NIRISS_SOSS] = 'Spec2Pipeline'
+S2_PIPELINES[definitions.NIRISS_FGS] = 'Image2Pipeline'
+for _mode in definitions.NIRSPEC_BOTS_MODES:
+    S2_PIPELINES[_mode] = 'Spec2Pipeline'
+S2_PIPELINES[definitions.NIRCAM_IMAGING] = 'Image2Pipeline'
+S2_PIPELINES[definitions.NIRCAM_WFSS] = 'Spec2Pipeline'
+S2_PIPELINES[definitions.MIRI_IMAGING] = 'Image2Pipeline'
+S2_PIPELINES[definitions.MIRI_LRS] = 'Spec2Pipeline'
 
 # Stage 3 (calwebb_tso3 / calwebb_spec3 / calwebb_image3)
 #   POGOS is time-series focused so the TSO variant is used where possible
 S3_PIPELINES = dict()
-S3_PIPELINES['JWST.NIRISS.SOSS'] = 'Tso3Pipeline'
-S3_PIPELINES['JWST.NIRISS.FGS'] = 'Image3Pipeline'
-S3_PIPELINES['JWST.NIRSPEC.BOTS.PRISM'] = 'Tso3Pipeline'
-S3_PIPELINES['JWST.NIRSPEC.BOTS.G395M'] = 'Tso3Pipeline'
-S3_PIPELINES['JWST.NIRSPEC.BOTS.G235M'] = 'Tso3Pipeline'
-S3_PIPELINES['JWST.NIRSPEC.BOTS.G140M'] = 'Tso3Pipeline'
-S3_PIPELINES['JWST.NIRSPEC.BOTS.G395H'] = 'Tso3Pipeline'
-S3_PIPELINES['JWST.NIRSPEC.BOTS.G235H'] = 'Tso3Pipeline'
-S3_PIPELINES['JWST.NIRSPEC.BOTS.G140H'] = 'Tso3Pipeline'
-S3_PIPELINES['JWST.NIRCAM.IMAGING'] = 'Tso3Pipeline'
-S3_PIPELINES['JWST.NIRCAM.WFSS'] = 'Spec3Pipeline'
-S3_PIPELINES['JWST.MIRI.IMAGING'] = 'Tso3Pipeline'
-S3_PIPELINES['JWST.MIRI.LRS'] = 'Tso3Pipeline'
+S3_PIPELINES[definitions.NIRISS_SOSS] = 'Tso3Pipeline'
+S3_PIPELINES[definitions.NIRISS_FGS] = 'Image3Pipeline'
+for _mode in definitions.NIRSPEC_BOTS_MODES:
+    S3_PIPELINES[_mode] = 'Tso3Pipeline'
+S3_PIPELINES[definitions.NIRCAM_IMAGING] = 'Tso3Pipeline'
+S3_PIPELINES[definitions.NIRCAM_WFSS] = 'Spec3Pipeline'
+S3_PIPELINES[definitions.MIRI_IMAGING] = 'Tso3Pipeline'
+S3_PIPELINES[definitions.MIRI_LRS] = 'Tso3Pipeline'
 
 # convenience lookup keyed by stage number
 STAGE_PIPELINES = {1: S1_PIPELINES, 2: S2_PIPELINES, 3: S3_PIPELINES}
@@ -90,7 +82,7 @@ STAGE_PIPELINES = {1: S1_PIPELINES, 2: S2_PIPELINES, 3: S3_PIPELINES}
 # =============================================================================
 # Define functions
 # =============================================================================
-def get_pipeline_name(stage: int, instmode: str):
+def get_pipeline_name(stage: int, instmode):
     """
     Return the JWST pipeline class name for a given stage + instrument mode.
 
@@ -100,7 +92,8 @@ def get_pipeline_name(stage: int, instmode: str):
              None if no standard pipeline is defined for this combination
     """
     mapping = STAGE_PIPELINES.get(stage, dict())
-    return mapping.get(instmode, None)
+    mode = instmode if isinstance(instmode, InstMode) else definitions.MODE_BY_NAME.get(instmode)
+    return mapping.get(mode, None)
 
 
 # =============================================================================

@@ -10,7 +10,6 @@ Created on 2024-10-29 at 09:32
 @author: cook
 """
 import sys
-from importlib import import_module
 from pathlib import Path
 
 # Fail fast if local folders would shadow installed packages.
@@ -28,7 +27,9 @@ from aperocore.core import drs_text
 from pogos.constants import constants as pogo_constants
 from pogos.constants.constants import CDict
 from pogos.core import base as pogos_base
+from pogos.core import definitions
 from pogos.core import general
+from pogos.core import recipe_helpers
 from pogos.core import startup
 
 
@@ -52,29 +53,6 @@ ConstDict = pogo_constants.ConstDict
 # get the logger
 WLOG = drs_log.wlog
 
-_LAZY_MODULES = {'tsovore', 'sossisse_wrap', 'miriam', 'sorbet',
-                 'eureka_wrap', 'jwst_wrap', 'nameless_wrap'}
-
-
-def __getattr__(name):
-    if name in _LAZY_MODULES:
-        module = import_module(f'pogos.{name}')
-        globals()[name] = module
-        return module
-    raise AttributeError(f'module {__name__!r} has no attribute {name!r}')
-
-
-def _get_module(name):
-    if name in globals():
-        return globals()[name]
-    return __getattr__(name)
-
-
-def _load_copy_modules():
-    names = ['tsovore', 'eureka_wrap', 'jwst_wrap', 'nameless_wrap',
-             'sossisse_wrap', 'miriam', 'sorbet']
-    return tuple(_get_module(name) for name in names)
-
 # =============================================================================
 # Define functions
 # =============================================================================
@@ -82,7 +60,9 @@ def main(**kwargs):
     # print splash
     general.start_splash('POGOS Copy')
     (tsovore, eureka_wrap, jwst_wrap, nameless_wrap,
-     sossisse_wrap, miriam, sorbet) = _load_copy_modules()
+     sossisse_wrap, miriam, sorbet) = recipe_helpers.load_modules(
+        ['tsovore', 'eureka_wrap', 'jwst_wrap', 'nameless_wrap',
+         'sossisse_wrap', 'miriam', 'sorbet'])
     # listing functionality
     if startup.quick_args(sys.argv): return
     # get other configs (either internal like SORBET or external like SOSSISSE)
@@ -102,9 +82,9 @@ def main(**kwargs):
     variables = ['GLOBAL.DEMO_FILE', 'GLOBAL.DATA_PATH',
                  'GLOBAL.INSTRUMENTMODE']
     # determine which submodules are being run
-    for submodule in pogos_base.SUBMODULES:
-        if 'RUN.{0}'.format(submodule) in params:
-            variables.append('RUN.{0}'.format(submodule))
+    for step in definitions.RED_STEPS:
+        if step.run_key in params:
+            variables.append(step.run_key)
     # print out the variables
     for variable in variables:
         WLOG(params, '', '    - {0} = {1}'.format(variable, params[variable]),
@@ -196,10 +176,6 @@ def main(**kwargs):
     # -------------------------------------------------------------------------
     # print splash
     general.end_splash()
-
-
-def run():
-    _ = main()
 
 # =============================================================================
 # Start of code

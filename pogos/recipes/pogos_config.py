@@ -27,6 +27,7 @@ from aperocore.core import drs_log
 from pogos.constants.constants import CDict
 from pogos.core import base as pogos_base
 from pogos.core import general
+from pogos.core import recipe_helpers
 from pogos.core import startup
 
 # =============================================================================
@@ -51,17 +52,6 @@ verr = ('The POGOS version of the {0} is not compatible with '
 WLOG = drs_log.wlog
 
 
-# =============================================================================
-# Define functions
-# =============================================================================
-def _is_ci_mode(kwargs) -> bool:
-    """Determine whether to run non-interactive CI validation mode."""
-    if kwargs.get('ci', False):
-        return True
-    ci_value = os.environ.get('CI', '').strip().lower()
-    return ci_value in ['1', 'true', 'yes', 'y']
-
-
 def main(**kwargs):
     # print splash
     general.start_splash('POGOS Config')
@@ -80,7 +70,7 @@ def main(**kwargs):
                                            kwargs=kwargs)
     # avoid interactive prompts in CI mode
     if params['GLOBAL.YAML_FILE'] is None:
-        if _is_ci_mode(kwargs):
+        if recipe_helpers.is_ci_mode(kwargs):
             emsg = 'CI mode requires GLOBAL.YAML_FILE (e.g. --yamlfile=...)'
             WLOG(params, 'error', emsg)
         params = load_functions.ask_for_missing_args(
@@ -95,7 +85,7 @@ def main(**kwargs):
     if not os.path.exists(yaml_file):
         WLOG(params, 'error', f'Yaml file does not exist: {yaml_file}')
 
-    ci_mode = _is_ci_mode(kwargs)
+    ci_mode = recipe_helpers.is_ci_mode(kwargs)
     # run validation (interactive by default, non-interactive for CI)
     report = load_functions.validate_yaml_config(config_list=[CDict],
                                                  yaml_file=yaml_file,
@@ -151,11 +141,6 @@ def main(**kwargs):
 
     # print splash
     general.end_splash()
-
-
-def run():
-    _ = main()
-
 
 # =============================================================================
 # Start of code

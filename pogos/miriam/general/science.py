@@ -25,6 +25,7 @@ from aperocore.constants import load_functions
 from aperocore.core import drs_log
 from aperocore.core import drs_misc
 from pogos.core import base
+from pogos.core import input_validation
 from pogos.miriam.core import base as mc_base
 from pogos.miriam.general import plots as mc_plots
 
@@ -157,6 +158,8 @@ def merge_inputs(params: ParamDict) -> MergedReturn:
             input_path = str(input_file)
         else:
             input_path = os.path.join(input_dir, input_file)
+        # Normalize every resolved input before checking and validation.
+        input_path = os.path.abspath(input_path)
         if not os.path.exists(input_path):
             emsg = 'MIRIAM.PATHS.INPUT_PATH.FILES[{0}]'
             emsg += ' file does not exist: {1}'
@@ -165,6 +168,8 @@ def merge_inputs(params: ParamDict) -> MergedReturn:
         else:
             input_paths.append(input_path)
             input_basenames.append(os.path.basename(input_path))
+    # Validate the resolved imaging inputs before loading or merging arrays.
+    input_validation.check_input_data_headers(params, input_paths)
     # -------------------------------------------------------------------------
     # set prefix (for use in output files)
     mparams['INPUTS']['PREFIX'] = load_functions.common_prefix(input_basenames)

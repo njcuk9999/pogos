@@ -21,6 +21,7 @@ from aperocore.constants import load_functions
 from aperocore.core import drs_log
 from aperocore.core import drs_misc
 from pogos.core import base as pogos_base
+from pogos.core import definitions
 from pogos.core import general as pogos_general
 from pogos.core import io as pogos_io
 from pogos.sorbet.core import core as sorbet_core
@@ -95,10 +96,10 @@ def any_sorbet_run(params: ParamDict) -> bool:
     """
     # loop around all sorbet modules and check for any to be True to run
     # them
-    for mod in pogos_base.SORBET_SUB_MODS:
-        run_mod_str = f'RUN.{mod}'
-        if run_mod_str in params:
-            if params[run_mod_str]:
+    sorbet_steps = (definitions.SORBET_WLCA, definitions.SORBET_SLCA)
+    for step in sorbet_steps:
+        if step.run_key in params:
+            if params[step.run_key]:
                 return True
     # if we get here then nothing is set to run
     return False
