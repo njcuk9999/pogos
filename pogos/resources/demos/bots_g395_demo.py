@@ -199,6 +199,12 @@ class BotsG395HDemo_WASP39b(demos.PogoDemo):
         self.cdict.set('BASELINE_INTS', group=cgroup, source=__NAME__,
                        value=[[0, 159], [341, 465]])
 
+        # Integrations flagged as a jump in the data. Used to separate the
+        # data into chunks that are analysed individually and separately.
+        #         Default value=None
+        self.cdict.set('JUMP_INTS', group=cgroup, source=__NAME__,
+                       value=[270])
+
         # =====================================================================
         # Definition of inputs related to handling of the data within each frame
         # =====================================================================
