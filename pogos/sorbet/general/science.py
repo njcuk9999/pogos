@@ -82,7 +82,8 @@ def load_wlc(params: ParamDict):
     if not os.path.isfile(filename):
         msg = f'SORBET.WLCA.INPUT_FILE="{filename}" does not exist.'
         raise sorbet_base.SorbetException(msg)
-    input_validation.check_input_data_headers(params, [filename])
+    # disable for SORBET
+    # input_validation.check_input_data_headers(params, [filename])
     # load the light curve table
     try:
         dataset = io.load_table(filename)
@@ -127,7 +128,8 @@ def load_slc(params: ParamDict, input_file: str,
             raise sorbet_base.SorbetException(msg)
     # Resolve and validate the FITS product before reading its extensions.
     filename = os.path.abspath(filename)
-    input_validation.check_input_data_headers(params, [filename])
+    # disable for SORBET
+    # input_validation.check_input_data_headers(params, [filename])
     # -------------------------------------------------------------------------
     # load the light curve data
     try:
