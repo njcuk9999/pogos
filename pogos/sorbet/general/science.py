@@ -107,6 +107,9 @@ def load_slc(params: ParamDict, input_file: str,
     """
     # get function name
     func_name = __NAME__ + '.load_slc()'
+    # deal with trace_order being None
+    if params['GLOBAL.INSTRUMENTMODE'] != 'JWST.NIRISS.SOSS':
+        trace_order = None
     # check that this function is only being used for SORBET.SLCA
     if params['RUN.SORBET.SLCA'] is None:
         msg = f'Cannot use "{func_name}" without RUN.SORBET.SLCA = True'
@@ -134,10 +137,20 @@ def load_slc(params: ParamDict, input_file: str,
     # load the light curve data
     try:
         with fits.open(filename) as hdulist:
-            wave = np.array(hdulist[f'WAVELENGTH_{trace_order}'].data)
-            flux = np.array(hdulist[f'RELFLUX_{trace_order}'].data)
-            eflux = np.array(hdulist[f'RELFLUX_ERROR_{trace_order}'].data)
-            bjd = np.array(hdulist[f'BJD_{trace_order}'].data)
+            # deal with not having trace_orders (<1)
+            if trace_order is None:
+                wave = np.array(hdulist[f'WAVELENGTH'].data)
+                flux = np.array(hdulist[f'RELFLUX'].data)
+                eflux = np.array(hdulist[f'RELFLUX_ERROR'].data)
+                bjd = np.array(hdulist[f'BJD'].data)
+            elif f'WAVELENGTH_{trace_order}' in hdulist:
+                wave = np.array(hdulist[f'WAVELENGTH_{trace_order}'].data)
+                flux = np.array(hdulist[f'RELFLUX_{trace_order}'].data)
+                eflux = np.array(hdulist[f'RELFLUX_ERROR_{trace_order}'].data)
+                bjd = np.array(hdulist[f'BJD_{trace_order}'].data)
+            else:
+                msg = (f'Could not find WAVELENGTH_{trace_order}')
+                raise sorbet_base.SorbetException(msg)
             # cast as np.float64
             wave = wave.astype(np.float64)
             flux = flux.astype(np.float64)

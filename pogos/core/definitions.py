@@ -154,7 +154,8 @@ PRE_NAMELESS = RedStep(
     'PRE_NAMELESS', 'RUN.PRE_NAMELESS', PRE_EXTRACTION, (NIRISS_SOSS,),
     sub_prefixes=('NAMELESS.S1_SETTINGS', 'NAMELESS.S2_SETTINGS',
                   'NAMELESS.PREP_SETTINGS', 'NAMELESS.CST_SETTINGS'),
-    shared_prefixes=('NAMELESS.GENERAL',), generic_run_dir=False)
+    shared_prefixes=('NAMELESS.GENERAL', 'NAMELESS.PATHS'),
+    generic_run_dir=False)
 PRE_EUREKA = RedStep(
     'PRE_EUREKA', 'RUN.PRE_EUREKA', PRE_EXTRACTION, STANDARD_JWST_MODES,
     sub_prefixes=('EUREKA.STAGE1', 'EUREKA.STAGE2'),
@@ -179,7 +180,8 @@ MIRIAM = RedStep(
 EXT_NAMELESS = RedStep(
     'EXT_NAMELESS', 'RUN.EXT_NAMELESS', EXTRACTION, (NIRISS_SOSS,),
     sub_prefixes=('NAMELESS.EXT_SETTINGS',),
-    shared_prefixes=('NAMELESS.GENERAL',), generic_run_dir=False)
+    shared_prefixes=('NAMELESS.GENERAL', 'NAMELESS.PATHS'),
+    generic_run_dir=False)
 EXT_EUREKA = RedStep(
     'EXT_EUREKA', 'RUN.EXT_EUREKA', EXTRACTION, STANDARD_JWST_MODES,
     sub_prefixes=('EUREKA.STAGE3',), shared_prefixes=('EUREKA.GENERAL',),
@@ -193,11 +195,11 @@ EXT_BOX = RedStep('EXT_BOX', 'RUN.EXT_BOX', EXTRACTION, ())
 SORBET_WLCA = RedStep(
     'SORBET.WLCA', 'RUN.SORBET.WLCA', POST_EXTRACTION,
     (NIRISS_SOSS,) + NIRSPEC_BOTS_MODES + (MIRI_IMAGING,),
-    shared_prefixes=('SORBET.GENERAL', 'SORBET.PLOTS'))
+    shared_prefixes=('SORBET.GENERAL', 'SORBET.PLOTS'), generic_run_dir=False)
 SORBET_SLCA = RedStep(
     'SORBET.SLCA', 'RUN.SORBET.SLCA', POST_EXTRACTION,
     (NIRISS_SOSS,) + NIRSPEC_BOTS_MODES,
-    shared_prefixes=('SORBET.GENERAL', 'SORBET.PLOTS'))
+    shared_prefixes=('SORBET.GENERAL', 'SORBET.PLOTS'), generic_run_dir=False)
 POST_EUREKA = RedStep(
     'POST_EUREKA', 'RUN.POST_EUREKA', POST_EXTRACTION,
     STANDARD_JWST_MODES,

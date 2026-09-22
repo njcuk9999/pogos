@@ -314,11 +314,11 @@ SORBET_CDict.add('INPUT_FILE', value=['spectroscopy_light_curves.fits'],
 # Trace orders, must be a list the same length as INPUT_FILE
 #     (Set each item to 1 if there is only one order) otherwise set each item
 #     to the order number
-SORBET_CDict.add('TRACE_ORDERS', value=[1], dtype=list, dtypei=int,
+SORBET_CDict.add('TRACE_ORDERS', value=[0], dtype=list, dtypei=int,
                  source=__NAME__, user=True, active=True, group=cgroup,
                  description='Trace orders, must be a list the same length as'
                              'INPUT_FILE '
-                             '\n\t(Set each item to 1 if there is '
+                             '\n\t(Set each item to 0 if there is '
                              'only one order) otherwise set each item '
                              'to the order number')
 # Output sub directory path for channel/bin (set internally)
