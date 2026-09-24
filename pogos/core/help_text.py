@@ -34,6 +34,15 @@ COMMANDS = (
          use_when='Your yaml is ready and your input data are in place.',
          examples=['pogos_run <your.yaml>',
                    'pogos_run --yamlfile=<your.yaml>']),
+    dict(name='pogos_reset',
+         purpose='Delete and recreate empty the output/plot/temporary/other '
+                 'directories POGOS created for one yaml profile. Raw '
+                 'inputs and calibration/reference directories are never '
+                 'touched.',
+         use_when='You want to re-run a profile from scratch without '
+                  're-copying your raw input data.',
+         examples=['pogos_reset <your.yaml>',
+                   'pogos_reset --yamlfile=<your.yaml>']),
 )
 
 

@@ -50,6 +50,7 @@ pogos_setup = "pogos.recipes.pogos_setup:main"
 pogos_run = "pogos.recipes.pogos_run:main"
 pogos_copy = "pogos.recipes.pogos_copy:main"
 pogos_config = "pogos.recipes.pogos_config:main"
+pogos_reset = "pogos.recipes.pogos_reset:main"
 pogos_help = "pogos.recipes.pogos_help:main"
 
 [project.optional-dependencies]
