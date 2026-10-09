@@ -68,13 +68,15 @@ def load_wlc(params: ParamDict):
         raise sorbet_base.SorbetException(msg)
 
     # input file with the white light curve data
-    input_file = params['SORBET.WLCA.INPUT_FILE']
+    input_file = params.rget('SORBET.WLCA.INPUT_FILE', required=True,
+                             func=func_name)
     # check if the file exists
     if os.path.isfile(input_file):
         filename = input_file
     else:
         # get input path
-        inpath = params[f'SORBET.WLCA.INPUT_PATH']
+        inpath = params.rget('SORBET.WLCA.INPUT_PATH', required=True,
+                     func=func_name)
         # construct full filename
         filename = os.path.join(inpath, input_file)
     # Resolve and check the FITS product before reading its table extension.
@@ -107,21 +109,25 @@ def load_slc(params: ParamDict, input_file: str,
     """
     # get function name
     func_name = __NAME__ + '.load_slc()'
-    # deal with trace_order being None
-    if params['GLOBAL.INSTRUMENTMODE'] != 'JWST.NIRISS.SOSS':
-        trace_order = None
     # check that this function is only being used for SORBET.SLCA
     if params['RUN.SORBET.SLCA'] is None:
         msg = f'Cannot use "{func_name}" without RUN.SORBET.SLCA = True'
         raise sorbet_base.SorbetException(msg)
+    inst_mode = params.rget('GLOBAL.INSTRUMENTMODE', required=True,
+                            func=func_name)
     # get the sorbet parameters
     slcta_params = params.get('SORBET.SLCA')
+    resolution_bin = slcta_params.rget('RESOLUTION_BIN', required=True,
+                                       func=func_name)
+    # deal with trace_order being None
+    if inst_mode != 'JWST.NIRISS.SOSS':
+        trace_order = None
     # check if the file exists
     if os.path.exists(input_file):
         filename = input_file
     else:
         # get input path
-        inpath = slcta_params['INPUT_PATH']
+        inpath = slcta_params.rget('INPUT_PATH', required=True, func=func_name)
         # construct full filename
         filename = os.path.join(inpath, input_file)
         # ---------------------------------------------------------------------
@@ -168,7 +174,7 @@ def load_slc(params: ParamDict, input_file: str,
         wave = np.tile(wave[0], flux.shape[0]).reshape(flux.shape)
 
     # determine order (NIRISS SOSS)
-    if params['GLOBAL.INSTRUMENTMODE'] == 'JWST.NIRISS.SOSS':
+    if inst_mode == 'JWST.NIRISS.SOSS':
         valid = np.isfinite(flux)
         w = 1 / eflux[valid]**2
         weighted_wave = np.nansum(wave[valid] * w) / np.nansum(w)
@@ -186,10 +192,9 @@ def load_slc(params: ParamDict, input_file: str,
 
     # -------------------------------------------------------------------------
     # bin data to right resolution
-    res = slcta_params['RESOLUTION_BIN']
-    if res > 1:
+    if resolution_bin > 1:
         wave_tuple, flux_bin, eflux_bin = bin_spectrum(wave, flux, eflux,
-                                                       res=res,
+                                                       res=resolution_bin,
                                                        return_range=True)
     # else native resolution
     else: 
@@ -315,10 +320,7 @@ def test_juliet_distributions(params: ParamDict,
 
     :return: list of strings, the prior distributions for each juliet parameter
     """
-    # select instrumental mode
-    inst_mode = core.sorbet_inst_mode(params)
     # get the juliet parameters and prior distributions from sparams
-    jparams = params[f'SORBET.{method}.JULIET_PARAMETERS']
     jdists = params[f'SORBET.{method}.JULIET_PRIOR_DISTS']
 
     # deal with jvals being empty
@@ -338,6 +340,8 @@ def test_juliet_distributions(params: ParamDict,
                f' Cannot proceed with the fit.')
         raise sorbet_base.SorbetException(msg)
 
+    jparams = params.rget(f'SORBET.{method}.JULIET_PARAMETERS', required=True)
+    inst_mode = core.sorbet_inst_mode(params)
     # test that all juliet parameters have a prior distribution
     prior_dists: List[str] = []
     found = []
@@ -386,7 +390,6 @@ def test_juliet_values(params: ParamDict,
              juliet parameter
     """
     # get the juliet parameters and prior distributions from sparams
-    jparams = params[f'SORBET.{method}.JULIET_PARAMETERS']
     jvals = params[f'SORBET.{method}.JULIET_PRIOR_VALS']
 
     # deal with jvals being empty
@@ -396,6 +399,7 @@ def test_juliet_values(params: ParamDict,
                f' Cannot proceed with the fit.')
         raise sorbet_base.SorbetException(msg)
 
+    jparams = params.rget(f'SORBET.{method}.JULIET_PARAMETERS', required=True)
     # function to force float conversion#
     def force_float(value: Any) -> float:
         """
@@ -465,6 +469,12 @@ def prepare_dataset(params: ParamDict, data_table: Table,
     """
     # get function name
     func_name = __NAME__ + '.prepare_dataset()'
+    sparams = params.get(f'SORBET.{method}')
+    slcta_params = params.get('SORBET.SLCA')
+    juliet_params = sparams.rget('JULIET_PARAMETERS', required=True,
+                                 func=func_name)
+    linear_detrending = sparams['LINEAR_DETRENDING']
+    inst_mode = core.sorbet_inst_mode(params)
     # -------------------------------------------------------------------------
     # Juliet is about to be used - print any warnings
     if len(JULIET_IMPORT_MESSAGES) > 0:
@@ -476,11 +486,6 @@ def prepare_dataset(params: ParamDict, data_table: Table,
         bin_params = dict(CHANNEL=None, BINNUMBER=None,
                           WAVE_BIN_LOW=None, WAVE_BIN_HIGH=None,
                           suffix=None)
-    # get the sorbet params (based on method)
-    sparams = params.get(f'SORBET.{method}')
-    slcta_params = params.get('SORBET.SLCA')
-    # select instrumental mode
-    inst_mode = core.sorbet_inst_mode(params)
     # -------------------------------------------------------------------------
     # convert the data into juliet format
     times, fluxes, fluxes_error = {},{},{}
@@ -494,10 +499,6 @@ def prepare_dataset(params: ParamDict, data_table: Table,
     #  in SORBET these are a list, a two dictionaries but we need to do some
     #  checks and data type conversion before passing them into juliet
     # -------------------------------------------------------------------------
-    # list of juliet parameters
-    juliet_params = sparams['JULIET_PARAMETERS']
-    # select instrumental mode
-    inst_mode = core.sorbet_inst_mode(params)
     # update juliet params with instrument mode
     juliet_params = [p.replace('{INST_MODE}', inst_mode) for p in juliet_params]
     # deal with no parameters
@@ -511,6 +512,7 @@ def prepare_dataset(params: ParamDict, data_table: Table,
     prior_dists = test_juliet_distributions(params, method=method)
     # list of prior hyperparameters
     prior_vals = test_juliet_values(params, method=method)
+    out_folder = sparams.rget('OUTPUT_PATH', required=True, func=func_name)
     # -------------------------------------------------------------------------
     # add parameter for GP
     do_gp = False
@@ -526,7 +528,7 @@ def prepare_dataset(params: ParamDict, data_table: Table,
     # add parameter for linear detrending
     linear_regressors = None
     # temporal slope# check if the file exists
-    if sparams['LINEAR_DETRENDING'] == 'time':
+    if linear_detrending == 'time':
         # make sure to not fit baseline twice
         idx = juliet_params.index(f'mflux_{str(inst_mode)}')
         prior_dists[idx] = 'fixed'
@@ -554,14 +556,16 @@ def prepare_dataset(params: ParamDict, data_table: Table,
             prior_dists.append('uniform')
             prior_vals.append([-5, 5])
 
-    elif sparams['LINEAR_DETRENDING'] not in [None, 'None', 'none']:
+    elif linear_detrending not in [None, 'None', 'none']:
         # check if file exists
-        input_file = sparams['LINEAR_DETRENDING']
+        input_file = linear_detrending
         input_type = sparams['LINEAR_DETRENDING_TYPE']
         if os.path.isfile(input_file):
             filename = input_file
         else:
-            filename = os.path.join(params['GLOBAL.DATA_PATH'], input_file)
+            data_path = params.rget('GLOBAL.DATA_PATH', required=True,
+                                    func=func_name)
+            filename = os.path.join(data_path, input_file)
         # load the linear detrending data
         try:
             lm_tbl = io.load_table(filename, fmt=input_type)
@@ -604,7 +608,9 @@ def prepare_dataset(params: ParamDict, data_table: Table,
     # use model limb-darkening if ExoTiC-LD is enabled
     if method == 'SLCA':
         # check if ExoTiC-LD is enabled
-        if slcta_params['EXOTIC-LD.ENABLE']:
+        exotic_ld_enabled = slcta_params.rget('EXOTIC-LD.ENABLE',
+                                              required=True, func=func_name)
+        if exotic_ld_enabled:
             # log exotic ld import warnings
             if len(EXOTIC_LD_IMPORT_MESSAGES) > 0:
                 for msg in EXOTIC_LD_IMPORT_MESSAGES:
@@ -616,7 +622,8 @@ def prepare_dataset(params: ParamDict, data_table: Table,
                         'Please define in SORBET.SLCA.EXOTIC-LD.LD_LAW')
                 raise sorbet_base.SorbetException(emsg)
             # check if ExoTiC-LD path exists
-            exotic_ld_path = slcta_params['EXOTIC-LD.MODEL_PATH']
+            exotic_ld_path = slcta_params.rget('EXOTIC-LD.MODEL_PATH',
+                                              required=True, func=func_name)
             if not os.path.isdir(exotic_ld_path):
                 emsg = (f'ExoTiC-LD path "{exotic_ld_path}" does not exist. '
                         f'Please define in SORBET.SLCA.EXOTIC-LD.MODEL_PATH')
@@ -671,8 +678,6 @@ def prepare_dataset(params: ParamDict, data_table: Table,
     # populate the priors dictionary:
     priors = juliet.generate_priors(juliet_params, prior_dists, prior_vals)
 
-    # add output path to the params
-    out_folder = sparams['OUTPUT_PATH']
     # if spectral bins
     if method == 'SLCA':
         suffix = str(bin_params['SUFFIX'])
@@ -714,7 +719,7 @@ def deal_with_previous_juilet_files(params: ParamDict, sparams: ParamDict,
         return
     # -------------------------------------------------------------------------
     # get the yaml file
-    yaml_file = params['GLOBAL.YAML_FILE']
+    yaml_file = params.rget('GLOBAL.YAML_FILE', required=True)
     # -------------------------------------------------------------------------
     # list files in the output folder
     prev_files = os.listdir(out_folder)
@@ -811,6 +816,8 @@ def save_transit_model(params: ParamDict, dataset, results: juliet.fit,
 
     :return: None
     """
+    output_key = 'OUTPUT_SUBPATH' if method == 'SLCA' else 'OUTPUT_PATH'
+    output_path = params.rget(f'SORBET.{method}.{output_key}', required=True)
     # select instrumental mode
     inst_mode = core.sorbet_inst_mode(params)
     # from juliet tutorial
@@ -824,12 +831,7 @@ def save_transit_model(params: ParamDict, dataset, results: juliet.fit,
         components['gp'] = results.lc.model[inst_mode]['GP']
 
     # file path
-    if method == 'SLCA':
-        filepath = os.path.join(params[f'SORBET.{method}.OUTPUT_SUBPATH'],
-                                'model_components.pkl')
-    else:
-        filepath = os.path.join(params[f'SORBET.{method}.OUTPUT_PATH'],
-                                'model_components.pkl')
+    filepath = os.path.join(output_path, 'model_components.pkl')
     # save the best-fit model
     with open(filepath, "wb") as pfile:
         pkl.dump(components, pfile)
@@ -856,13 +858,10 @@ def load_transit_model(params: ParamDict, method: Literal['WLCA', 'SLCA']):
 
     :return: components, the best-fit model components
     """
+    output_key = 'OUTPUT_SUBPATH' if method == 'SLCA' else 'OUTPUT_PATH'
+    output_path = params.rget(f'SORBET.{method}.{output_key}', required=True)
     # file path
-    if method == 'SLCA':
-        filepath = os.path.join(params[f'SORBET.{method}.OUTPUT_SUBPATH'],
-                             'model_components.pkl')
-    else:
-        filepath = os.path.join(params[f'SORBET.{method}.OUTPUT_PATH'],
-                             'model_components.pkl')
+    filepath = os.path.join(output_path, 'model_components.pkl')
     # load the best-fit model
     with open(filepath, "rb") as f:
         components = pkl.load(f)
@@ -881,11 +880,12 @@ def save_transmission_spectrum(params: ParamDict, spec_tbl: Table,
     :return: None
     """
     # select instrumental mode
-    inst_mode = params['GLOBAL.INSTRUMENTMODE'].upper()
+    inst_mode = params.rget('GLOBAL.INSTRUMENTMODE', required=True)
+    output_path = params.rget('SORBET.SLCA.OUTPUT_PATH', required=True)
+    inst_mode = inst_mode.upper()
     # output path
     bargs = [inst_mode, channel]
     basename = 'transmission_spectrum_{0}_ord{1}.csv'.format(*bargs)
-    output_path = params['SORBET.SLCA.OUTPUT_PATH']
     filename = os.path.join(output_path, basename)
     # save new path
     params['SORBET.SLCA.TRANSMISSION_SPECTRUM_FILE'] = filename

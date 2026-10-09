@@ -102,15 +102,14 @@ def plot_fit_params(params: ParamDict, psf: np.ndarray,
 def plot_correlations(params: ParamDict, ptbl: Table, d2flag: bool):
     # set function name
     func_name = f'{__NAME__}.plot_correlations'
+    plot_pedestal = params.rget('MIRIAM.PLOTS.CORR_PLOT_PEDESTAL',
+                                required=True, func=func_name)
     # set title and description
     title = 'MIRIAM Fit Parameter Correlations'
     description = ('Plot of the MIRIAM fit parameter correlations used in the '
                    'PSF fitting. Showing the time series of the fit parameters '
                    'used to correct the photometry for instrumental '
                    'systematics.')
-    # -------------------------------------------------------------------------
-    # get parameters from params
-    plot_pedestal = params['MIRIAM.PLOTS.CORR_PLOT_PEDESTAL']
     # -------------------------------------------------------------------------
     # work out the segments
     gaps = []

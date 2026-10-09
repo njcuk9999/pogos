@@ -52,12 +52,14 @@ def main(**kwargs):
                                            config_list=[CDict],
                                            external_const=other_const,
                                            kwargs=kwargs)
+    yaml_file = params.rget('GLOBAL.YAML_FILE', required=True)
+    run_wlc = params.rget('RUN.SORBET.WLC', required=True)
     # -------------------------------------------------------------------------
     # print yaml file used
-    msg = f'Using yaml file: {os.path.realpath(params["GLOBAL.YAML_FILE"])}'
+    msg = f'Using yaml file: {os.path.realpath(yaml_file)}'
     WLOG(params, 'info', msg)
     # run the spectral light curve analysis
-    if params['RUN.SORBET.WLC']:
+    if run_wlc:
         sorbet.general.run_sorbet_wlcta(params)
 
 

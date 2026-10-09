@@ -1,9 +1,11 @@
+from aperocore.constants.param_functions import ParamDict
+
 from pogos.sossisse_wrap.core import core
 
 
 class FakeSubParams(dict):
     def as_param_dict(self):
-        return dict(self)
+        return ParamDict(self)
 
 
 def test_tsovore_input_copies_outputs_and_calib_files(tmp_path):

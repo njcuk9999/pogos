@@ -338,8 +338,8 @@ def build_reduc(params: ParamDict, nameless_mod):
     :return: the NAMELESS reduction object (or None on failure)
     """
     # get the POGOS paths
-    in_path = params['NAMELESS.PATHS.IN_PATH']
-    topdir = params['NAMELESS.PATHS.TOPDIR']
+    in_path = params.rget('NAMELESS.PATHS.IN_PATH', required=True)
+    topdir = params.rget('NAMELESS.PATHS.TOPDIR', required=True)
     ancil_path = params['NAMELESS.PATHS.ANCIL_PATH']
     # -------------------------------------------------------------------------
     # discover the file handle / segments
@@ -408,7 +408,9 @@ def make_nameless_dirs(params: ParamDict):
     # -------------------------------------------------------------------------
     # set the reduction (top) directory == {DATA_PATH}/nameless/{SUBDIRECTORY}
     #   (prepare_directory above guarantees sid_path is now set)
-    topdir = os.path.join(params['GLOBAL.DATA_PATH'], mode, params[sid_path])
+    data_path = params.rget('GLOBAL.DATA_PATH', required=True)
+    subdirectory = params.rget(sid_path, required=True)
+    topdir = os.path.join(data_path, mode, subdirectory)
     params.set('NAMELESS.PATHS.TOPDIR', value=topdir, source=func_name)
     # make the top directory
     if not os.path.exists(topdir):

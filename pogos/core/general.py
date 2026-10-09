@@ -118,13 +118,14 @@ def prepare_directory(params: ParamDict, pkind: str, sid_path: str,
     if os.path.exists(os.path.realpath(path_constant)):
         my_path = os.path.realpath(path_constant)
     else:
+        data_path = params.rget('GLOBAL.DATA_PATH', required=True)
+        subdirectory = params.rget(sid_path, required=True)
         if path_constant is None:
             my_path = pkind
         else:
             my_path = str(path_constant)
         # if not, make it relative to the global database
-        my_path = os.path.join(params['GLOBAL.DATA_PATH'], pmode,
-                               params[sid_path], my_path)
+        my_path = os.path.join(data_path, pmode, subdirectory, my_path)
     # make sure the path is in the params
     if not os.path.exists(my_path):
         os.makedirs(my_path)

@@ -37,8 +37,9 @@ WLOG = drs_log.wlog
 def plot_file(params: ParamDict, outname: str, plot_path, title,
               description: str = 'No description',
               func_name = 'Unknown'):
+    plot_directory = params.rget(plot_path, required=True)
     # get plot file
-    plotfile = os.path.join(params[plot_path], 'plots.yaml')
+    plotfile = os.path.join(plot_directory, 'plots.yaml')
     # read yaml file
     if os.path.exists(plotfile):
         blocks = aperobase.load_yaml(plotfile)
@@ -69,14 +70,16 @@ def save_show_plot(params: ParamDict, outname: str, figure_types: str,
 
     :return:
     """
+    plot_directory = params.rget(plot_path, required=True)
+    output_figure_types = params.rget(figure_types, required=True)
     # save to yaml file (for html writing)
     plot_file(params, outname, plot_path, title, description, func_name)
     # loop around figure types
-    for figtype in params[figure_types]:
+    for figtype in output_figure_types:
         # construct the basename with extension
         basename = f'{outname}.{figtype}'
         # contstruct the full path
-        abspath = os.path.join(params[plot_path], basename)
+        abspath = os.path.join(plot_directory, basename)
         # say that we are plotting graph
         msg = f'Plotting graph: {basename}'
         WLOG(params, '', msg)

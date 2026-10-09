@@ -71,14 +71,16 @@ def setup_sorbet_module(params: ParamDict):
     # deal with no requiring to run sorbet
     if not any_sorbet_run(params):
         return params
+    run_wlca = params.rget('RUN.SORBET.WLCA', required=True)
+    run_slca = params.rget('RUN.SORBET.SLCA', required=True)
     # ----------------------------------------------------------------------
     # setup the wlca  input and output directories
-    if params['RUN.SORBET.WLCA']:
+    if run_wlca:
         # prepare directories
         prepare_directories(params, method='WLCA')
     # ----------------------------------------------------------------------
     # setup the slca  input and output directories
-    if params['RUN.SORBET.SLCA']:
+    if run_slca:
         # prepare directories
         prepare_directories(params, method='SLCA')
 
@@ -99,7 +101,8 @@ def any_sorbet_run(params: ParamDict) -> bool:
     sorbet_steps = (definitions.SORBET_WLCA, definitions.SORBET_SLCA)
     for step in sorbet_steps:
         if step.run_key in params:
-            if params[step.run_key]:
+            run_step = params.rget(step.run_key, required=True)
+            if run_step:
                 return True
     # if we get here then nothing is set to run
     return False
@@ -123,7 +126,8 @@ def run_sorbet_module(params: ParamDict, ext_inst: Dict[str, Any]):
     # Check at least one recipe is set to run
     run_any = False
     for key in RUN_CONSTANTS:
-        if params[key]:
+        run_step = params.rget(key, required=True, func=func_name)
+        if run_step:
             run_any = True
             break
     # if not running any then skip SORBET
@@ -142,13 +146,15 @@ def run_sorbet_module(params: ParamDict, ext_inst: Dict[str, Any]):
     # ----------------------------------------------------------------------
     # White Light Curve Transit Analysis
     # ----------------------------------------------------------------------
-    if params['RUN.SORBET.WLCA']:
+    run_wlca = params.rget('RUN.SORBET.WLCA', required=True, func=func_name)
+    if run_wlca:
         params = run_sorbet_wlcta(params)
 
     # ----------------------------------------------------------------------
     # Spectral Light Curve Transit Analysis
     # ----------------------------------------------------------------------
-    if params['RUN.SORBET.SLCA']:
+    run_slca = params.rget('RUN.SORBET.SLCA', required=True, func=func_name)
+    if run_slca:
         params = run_sorbet_slcta(params)
 
     # ----------------------------------------------------------------------
@@ -174,6 +180,8 @@ def sossisse_input(params: ParamDict,
     # -------------------------------------------------------------------------
     # after sossisse run we may need to copy files to SORBET input location
     sossisse_output_dir = sossisse_inst.params['PATHS.OUT_PATH']
+    run_wlca = params.rget('RUN.SORBET.WLCA', required=True, func=func_name)
+    run_slca = params.rget('RUN.SORBET.SLCA', required=True, func=func_name)
     # get sorbet parameters
     sb_params = params.get('SORBET')
     # get sossisse parameters
@@ -187,18 +195,22 @@ def sossisse_input(params: ParamDict,
     # get the prefix used for the sossisse files
     sossisse_prefix = s_params['GENERAL.PREFIX']
     if sossisse_prefix is None:
-        sossisse_prefix = load_functions.common_prefix(s_params['GENERAL.FILES'])
+        sossisse_files = s_params.rget('GENERAL.FILES', required=True,
+                                       func=func_name)
+        sossisse_prefix = load_functions.common_prefix(sossisse_files)
     # add the prefix to wlc and spec file
     sossisse_wlc_file = sossisse_wlc_file.format(prefix=sossisse_prefix)
     sossisse_spec_lc_file = sossisse_spec_lc_file.format(prefix=sossisse_prefix)
 
     # ---------------------------------------------------------------------
     # deal with WLCA files
-    if params['RUN.SORBET.WLCA']:
+    if run_wlca:
         # prepare input directory
         prepare_directories(params, method='WLCA', verbose=False)
         # get the sorbet input directory for WLCA
-        sorbet_wlcta_indir = str(sb_params['WLCA.INPUT_PATH'])
+        sorbet_wlcta_indir = sb_params.rget('WLCA.INPUT_PATH', required=True,
+                           func=func_name)
+        sorbet_wlcta_indir = str(sorbet_wlcta_indir)
         sossisse_wlc_base = str(os.path.basename(sossisse_wlc_file))
         # get absolute path to
         sorbet_file = str(os.path.join(sorbet_wlcta_indir, sossisse_wlc_base))
@@ -209,11 +221,13 @@ def sossisse_input(params: ParamDict,
         params.set_source('SORBET.WLCA.INPUT_FILE', func_name)
     # ---------------------------------------------------------------------
     # deal with SLCA files
-    if params['RUN.SORBET.SLCA']:
+    if run_slca:
         # prepare input directory
         prepare_directories(params, method='SLCA', verbose=False)
         # get the sorbet input directory for SLCA
-        sorbet_slcta_indir = str(sb_params['SLCA.INPUT_PATH'])
+        sorbet_slcta_indir = sb_params.rget('SLCA.INPUT_PATH', required=True,
+                           func=func_name)
+        sorbet_slcta_indir = str(sorbet_slcta_indir)
         sossisse_spec_lc_base = str(os.path.basename(sossisse_spec_lc_file))
         # get absolute path to
         sorbet_file = str(os.path.join(sorbet_slcta_indir, sossisse_spec_lc_base))
@@ -238,14 +252,17 @@ def miriam_input(params: ParamDict,
     # deal with no MIRIAM WLC file
     if miriam_wlc_file is None:
         return params
+    run_wlca = sb_params.rget('WLCA.RUN', required=True, func=func_name)
     miriam_wlc_file = str(miriam_wlc_file)
     # ---------------------------------------------------------------------
     # deal with WLCA files
-    if sb_params['WLCA.RUN']:
+    if run_wlca:
         # prepare input directory
         prepare_directories(params, method='WLCA', verbose=False)
         # get the sorbet input directory for WLCA
-        sorbet_wlcta_input_dir = str(sb_params['WLCA.INPUT_PATH'])
+        sorbet_wlcta_input_dir = sb_params.rget('WLCA.INPUT_PATH',
+                               required=True, func=func_name)
+        sorbet_wlcta_input_dir = str(sorbet_wlcta_input_dir)
         # get absolute path to
         sorbet_file = str(os.path.join(sorbet_wlcta_input_dir,
                                        os.path.basename(miriam_wlc_file)))
@@ -336,9 +353,10 @@ def run_sorbet_slcta(params: ParamDict):
     # prepare directories
     prepare_directories(params, method='SLCA')
     # check the dataset (multiple channels/orders?)
-    input_files = slcta_params['INPUT_FILE']
+    input_files = slcta_params.rget('INPUT_FILE', required=True, func=func_name)
     # get the trace order
-    trace_orders = slcta_params['TRACE_ORDERS']
+    trace_orders = slcta_params.rget('TRACE_ORDERS', required=True,
+                                    func=func_name)
     # deal with single string input
     if isinstance(input_files, str):
         raise ValueError("Input file of SORBET.SLCA must be a list.")

@@ -73,6 +73,8 @@ def run_miriam(params: ParamDict, pre_inst: Dict[str, Any]) -> ParamDict:
 
     # get miriam specific parameters
     mparams = params.get('MIRIAM')
+    use_original_errors = mparams.rget('INPUTS.USE_ORIGINAL_ERRORS',
+                                       required=True, func=func_name)
     # -------------------------------------------------------------------------
     # Step 1: merge all input files into a single (cropped) data structure
     # -------------------------------------------------------------------------
@@ -89,7 +91,7 @@ def run_miriam(params: ParamDict, pre_inst: Dict[str, Any]) -> ParamDict:
     # TODO decide if we want to compute errors or keep errors from
     #     the original cube files
     cube2, cube2_err = mc_science.calculate_cube_errors(params, cube2)
-    if mparams['INPUTS.USE_ORIGINAL_ERRORS']:
+    if use_original_errors:
         cube2_err = np.array(cube_err)
 
     # -------------------------------------------------------------------------
@@ -131,8 +133,9 @@ def setup_miriam_module(params: ParamDict) -> ParamDict:
     """
     # set the function name
     func_name = f'{__NAME__}.setup_miriam_module'
+    run_miriam = params.rget('RUN.MIRIAM', required=True, func=func_name)
     # deal with no requiring to run miriam
-    if not params['RUN.MIRIAM']:
+    if not run_miriam:
         return params
     # setup input and output directories
     prepare_directories(params)
@@ -186,12 +189,11 @@ def tsovore_input(params: ParamDict,
         return
     # convert to independent parameter dictionary
     miriam_params = miriam_params.as_param_dict()
+    miriam_input_dir = miriam_params.rget('PATHS.INPUT_PATH', required=True,
+                                         func=func_name)
     # -------------------------------------------------------------------------
     # get tsovore files to copy
     tsovore_outputs = tsovore_inst.variables['OUT']
-    # ---------------------------------------------------------------------
-    # Get the MIRIAM input directory
-    miriam_input_dir = miriam_params['PATHS.INPUT_PATH']
     # ---------------------------------------------------------------------
     basenames = []
     # copy files to MIRIAM input location

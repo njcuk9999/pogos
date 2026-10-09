@@ -122,6 +122,7 @@ class Instrument:
         # if there is no history don't do this step
         if len(self.history) == 0:
             return
+        outdir = self.tparams.rget('PATHS.OUTPUT_PATH', required=True)
         # setup title
         title = f'TSOVORE Flow'
         title += f'\n{self.tparams["GENERAL.SUBDIRECTORY"]}'
@@ -130,7 +131,6 @@ class Instrument:
         # starting box
         start = f'INST[{self.tparams["INPUTS.INSTRUMENTMODE"]}] uncal.fits'
         # outpath
-        outdir = self.tparams['PATHS.OUTPUT_PATH']
         outfile = f'flow_{str(Time.now().fits)}.pdf'
         outpath = os.path.join(outdir, outfile)
 
@@ -681,9 +681,9 @@ class Instrument:
         """
         # set function name
         # func_name = f"{__NAME__}.Instrument.rename_results"
-        prefixes = self.variables['PREFIXES']
         # get parameters from params
-        datadir = self.tparams['PATHS.TEMP_PATH']
+        datadir = self.tparams.rget('PATHS.TEMP_PATH', required=True)
+        prefixes = self.variables['PREFIXES']
         # storage for OUT variable
         out_files = []
         # storage of whether we used this step
@@ -742,11 +742,11 @@ class Instrument:
         """
         # set function name
         # func_name = f"{__NAME__}.Instrument.remove_intermediate_files"
-        # get parameters from params
-        remove_intermediates = self.tparams['INPUTS.REMOVE_INTERMEDIATES']
         # do not remove the initial input files
         if filepath in self.variables['ABSFILES']:
             return
+        remove_intermediates = self.tparams.rget('INPUTS.REMOVE_INTERMEDIATES',
+                                                 required=True)
         # check if we need to remove intermediate files
         if remove_intermediates and os.path.exists(filepath):
             # remove the file
@@ -806,6 +806,7 @@ class Instrument:
 
     def expected_tmp_file(self, rkwargs: Dict[str, Any],
                           file_num: Optional[int] = None) -> str:
+        temp_path = self.tparams.rget('PATHS.TEMP_PATH', required=True)
         # get the ftype
         ftype = rkwargs.get('FTYPE', 'suffix')
         # get the fname if we don't have it create it
@@ -826,7 +827,7 @@ class Instrument:
             expected_base_name = prefixes[file_num] + fname
         # ---------------------------------------------------------------------
         # construct path to filename
-        expected_filename = os.path.join(self.tparams['PATHS.TEMP_PATH'],
+        expected_filename = os.path.join(temp_path,
                                          expected_base_name)
         # ---------------------------------------------------------------------
         # return the absolute path to the files
@@ -866,7 +867,9 @@ class Instrument:
         if rkwargs['FNAME'] is None:
             return rkwargs
         # skip if we are not skipping processed files
-        if not self.tparams['INPUTS.SKIP_PROCESSED_FILES']:
+        skip_processed_files = self.tparams.rget('INPUTS.SKIP_PROCESSED_FILES',
+                             required=True)
+        if not skip_processed_files:
             return rkwargs
         # skip if we are not in the correct mode
         if 'MODE' in rkwargs and rkwargs['MODE'] is not None:
@@ -960,11 +963,10 @@ class Instrument:
         :param outfiles: str or list[str], the output file(s)
         :return: None, updates self.variables['OUT"]
         """
+        newpath = self.tparams.rget('PATHS.OUTPUT_PATH', required=True)
         # deal with a single string
         if isinstance(outfiles, str):
             outfiles = [outfiles]
-        # set the new path
-        newpath = self.tparams['PATHS.OUTPUT_PATH']
         # storage for output
         newfiles = []
         # copy outfiles to output directory
@@ -1012,10 +1014,9 @@ class Instrument:
 
         :return: None, saves a tex table to OUT_TEX_FILE
         """
+        outpath = self.tparams.rget('PATHS.OUTPUT_PATH', required=True)
         # get text file name
         filename = f'params_{str(Time.now().fits)}.tex'
-        # set file path
-        outpath = self.tparams['PATHS.OUTPUT_PATH']
         # construct absolute path
         filepath = os.path.join(outpath, filename)
         # save tex file
@@ -1047,12 +1048,12 @@ class JWST(Instrument):
         """
         # set function name
         func_name = f"{__NAME__}.JWST.handle_input_data"
+        input_dir = self.tparams.rget('PATHS.INPUT_PATH', required=True,
+                          func=func_name)
+        input_files = self.tparams.rget('INPUTS.FILES', required=True,
+                        func=func_name)
         # update history (this is always run)
         self.history['STEP.HANDLE_INPUT_DATA'] = True
-        # get the input file directory
-        input_dir = self.tparams['PATHS.INPUT_PATH']
-        # Get the input files
-        input_files = self.tparams['INPUTS.FILES']
         # Storage for absolute file paths
         input_absfiles = []
         input_prefixes = []
@@ -1134,7 +1135,8 @@ class JWST(Instrument):
         if not rkwargs['RUN_STEP']: return rkwargs['INFILES']
         # ---------------------------------------------------------------------
         # get parameters from params
-        datadir = self.tparams['PATHS.TEMP_PATH']
+        datadir = self.tparams.rget('PATHS.TEMP_PATH', required=True,
+                        func=func_name)
         # storage for output files
         outfiles = []
         # loop around infiles
@@ -1239,7 +1241,8 @@ class JWST(Instrument):
         if not rkwargs['RUN_STEP']: return rkwargs['INFILES']
         # ---------------------------------------------------------------------
         # get parameters from params
-        datadir = self.tparams['PATHS.TEMP_PATH']
+        datadir = self.tparams.rget('PATHS.TEMP_PATH', required=True,
+                        func=func_name)
         # storage for output files
         outfiles = []
         # loop around infiles
@@ -1278,7 +1281,8 @@ class JWST(Instrument):
         if not rkwargs['RUN_STEP']: return rkwargs['INFILES']
         # ---------------------------------------------------------------------
         # get parameters from params
-        datadir = self.tparams['PATHS.TEMP_PATH']
+        datadir = self.tparams.rget('PATHS.TEMP_PATH', required=True,
+                        func=func_name)
         # storage for output files
         outfiles = []
         # loop around infiles
@@ -1312,7 +1316,8 @@ class JWST(Instrument):
         if not rkwargs['RUN_STEP']: return rkwargs['INFILES']
         # ---------------------------------------------------------------------
         # get parameters from params
-        datadir = self.tparams['PATHS.TEMP_PATH']
+        datadir = self.tparams.rget('PATHS.TEMP_PATH', required=True,
+                        func=func_name)
         # storage for output files
         outfiles = []
         # loop around infiles
@@ -1346,7 +1351,8 @@ class JWST(Instrument):
         if not rkwargs['RUN_STEP']: return rkwargs['INFILES']
         # ---------------------------------------------------------------------
         # get parameters from params
-        datadir = self.tparams['PATHS.TEMP_PATH']
+        datadir = self.tparams.rget('PATHS.TEMP_PATH', required=True,
+                        func=func_name)
         # storage for output files
         outfiles = []
         # loop around infiles
@@ -1380,7 +1386,8 @@ class JWST(Instrument):
         if not rkwargs['RUN_STEP']: return rkwargs['INFILES']
         # ---------------------------------------------------------------------
         # get parameters from params
-        datadir = self.tparams['PATHS.TEMP_PATH']
+        datadir = self.tparams.rget('PATHS.TEMP_PATH', required=True,
+                        func=func_name)
         # storage for output files
         outfiles = []
         # loop around infiles
@@ -1414,7 +1421,8 @@ class JWST(Instrument):
         if not rkwargs['RUN_STEP']: return rkwargs['INFILES']
         # ---------------------------------------------------------------------
         # get parameters from params
-        datadir = self.tparams['PATHS.TEMP_PATH']
+        datadir = self.tparams.rget('PATHS.TEMP_PATH', required=True,
+                        func=func_name)
         # storage for output files
         outfiles = []
         # loop around infiles
@@ -1448,7 +1456,8 @@ class JWST(Instrument):
         if not rkwargs['RUN_STEP']: return rkwargs['INFILES']
         # ---------------------------------------------------------------------
         # get parameters from params
-        datadir = self.tparams['PATHS.TEMP_PATH']
+        datadir = self.tparams.rget('PATHS.TEMP_PATH', required=True,
+                        func=func_name)
         # storage for output files
         outfiles = []
         # loop around infiles
@@ -1483,7 +1492,8 @@ class JWST(Instrument):
         if not rkwargs['RUN_STEP']: return rkwargs['INFILES']
         # ---------------------------------------------------------------------
         # get parameters from params
-        datadir = self.tparams['PATHS.TEMP_PATH']
+        datadir = self.tparams.rget('PATHS.TEMP_PATH', required=True,
+                        func=func_name)
         # storage for output files
         outfiles = []
         # loop around infiles
@@ -1517,7 +1527,8 @@ class JWST(Instrument):
         if not rkwargs['RUN_STEP']: return rkwargs['INFILES']
         # ---------------------------------------------------------------------
         # get parameters from params
-        datadir = self.tparams['PATHS.TEMP_PATH']
+        datadir = self.tparams.rget('PATHS.TEMP_PATH', required=True,
+                        func=func_name)
         # storage for output files
         outfiles = []
         # loop around infiles
@@ -1552,7 +1563,8 @@ class JWST(Instrument):
         if not rkwargs['RUN_STEP']: return rkwargs['INFILES']
         # ---------------------------------------------------------------------
         # get parameters from params
-        datadir = self.tparams['PATHS.TEMP_PATH']
+        datadir = self.tparams.rget('PATHS.TEMP_PATH', required=True,
+                        func=func_name)
         # storage for output files
         outfiles = []
         # loop around infiles
@@ -1586,7 +1598,8 @@ class JWST(Instrument):
         if not rkwargs['RUN_STEP']: return rkwargs['INFILES']
         # ---------------------------------------------------------------------
         # get parameters from params
-        datadir = self.tparams['PATHS.TEMP_PATH']
+        datadir = self.tparams.rget('PATHS.TEMP_PATH', required=True,
+                        func=func_name)
         # storage for output files
         outfiles = []
         # loop around infiles
@@ -1621,7 +1634,8 @@ class JWST(Instrument):
         if not rkwargs['RUN_STEP']: return rkwargs['INFILES']
         # ---------------------------------------------------------------------
         # get parameters from params
-        datadir = self.tparams['PATHS.TEMP_PATH']
+        datadir = self.tparams.rget('PATHS.TEMP_PATH', required=True,
+                        func=func_name)
         # storage for output files
         outfiles = []
         # loop around infiles
@@ -1656,7 +1670,8 @@ class JWST(Instrument):
         if not rkwargs['RUN_STEP']: return rkwargs['INFILES']
         # ---------------------------------------------------------------------
         # get parameters from params
-        datadir = self.tparams['PATHS.TEMP_PATH']
+        datadir = self.tparams.rget('PATHS.TEMP_PATH', required=True,
+                        func=func_name)
         # storage for output files
         outfiles = []
         # loop around infiles
@@ -1690,7 +1705,8 @@ class JWST(Instrument):
         if not rkwargs['RUN_STEP']: return rkwargs['INFILES']
         # ---------------------------------------------------------------------
         # get parameters from params
-        datadir = self.tparams['PATHS.TEMP_PATH']
+        datadir = self.tparams.rget('PATHS.TEMP_PATH', required=True,
+                        func=func_name)
         # storage for output files
         outfiles = []
         # loop around infiles
@@ -1724,7 +1740,8 @@ class JWST(Instrument):
         if not rkwargs['RUN_STEP']: return rkwargs['INFILES']
         # ---------------------------------------------------------------------
         # get parameters from params
-        datadir = self.tparams['PATHS.TEMP_PATH']
+        datadir = self.tparams.rget('PATHS.TEMP_PATH', required=True,
+                        func=func_name)
         # storage for output files
         outfiles = []
         # loop around infiles
@@ -1758,7 +1775,8 @@ class JWST(Instrument):
         if not rkwargs['RUN_STEP']: return rkwargs['INFILES']
         # ---------------------------------------------------------------------
         # get parameters from params
-        datadir = self.tparams['PATHS.TEMP_PATH']
+        datadir = self.tparams.rget('PATHS.TEMP_PATH', required=True,
+                        func=func_name)
         # storage for output files
         outfiles = []
         # loop around infiles
@@ -1792,7 +1810,8 @@ class JWST(Instrument):
         if not rkwargs['RUN_STEP']: return rkwargs['INFILES']
         # ---------------------------------------------------------------------
         # get parameters from params
-        datadir = self.tparams['PATHS.TEMP_PATH']
+        datadir = self.tparams.rget('PATHS.TEMP_PATH', required=True,
+                        func=func_name)
         # storage for output files
         outfiles = []
         # loop around infiles
@@ -1826,7 +1845,8 @@ class JWST(Instrument):
         if not rkwargs['RUN_STEP']: return rkwargs['INFILES']
         # ---------------------------------------------------------------------
         # get parameters from params
-        datadir = self.tparams['PATHS.TEMP_PATH']
+        datadir = self.tparams.rget('PATHS.TEMP_PATH', required=True,
+                        func=func_name)
         # storage for output files
         outfiles = []
         # loop around infiles
@@ -1905,7 +1925,8 @@ class JWST(Instrument):
         if not rkwargs['RUN_STEP']: return rkwargs['INFILES']
         # ---------------------------------------------------------------------
         # get parameters from params
-        datadir = self.tparams['PATHS.TEMP_PATH']
+        datadir = self.tparams.rget('PATHS.TEMP_PATH', required=True,
+                        func=func_name)
         # storage for output files
         outfiles = []
         # loop around infiles
@@ -1940,7 +1961,8 @@ class JWST(Instrument):
         if not rkwargs['RUN_STEP']: return rkwargs['INFILES']
         # ---------------------------------------------------------------------
         # get parameters from params
-        datadir = self.tparams['PATHS.TEMP_PATH']
+        datadir = self.tparams.rget('PATHS.TEMP_PATH', required=True,
+                        func=func_name)
         # storage for output files
         outfiles = []
         # loop around infiles
@@ -1975,7 +1997,8 @@ class JWST(Instrument):
         if not rkwargs['RUN_STEP']: return rkwargs['INFILES']
         # ---------------------------------------------------------------------
         # get parameters from params
-        datadir = self.tparams['PATHS.TEMP_PATH']
+        datadir = self.tparams.rget('PATHS.TEMP_PATH', required=True,
+                        func=func_name)
         # storage for output files
         outfiles = []
         # loop around infiles
@@ -2010,7 +2033,8 @@ class JWST(Instrument):
         if not rkwargs['RUN_STEP']: return rkwargs['INFILES']
         # ---------------------------------------------------------------------
         # get parameters from params
-        datadir = self.tparams['PATHS.TEMP_PATH']
+        datadir = self.tparams.rget('PATHS.TEMP_PATH', required=True,
+                        func=func_name)
         # storage for output files
         outfiles = []
         # loop around infiles
@@ -2045,7 +2069,8 @@ class JWST(Instrument):
         if not rkwargs['RUN_STEP']: return rkwargs['INFILES']
         # ---------------------------------------------------------------------
         # get parameters from params
-        datadir = self.tparams['PATHS.TEMP_PATH']
+        datadir = self.tparams.rget('PATHS.TEMP_PATH', required=True,
+                        func=func_name)
         # storage for output files
         outfiles = []
         # loop around infiles
@@ -2079,7 +2104,8 @@ class JWST(Instrument):
         if not rkwargs['RUN_STEP']: return rkwargs['INFILES']
         # ---------------------------------------------------------------------
         # get parameters from params
-        datadir = self.tparams['PATHS.TEMP_PATH']
+        datadir = self.tparams.rget('PATHS.TEMP_PATH', required=True,
+                        func=func_name)
         # storage for output files
         outfiles = []
         # loop around infiles
@@ -2113,7 +2139,8 @@ class JWST(Instrument):
         if not rkwargs['RUN_STEP']: return rkwargs['INFILES']
         # ---------------------------------------------------------------------
         # get parameters from params
-        datadir = self.tparams['PATHS.TEMP_PATH']
+        datadir = self.tparams.rget('PATHS.TEMP_PATH', required=True,
+                        func=func_name)
         # storage for output files
         outfiles = []
         # loop around infiles
@@ -2148,7 +2175,8 @@ class JWST(Instrument):
         if not rkwargs['RUN_STEP']: return rkwargs['INFILES']
         # ---------------------------------------------------------------------
         # get parameters from params
-        datadir = self.tparams['PATHS.TEMP_PATH']
+        datadir = self.tparams.rget('PATHS.TEMP_PATH', required=True,
+                        func=func_name)
         # storage for output files
         outfiles = []
         # loop around infiles
@@ -2183,7 +2211,8 @@ class JWST(Instrument):
         if not rkwargs['RUN_STEP']: return rkwargs['INFILES']
         # ---------------------------------------------------------------------
         # get parameters from params
-        datadir = self.tparams['PATHS.TEMP_PATH']
+        datadir = self.tparams.rget('PATHS.TEMP_PATH', required=True,
+                        func=func_name)
         # storage for output files
         outfiles = []
         # loop around infiles
@@ -2218,7 +2247,8 @@ class JWST(Instrument):
         if not rkwargs['RUN_STEP']: return rkwargs['INFILES']
         # ---------------------------------------------------------------------
         # get parameters from params
-        datadir = self.tparams['PATHS.TEMP_PATH']
+        datadir = self.tparams.rget('PATHS.TEMP_PATH', required=True,
+                        func=func_name)
         # storage for output files
         outfiles = []
         # loop around infiles
@@ -2280,7 +2310,8 @@ class JWST(Instrument):
         if not rkwargs['RUN_STEP']: return rkwargs['INFILES']
         # ---------------------------------------------------------------------
         # get parameters from params
-        datadir = self.tparams['PATHS.TEMP_PATH']
+        datadir = self.tparams.rget('PATHS.TEMP_PATH', required=True,
+                        func=func_name)
         # storage for output files
         outfiles = []
         # loop around infiles

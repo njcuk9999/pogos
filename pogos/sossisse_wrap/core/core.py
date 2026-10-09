@@ -85,7 +85,7 @@ def run_sossisse_module(params: ParamDict, pre_inst: Dict[str, Any]):
         # ---------------------------------------------------------------------
         # SOSSISSE requires raw data to be copied to a specific location
         # check here if that exists and if not prompt the user
-        spath = sparams['PATHS.RAWPATH']
+        spath = sparams.rget('PATHS.RAWPATH', required=True)
         # deal with SOSSISSE raw data path not existing
         if not os.path.exists(spath):
             msg = ('\n\nSOSSISSE requires raw data to be in a '
@@ -122,10 +122,11 @@ def setup_sossisse_module(params: ParamDict, cdict):
     if sossisse_params is None:
         # we assume that if SOSSISSE is not there we don't want to run this
         return
+    yaml_file = params.rget('GLOBAL.YAML_FILE', required=True)
     # convert to independent parameter dictionary
     sparams = sossisse_params.as_param_dict()
     # make sure yaml file is set
-    sparams['INPUTS.PARAM_FILE'] = str(params['GLOBAL.YAML_FILE'])
+    sparams['INPUTS.PARAM_FILE'] = str(yaml_file)
     # setup for SOSSISSE just uses "get_parameters" function
     inst = sossisse.get_parameters(__NAME__=__NAME__, setup_mode=True,
                                    log_level='setup', __YAML_DICT__=sparams)
@@ -146,8 +147,6 @@ def setup_sossisse_module(params: ParamDict, cdict):
                    source=sparams.sources['INPUTS.SUBDIRECTORY'])
     # -------------------------------------------------------------------------
     # re-save the yaml file after sossisse updates
-    # get the yaml file
-    yaml_file = params['GLOBAL.YAML_FILE']
     # print progress
     msg = 'Re-saving constants to yaml file after SOSSISSE setup: {0}'
     WLOG(params, '', msg.format(os.path.realpath(yaml_file)))
@@ -207,10 +206,10 @@ def tsovore_input(params: ParamDict,
         # deal with string / list
         if isinstance(calib_files, str):
             calib_files = [calib_files]
+        if len(calib_files) > 0:
+            calib_dir = sparams.rget('PATHS.CALIBPATH', required=True)
         # loop around and use the last one as the wave file
         for calib_file in calib_files:
-            # get the sossisse calibration directory
-            calib_dir = sparams['PATHS.CALIBPATH']
             # define source and destination
             source = str(calib_file)
             dest = str(os.path.join(calib_dir, os.path.basename(calib_file)))

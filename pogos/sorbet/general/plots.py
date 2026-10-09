@@ -123,6 +123,8 @@ def plot_transit(params: ParamDict, dataset: juliet.load, results: juliet.fit,
     """
     # set function name
     func_name = f'{__NAME__}.plot_transit()'
+    inst_mode = params.rget('GLOBAL.INSTRUMENTMODE', required=True,
+                            func=func_name)
     # -------------------------------------------------------------------------
     # set title
     title = 'Transit fit to the light curve'
@@ -135,8 +137,6 @@ def plot_transit(params: ParamDict, dataset: juliet.load, results: juliet.fit,
                         'wave={WAVE_BIN_LOW}-{WAVE_BIN_HIGH}um'
                         ).format(**bin_params)
     # -------------------------------------------------------------------------
-    # select instrumental mode
-    inst_mode = params['GLOBAL.INSTRUMENTMODE']
     # load best-fit model components
     components = science.load_transit_model(params, method=method)
     # check if lm was indeed fitted (by default juliet reports a lm of zeros)
@@ -314,14 +314,13 @@ def plot_transmission_spectrum(params: ParamDict,
     """
     # set function name
     func_name = f'{__NAME__}.plot_transmission_spectrum()'
+    slcta_params = params.get('SORBET.SLCA')
+    filename = slcta_params.rget('TRANSMISSION_SPECTRUM_FILE', required=True,
+                                 func=func_name)
     # set title
     title = 'Transmission Spectrum'
     description = 'Plot showing the transmission spectrum from the SLCA'
     # -------------------------------------------------------------------------
-    # get slca parameters
-    slcta_params = params.get('SORBET.SLCA')
-    # load the transmission spectrum
-    filename = slcta_params['TRANSMISSION_SPECTRUM_FILE']
     # check if the file exists
     if not os.path.isfile(filename):
         msg = f'Transmission spectrum file does not exist: {filename}'

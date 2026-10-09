@@ -198,7 +198,8 @@ def _validate_eureka_stage_inputs(params: ParamDict, stage: int):
 
 def _eureka_topdir(params: ParamDict) -> str:
     """Return the absolute Eureka top directory for this run."""
-    return os.path.join(params['GLOBAL.DATA_PATH'], 'eureka',
+    data_path = params.rget('GLOBAL.DATA_PATH', required=True)
+    return os.path.join(data_path, 'eureka',
                         str(params['EUREKA.GENERAL.SUBDIRECTORY']))
 
 
@@ -273,9 +274,11 @@ def make_eureka_dirs(params: ParamDict, stage: int = None):
     sid_path = 'EUREKA.GENERAL.SUBDIRECTORY'
     sid_null = eureka_unique_id()
     mode = 'eureka'
+    data_path = params.rget('GLOBAL.DATA_PATH', required=True)
+    subdirectory = params.rget(sid_path, required=True)
 
     # set topdir
-    topdir = os.path.join(params['GLOBAL.DATA_PATH'], mode, params[sid_path])
+    topdir = os.path.join(data_path, mode, subdirectory)
 
     # Deal with the stages
     for _stage in [1, 2, 3]:

@@ -94,8 +94,9 @@ def setup_tsovore_module(params: ParamDict):
     """
     # set the function name
     func_name = f'{__NAME__}.setup_tsovore_module'
+    run_tsovore = params.rget('RUN.TSOVORE', required=True, func=func_name)
     # deal with no requiring to run miriam
-    if not params['RUN.TSOVORE']:
+    if not run_tsovore:
         return params
     # setup input and output directories
     prepare_directories(params)

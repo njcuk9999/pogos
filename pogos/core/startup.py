@@ -145,6 +145,7 @@ def setup(params: ParamDict, start_from_demo: bool = True):
 
     # -------------------------------------------------------------------------
     # create paths to sub modules
+    data_path = None
     for step in definitions.RED_STEPS:
         # don't create if we don't have the run key in params
         if step.run_key not in params:
@@ -156,10 +157,12 @@ def setup(params: ParamDict, start_from_demo: bool = True):
         # directory trees, so avoid creating empty generic stage folders.
         if not step.generic_run_dir:
             continue
+        if data_path is None:
+            data_path = params.rget('GLOBAL.DATA_PATH', required=True)
         # get run value
         run_value = step.name
         # get path to directory
-        run_path = os.path.join(params['GLOBAL.DATA_PATH'], run_value.lower())
+        run_path = os.path.join(data_path, run_value.lower())
         # make directory if it doesn't already exist
         if not os.path.exists(run_path):
             # print making directory
@@ -184,26 +187,27 @@ def setup(params: ParamDict, start_from_demo: bool = True):
         if path not in params:
             continue
         # convert path to a real absolute path
-        params[path] = os.path.abspath(params[path])
+        absolute_path = os.path.abspath(params.rget(path, required=True))
+        params[path] = absolute_path
         # find if path exists
-        if os.path.exists(params[path]):
-            WLOG(params, '', 'Path exists: {0}'.format(params[path]))
+        if os.path.exists(absolute_path):
+            WLOG(params, '', 'Path exists: {0}'.format(absolute_path))
             continue
         # ask user to create path
         question = '\nPath does not exist: {0}\nWould you like to create it?'
-        question = question.format(params[path])
+        question = question.format(absolute_path)
         # ask user
         if drs_text.user_input(question, dtype='YN', required=True):
-            os.makedirs(params[path])
+            os.makedirs(absolute_path)
     # ----------------------------------------------------------------------
     # print progress
     WLOG(params, 'info', params['LOG.HEADER'])
     WLOG(params, 'info', 'Constructing yaml file')
     WLOG(params, 'info', params['LOG.HEADER'])
+    config_list = params.rget('CONFIG_LIST', required=True)
+    yaml_file = params.rget('GLOBAL.YAML_FILE', required=True)
     # Get the merged constants dictionary
-    cdict = ConstDict.merge_configs(params['CONFIG_LIST'])
-    # get the yaml file
-    yaml_file = params['GLOBAL.YAML_FILE']
+    cdict = ConstDict.merge_configs(config_list)
     # print progress
     msg = 'Saving constants to yaml file: {0}'
     WLOG(params, '', msg.format(os.path.realpath(yaml_file)))
@@ -596,10 +600,9 @@ def core_yaml_setup(params: ParamDict):
 
     # Make sure yaml file is a file (and path exists)
     test_yamlfile(params)
+    data_path = params.rget('GLOBAL.DATA_PATH', required=True)
     # keep asking until this variable is set
     while params['GLOBAL.YAML_FILE'] is None:
-        # get the data directory
-        data_path = params['GLOBAL.DATA_PATH']
         # get the yaml directory
         yamldir = os.path.join(data_path, 'yamls')
         # create this directory
@@ -669,8 +672,8 @@ def core_yaml_setup(params: ParamDict):
                 params['GLOBAL.YAML_FILE'] = None
     # -------------------------------------------------------------------------
     # and finally make sure the data exists
-    if not os.path.exists(params['GLOBAL.DATA_PATH']):
-        os.makedirs(params['GLOBAL.DATA_PATH'])
+    if not os.path.exists(data_path):
+        os.makedirs(data_path)
     # -------------------------------------------------------------------------
     return params
 
@@ -819,13 +822,13 @@ def _propagate_crds_setup(crds_path: str, server_url: str):
 
 
 def check_crds(params: ParamDict):
+    data_path = params.rget('GLOBAL.DATA_PATH', required=True)
     # use any pre-existing CRDS setup if available, otherwise fall back to the
     # POGOS-managed cache inside the data directory
     check1 = 'CRDS_PATH' in os.environ
     check2 = 'CRDS_SERVER_URL' in os.environ
     crds_path = os.environ.get('CRDS_PATH',
-                               os.path.join(params['GLOBAL.DATA_PATH'],
-                                            'crds'))
+                               os.path.join(data_path, 'crds'))
     server_url = os.environ.get('CRDS_SERVER_URL',
                                 'https://jwst-crds.stsci.edu')
 

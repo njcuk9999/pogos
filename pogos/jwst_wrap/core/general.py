@@ -230,7 +230,8 @@ def run_jwst_stage(params: ParamDict, pipelines: dict, stage: int):
         return
     # -------------------------------------------------------------------------
     # get the input/output paths and the suffix we are looking for
-    inpath = os.path.abspath(params[f'STD_JWST.PATHS.IN_S{stage}_PATH'])
+    input_path = params.rget(f'STD_JWST.PATHS.IN_S{stage}_PATH', required=True)
+    inpath = os.path.abspath(input_path)
     outpath = params[f'STD_JWST.PATHS.OUT_S{stage}_PATH']
     suffix = params[f'STD_JWST.STAGE{stage}.input_suffix']
     save_results = params[f'STD_JWST.STAGE{stage}.save_results']
@@ -259,6 +260,7 @@ def run_jwst_stage(params: ParamDict, pipelines: dict, stage: int):
                             save_results=save_results)
     # Stage 3 runs once on a level-3 association built from the inputs
     else:
+        outpath = params.rget(f'STD_JWST.PATHS.OUT_S{stage}_PATH', required=True)
         asn_file = build_stage3_association(params, files, outpath)
         pipe_class.call(asn_file, output_dir=outpath,
                         save_results=save_results)
@@ -329,8 +331,10 @@ def make_jwst_dirs(params: ParamDict, stage: int = None):
     sid_path = 'STD_JWST.GENERAL.SUBDIRECTORY'
     sid_null = jwst_unique_id()
     mode = 'jwst'
+    data_path = params.rget('GLOBAL.DATA_PATH', required=True)
+    subdirectory = params.rget(sid_path, required=True)
     # set topdir
-    topdir = os.path.join(params['GLOBAL.DATA_PATH'], mode, params[sid_path])
+    topdir = os.path.join(data_path, mode, subdirectory)
     # Deal with the stages
     for _stage in [1, 2, 3]:
         if stage in [None, _stage]:

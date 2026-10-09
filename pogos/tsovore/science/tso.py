@@ -189,6 +189,8 @@ class Tso(ts_default.Instrument):
         # initialize step (do not modify)
         rkwargs = self.assign_step(segment_list, func_name)
         if not rkwargs['RUN_STEP']: return rkwargs['INFILES']
+        datadir = self.tparams.rget('PATHS.TEMP_PATH', required=True,
+                        func=func_name)
         # ---------------------------------------------------------------------
         # get the number of segments
         nsegements = len(segment_list)
@@ -298,8 +300,6 @@ class Tso(ts_default.Instrument):
         deepstackname = self.expected_tmp_file(rkwargs)
         # ---------------------------------------------------------------------
         # for the rms file we construct filename ourselfs
-        datadir = self.tparams['PATHS.TEMP_PATH']
-
         cprefix = self.variables['COMMON_PREFIX']
         rms_filename = self.file_deepstack_rms.format(cprefix=cprefix)
         rms_out = os.path.join(datadir, rms_filename)
@@ -339,6 +339,8 @@ class Tso(ts_default.Instrument):
         # initialize step (do not modify)
         rkwargs = self.assign_step(postrampfitting_list, func_name)
         if not rkwargs['RUN_STEP']: return rkwargs['INFILES']
+        outdir = self.tparams.rget('PATHS.TEMP_PATH', required=True,
+                       func=func_name)
         # ---------------------------------------------------------------------
         # print progress
         msg = ('soss_correct_badpix - flagging bad pixels using thresholds '
@@ -347,7 +349,6 @@ class Tso(ts_default.Instrument):
         # ---------------------------------------------------------------------
         #Establish what the directory is and the basename for the files
         # as well as the names of temporary block files.
-        outdir = self.tparams['PATHS.TEMP_PATH']
         # get the number of segments
         nsegments = len(postrampfitting_list)
         # store a list of segment base names
@@ -596,7 +597,7 @@ class Tso(ts_default.Instrument):
         """
         #Establish what the directory is and the basename for the files
         # as well as the names of temporary block files.
-        outdir = self.tparams['PATHS.TEMP_PATH']
+        outdir = self.tparams.rget('PATHS.TEMP_PATH', required=True)
         # ---------------------------------------------------------------------
         # hack - the jwst steps need a known suffix
         tmp_file = self.file_seg_tmp.format(**skwargs)
@@ -626,7 +627,7 @@ def _badpixel_flag_seconderivative(params, data: np.ndarray,
     #Establish what the directory is and the basename for the files
     # as well as the names of temporary block files.
     tparams = params.get('TSOVORE')
-    outdir = tparams['PATHS.TEMP_PATH']
+    outdir = tparams.rget('PATHS.TEMP_PATH', required=True)
     # Expect data to be 3-dimensional (integrations, y, x)
     nint, dimy, dimx = np.shape(data)
 

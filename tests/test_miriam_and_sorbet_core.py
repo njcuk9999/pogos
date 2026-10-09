@@ -1,3 +1,5 @@
+from aperocore.constants.param_functions import ParamDict
+
 from pogos.miriam.core import general as miriam_general
 from pogos.sorbet.core import core as sorbet_core
 
@@ -27,7 +29,7 @@ def test_sorbet_unique_id_format(monkeypatch):
 
 
 def test_sorbet_inst_mode_normalizes_underscores():
-    params = {"GLOBAL.INSTRUMENTMODE": "jwst_niriss_soss"}
+    params = ParamDict({"GLOBAL.INSTRUMENTMODE": "jwst_niriss_soss"})
 
     assert sorbet_core.sorbet_inst_mode(params) == "JWST.NIRISS.SOSS"
 

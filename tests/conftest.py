@@ -25,6 +25,14 @@ class ParamDict(dict):
     def set(self, key, value=None, source=None):
         self[key] = value
 
+    def rget(self, key, override=None, required=False, func=None):
+        """Provide retrieval semantics for lightweight orchestration tests."""
+        if override is not None:
+            return override
+        if required:
+            return self[key]
+        return self.get(key)
+
 
 param_functions.ParamDict = ParamDict
 aperocore_constants.param_functions = param_functions

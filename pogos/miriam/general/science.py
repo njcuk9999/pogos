@@ -140,15 +140,17 @@ def merge_inputs(params: ParamDict) -> MergedReturn:
     # get MIRIAM params
     mparams = params.get('MIRIAM')
     # get input directory
-    input_dir = mparams['PATHS.INPUT_PATH']
+    input_dir = mparams.rget('PATHS.INPUT_PATH', required=True)
     # get the temporary directory
-    temp_dir = mparams['PATHS.TEMP_PATH']
+    temp_dir = mparams.rget('PATHS.TEMP_PATH', required=True)
+    # get list of input files
+    input_files = mparams.rget('INPUTS.FILES', required=True)
+    use_previous_merged_data = mparams.rget('INPUTS.USE_PREVIOUS_MERGED_DATA',
+                                            required=True)
     # -------------------------------------------------------------------------
     # construct merged file name
     merged_cube_file = os.path.join(temp_dir, 'merged_cube.fits')
     # -------------------------------------------------------------------------
-    # get list of input files
-    input_files = mparams['INPUTS.FILES']
     # store input paths
     input_paths, input_basenames = [], []
     # check that all input files exist
@@ -175,7 +177,7 @@ def merge_inputs(params: ParamDict) -> MergedReturn:
     mparams['INPUTS']['PREFIX'] = load_functions.common_prefix(input_basenames)
     # -------------------------------------------------------------------------
     # attempt to load merged data from previous run
-    if mparams['INPUTS.USE_PREVIOUS_MERGED_DATA']:
+    if use_previous_merged_data:
         merged_data = None
     else:
         merged_data = merged_from_previous(params, input_basenames,
@@ -445,9 +447,10 @@ def cut_down_cubes(params: ParamDict, cube: np.ndarray,
     # get MIRIAM params
     mparams = params.get('MIRIAM')
     # get the y-pixel range
-    cut_size = mparams['INPUTS.CUT_DOWNSIZE']
+    cut_size = mparams.rget('INPUTS.CUT_DOWNSIZE', required=True)
     # get the center offset
-    center_offset = mparams['INPUTS.CUT_DOWNSIZE_CENTER_OFFSET']
+    center_offset = mparams.rget('INPUTS.CUT_DOWNSIZE_CENTER_OFFSET',
+                                 required=True)
     # get the size of the images
     nbxpix, nbypix = cube[0].shape
     # get start and end points
@@ -468,7 +471,7 @@ def calc_mean_pedestal(params: ParamDict, cube: np.ndarray
     # get the MIRIAM params
     mparams = params.get('MIRIAM')
     # get the mean pedestal radius
-    mean_ped_rad = mparams['INPUTS.MEAN_PEDESTAL_RADIUS']
+    mean_ped_rad = mparams.rget('INPUTS.MEAN_PEDESTAL_RADIUS', required=True)
 
     # get the indices (with an integration) in y and x
     y_indices, x_indices = np.indices(cube[0].shape)

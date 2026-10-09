@@ -48,7 +48,8 @@ def loic_group_scale_step(self, infiles: list) -> list:
     if not rkwargs['RUN_STEP']: return rkwargs['INFILES']
     # ---------------------------------------------------------------------
     # get parameters from params
-    datadir = self.tparams['PATHS.TEMP_PATH']
+    datadir = self.tparams.rget('PATHS.TEMP_PATH', required=True,
+                                func=func_name)
     # storage for output files
     outfiles = []
     # loop around infiles

@@ -66,7 +66,8 @@ def sorbet_inst_mode(params: ParamDict) -> str:
     :return:
     """
     # get instrument mode
-    inst_mode = params['GLOBAL.INSTRUMENTMODE'].upper()
+    inst_mode = params.rget('GLOBAL.INSTRUMENTMODE', required=True)
+    inst_mode = inst_mode.upper()
     # make sure inst_mode has no _ for juliet compatibility
     inst_mode = inst_mode.replace('_', '.')
     # return updated instrument mode
