@@ -151,7 +151,7 @@ def plot_correlations(params: ParamDict, ptbl: Table, d2flag: bool):
     frames[2].errorbar(ptbl['int_mid_BJD_TDB'], ptbl['d2s'],
                        yerr=ptbl['d2s_err'], alpha=0.3, marker='.',
                        ls='None')
-    frames[2].set(xlabel='Time [BJD]', ylabel='Shape parameter ($c_\perp$)')
+    frames[2].set(xlabel='Time [BJD]', ylabel=r'Shape parameter ($c_\perp$)')
     frames[2].grid(color='gray', ls='--', lw=0.5)
     # --------------------------------------------------------------------------
     # plot pedestal if required

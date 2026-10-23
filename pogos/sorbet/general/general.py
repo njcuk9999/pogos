@@ -12,7 +12,7 @@ Created on 2025-10-16 at 13:39
 import shutil
 import string
 import os
-from typing import Any, Dict, Optional
+from typing import Any, Dict, List, Optional, Tuple
 
 import numpy as np
 
@@ -24,6 +24,7 @@ from pogos.core import base as pogos_base
 from pogos.core import definitions
 from pogos.core import general as pogos_general
 from pogos.core import io as pogos_io
+from pogos.sorbet.core import base as sorbet_base
 from pogos.sorbet.core import core as sorbet_core
 from sossisse.core import misc
 from sossisse.instruments import default as sdefault
@@ -333,6 +334,42 @@ def run_sorbet_wlcta(params: ParamDict):
     # return params
     return params
 
+def _deal_with_slcta_input_file(params) -> Tuple[List[str], List[int | None]]:
+    func_name = f'{__NAME__}._deal_with_slcta_input_file'
+    # get the sorbet parameters
+    slcta_params = params.get('SORBET.SLCA')
+    # check the dataset (multiple channels/orders?)
+    input_files = slcta_params.rget('INPUT_FILE', required=True, func=func_name)
+    # get the trace order
+    trace_orders = slcta_params['TRACE_ORDERS']
+    inst_mode = params.rget('GLOBAL.INSTRUMENTMODE', required=True,
+                            func=func_name)
+    # deal with no trace orders (fine for modes which don't have trace orders)
+    if trace_orders is None and inst_mode != 'JWST.NIRISS.SOSS':
+        if isinstance(input_files, str):
+            return [input_files], [None]
+        if len(input_files) > 1:
+            emsg = ("TRACE_ORDERS must be provided for multiple input files "
+                    "in SORBET.SLCA.INPUT_FILE")
+            raise sorbet_base.SorbetException(emsg)
+        return [input_files[0]], [None]
+
+    elif trace_orders is None:
+        emsg = ("TRACE_ORDERS must be provided for SORBET.SLCA.INPUT_FILE when "
+                "using JWST.NIRISS.SOSS mode")
+        raise sorbet_base.SorbetException(emsg)
+
+    # deal with single string input
+    if isinstance(input_files, str):
+        emsg = "Input file of SORBET.SLCA must be a list."
+        raise sorbet_base.SorbetException(emsg)
+
+    if len(trace_orders) != len(input_files):
+        emsg = (f"The number of trace orders ({len(trace_orders)}) must match "
+                f"the number of input files ({len(input_files)}).")
+        raise sorbet_base.SorbetException(emsg)
+
+    return input_files, trace_orders
 
 def run_sorbet_slcta(params: ParamDict):
     """
@@ -347,27 +384,18 @@ def run_sorbet_slcta(params: ParamDict):
     sorbet_science, sorbet_plots = _load_sorbet_runtime_modules()
     # print the spectral light curve splash
     print(misc.art('SORBET SLC Transit Analysis', 'blue', 'CYAN'))
-    # get the sorbet parameters
-    slcta_params = params.get('SORBET.SLCA')
     # --------------------------------------------------------------------------
     # prepare directories
     prepare_directories(params, method='SLCA')
-    # check the dataset (multiple channels/orders?)
-    input_files = slcta_params.rget('INPUT_FILE', required=True, func=func_name)
-    # get the trace order
-    trace_orders = slcta_params.rget('TRACE_ORDERS', required=True,
-                                    func=func_name)
-    # deal with single string input
-    if isinstance(input_files, str):
-        raise ValueError("Input file of SORBET.SLCA must be a list.")
-    else:
-        len_channel = len(input_files)
-    for chl in range(len_channel):
+    # get input files and trace ordeers
+    input_files, trace_orders = _deal_with_slcta_input_file(params)
+    # --------------------------------------------------------------------------
+    # loop around channels
+    for chl in range(len(input_files)):
         # load the dataset
         sout = sorbet_science.load_slc(params, input_files[chl],
                                        trace_orders[chl])
         bjd, wave_tuple, flux_bin, eflux_bin, channel = sout
-        # TODO
         # eflux_bin = np.ones_like(flux_bin) * 10e-6
         # initiate transmission spectrum table
         tout = sorbet_science.initiate_transmission_spectrum(wave_tuple)

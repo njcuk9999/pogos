@@ -17,7 +17,7 @@ from pogos.core.external_imports import EXOTIC_LD_IMPORT_MESSAGES
 import os
 import pickle as pkl
 import warnings
-from typing import Any, Dict, Literal, List, Optional
+from typing import Any, Dict, Literal, List, Optional, Union
 import numpy as np
 from astropy.table import Table
 from astropy.io import fits
@@ -98,7 +98,7 @@ def load_wlc(params: ParamDict):
 
 
 def load_slc(params: ParamDict, input_file: str,
-             trace_order: int = 1):
+             trace_order: Union[int, None] = None):
     """
     Load the wavelength grid and spectral light curves for the
     transmission spectrum

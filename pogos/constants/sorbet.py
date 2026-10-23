@@ -311,16 +311,13 @@ SORBET_CDict.add('INPUT_FILE', value=['spectroscopy_light_curves.fits'],
                  dtype=list, source=__NAME__,
                  user=True, active=True, group=cgroup,
                  description='Input data file or path to the data file')
-# Trace orders, must be a list the same length as INPUT_FILE
-#     (Set each item to 1 if there is only one order) otherwise set each item
-#     to the order number
-SORBET_CDict.add('TRACE_ORDERS', value=[0], dtype=list, dtypei=int,
+# Trace orders, must be a list the same length as INPUT_FILE or None for
+#    modes without orders'
+SORBET_CDict.add('TRACE_ORDERS', value=None, dtype=list, dtypei=int,
                  source=__NAME__, user=True, active=True, group=cgroup,
+                 modes=['JWST.NIRISS.SOSS'],
                  description='Trace orders, must be a list the same length as'
-                             'INPUT_FILE '
-                             '\n\t(Set each item to 0 if there is '
-                             'only one order) otherwise set each item '
-                             'to the order number')
+                             'INPUT_FILE or None for modes without orders')
 # Output sub directory path for channel/bin (set internally)
 SORBET_CDict.add('OUTPUT_SUBPATH', value=None, dtype=str, source=__NAME__,
                 user=False, active=False, group=cgroup,
