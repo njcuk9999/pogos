@@ -49,6 +49,14 @@ WLOG = drs_log.wlog
 # =============================================================================
 # Define functions
 # =============================================================================
+def _sossisse_parameters(params: ParamDict, sossisse_params):
+    sparams = sossisse_params.as_param_dict()
+    sparams['INPUTS.PROJECT_NAME'] = params.rget('GLOBAL.PROJECT_NAME',
+                                               required=True)
+    sparams['INPUTS.SOSSIOPATH'] = params.rget('GLOBAL.DATA_PATH', required=True)
+    return sparams
+
+
 def run_sossisse_module(params: ParamDict, pre_inst: Dict[str, Any]):
     """
     Run the sossisse run recipe
@@ -73,7 +81,7 @@ def run_sossisse_module(params: ParamDict, pre_inst: Dict[str, Any]):
         WLOG(params, 'warning', 'SOSSISSE not in params - skipping.')
         return
     # convert to independent parameter dictionary
-    sparams = sossisse_params.as_param_dict()
+    sparams = _sossisse_parameters(params, sossisse_params)
     # make sure yaml file is set
     sparams['INPUTS.PARAM_FILE'] = str(params['GLOBAL.YAML_FILE'])
 
@@ -124,7 +132,7 @@ def setup_sossisse_module(params: ParamDict, cdict):
         return
     yaml_file = params.rget('GLOBAL.YAML_FILE', required=True)
     # convert to independent parameter dictionary
-    sparams = sossisse_params.as_param_dict()
+    sparams = _sossisse_parameters(params, sossisse_params)
     # make sure yaml file is set
     sparams['INPUTS.PARAM_FILE'] = str(yaml_file)
     # setup for SOSSISSE just uses "get_parameters" function
@@ -140,11 +148,6 @@ def setup_sossisse_module(params: ParamDict, cdict):
         # if the key exists update it
         if pkey in params:
             params.set(pkey, spaths[path], source=func_name)
-    # update the SUBDIRECTORY if changed
-    if sparams['INPUTS.SUBDIRECTORY'] is not None:
-        params.set('SOSSISSE.INPUTS.SUBDIRECTORY',
-        sparams['INPUTS.SUBDIRECTORY'],
-                   source=sparams.sources['INPUTS.SUBDIRECTORY'])
     # -------------------------------------------------------------------------
     # re-save the yaml file after sossisse updates
     # print progress
@@ -176,7 +179,7 @@ def tsovore_input(params: ParamDict,
     sossisse_params['GENERAL.FILES'] = tsovore_outputs
     # -------------------------------------------------------------------------
     # convert to independent parameter dictionary
-    sparams = sossisse_params.as_param_dict()
+    sparams = _sossisse_parameters(params, sossisse_params)
     # -------------------------------------------------------------------------
     # set the source of the parameters (POGOS)
     sparams['__SOURCE__'] = 'POGOS'
@@ -232,6 +235,8 @@ def tsovore_input(params: ParamDict,
         elif sossisse_params[key] is None and sparams[key] is not None:
             sossisse_params[key] = sparams[key]
     # ---------------------------------------------------------------------
+    sossisse_params['INPUTS.PROJECT_NAME'] = sparams['INPUTS.PROJECT_NAME']
+    sossisse_params['INPUTS.SOSSIOPATH'] = sparams['INPUTS.SOSSIOPATH']
     # return params
     return sossisse_params
 

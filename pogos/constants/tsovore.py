@@ -51,17 +51,6 @@ TSOVORE_CDict.title = TSOVORE_CDict.yaml_title('TSOVORE',
 cgroup = 'GENERAL'
 TSOVORE_CDict.add_group(cgroup, description='General configs for TSOVORE',
                         source=__NAME__, user=True, active=True)
-# add the subdirectory (to be used when default path required)
-TSOVORE_CDict.add('SUBDIRECTORY', value=None, dtype=str, source=__NAME__,
-                  user=True, active=True, group=cgroup,
-                  description='The sub-directory to use for this TSOVORE run. '
-                              'This should be descriptive and unique. '
-                              '\nIt should contain no whitespaces or special '
-                              'characters other than underscoes.'
-                              '\nAll miriam data will be stored in '
-                              '{GLOBAL.DATA_PATH}/tsovore/{SUBDIRECTORY}/'
-                             '\n\nWe suggest {OBJNAME}-{INST.MODE}-{STEP}-{YYYYMMDD}')
-
 # define what we are running through SORBET
 TSOVORE_CDict.add('DESCRIPTION', value='', dtype=str, source=__NAME__,
                   user=True, active=True, group=cgroup,
@@ -96,7 +85,7 @@ TSOVORE_CDict.add('TEMP_PATH', value='temporary', dtype=str,
                              '\nIf this is an aboslute path it will be '
                              'used as is'
                              '\n otherwise it will be relative to '
-                             'GLOBAL.DATA_PATH/tsovore/')
+                             '{GLOBAL.DATA_PATH}/projects/{GLOBAL.PROJECT_NAME}/tsovore/')
 
 # Output results folder
 TSOVORE_CDict.add('OUTPUT_PATH', value='outputs', dtype=str,
@@ -108,7 +97,7 @@ TSOVORE_CDict.add('OUTPUT_PATH', value='outputs', dtype=str,
                              '\nIf this is an aboslute path it will '
                              'be used as is'
                              '\n otherwise it will be relative to '
-                             'GLOBAL.DATA_PATH/tsovore/')
+                             '{GLOBAL.DATA_PATH}/projects/{GLOBAL.PROJECT_NAME}/tsovore/')
 # the plot path
 TSOVORE_CDict.add('PLOT_PATH', value='plots', dtype=str,
                  source=__NAME__, active=False, user=False, group=cgroup,
@@ -160,8 +149,8 @@ TSOVORE_CDict.add('INSTRUMENTMODE', value=None, dtype=str, not_none=True,
 fdesc = ('List of files to be processed in form: '
          '\nFILES:\n - file1\n - file2\n - file3'
          '\n\nBy default these should be placed in '
-         '{GLOBAL.DATA_PATH}/{MIRIAM.PATHS.INTPUT_PATH}/'
-         '\n or whatever is set in {TSOVORE.PATHS.INTPUT_PATH} (if absolute)')
+         '{GLOBAL.DATA_PATH}/projects/{GLOBAL.PROJECT_NAME}/tsovore/inputs/'
+         '\n or whatever is set in {TSOVORE.PATHS.INPUT_PATH} (if absolute)')
 TSOVORE_CDict.add('FILES', value=None, dtype=list, dtypei=str, not_none=False,
                  source=__NAME__, user=True, active=True, group=cgroup,
                  description=fdesc)

@@ -15,7 +15,7 @@ from aperocore.constants import load_functions
 import sossisse
 
 from pogos.constants.constants import CDict
-from pogos.core import base as pbase
+from pogos.core import startup
 from sossisse.instruments import Instrument
 
 from pogos.recipes import pogos_run
@@ -49,12 +49,15 @@ def sossisse_init(yaml_file: str) -> Instrument:
                                            inputargs=__inputs__,
                                            param_file_path='GLOBAL.YAML_FILE',
                                            config_list=[CDict],
-                                           external_const=pbase.EXTERNAL_CONST,
+                                           external_const=startup.initial_setup(),
                                            cmd_kwargs=cmd_kwargs)
     # get the SOSSISSE sub-dictionary
     sossisse_params = params.get('SOSSISSE')
     # convert to independent parameter dictionary
     sparams = sossisse_params.as_param_dict()
+    sparams['INPUTS.PROJECT_NAME'] = params.rget('GLOBAL.PROJECT_NAME',
+                                               required=True)
+    sparams['INPUTS.SOSSIOPATH'] = params.rget('GLOBAL.DATA_PATH', required=True)
     # make sure yaml file is set
     sparams['INPUTS.PARAM_FILE'] = str(params['GLOBAL.YAML_FILE'])
     # get instrument class for SOSSISSE

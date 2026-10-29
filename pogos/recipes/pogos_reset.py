@@ -47,7 +47,7 @@ __description__ = ('Reset a POGOS profile by deleting (and recreating empty) '
                    'every output/plot/temporary/other directory that POGOS '
                    'created for the enabled reduction steps in a given yaml '
                    'file. Raw input files, calibration/reference directories, '
-                   'and anything not scoped to this profile\'s SUBDIRECTORY '
+                   'and anything not scoped to this profile\'s PROJECT_NAME '
                    '(e.g. shared yaml backups) are never touched.')
 __inputs__ = ['GLOBAL.YAML_FILE', 'GLOBAL.LIST_YAMLS']
 # version error text

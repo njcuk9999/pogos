@@ -116,6 +116,58 @@ You can and should run this demo (it downloads the data) just to make sure your 
 Once you have run a demo you can either manually edit the demo yaml and copy the file structure we provide, or run `pogos_copy` ([This section](#5-running-pogos-with-your-own-data))
 to walk you through creating a new yaml file and file structure based on your own data.
 
+### Project configuration and data layout
+
+Set one required `GLOBAL.PROJECT_NAME` for the whole observation/project, shared
+by every enabled module. `GLOBAL.DATA_PATH` is the data root, not a module
+directory. For example:
+
+```yaml
+GLOBAL:
+  DATA_PATH: /path/to/pogos-data
+  PROJECT_NAME: target-visit-20240707
+```
+
+The project name can also be supplied to setup with
+`pogos_setup --project_name target-visit-20240707`. Use a descriptive name with
+no whitespace or special characters other than `-`, `+`, `.`, and `_`.
+Repeated runs with the same root and project name reuse the same directories.
+Choose a different project name for a separate reduction.
+
+Default module paths use
+`{GLOBAL.DATA_PATH}/projects/{GLOBAL.PROJECT_NAME}/<module>/`:
+
+```text
+/path/to/pogos-data/
+  projects/
+    target-visit-20240707/
+      tsovore/
+      jwst/
+      nameless/
+      eureka/
+      sossisse/
+      miriam/
+      sorbet/
+```
+
+Only enabled modules need directories; their input, output, temporary, and plot
+subfolders live below the module directory. In POGOS, SOSSISSE receives the
+global project name and uses `GLOBAL.DATA_PATH` as its `INPUTS.SOSSIOPATH` root.
+Do not configure a second project name under SOSSISSE or any other module.
+Standalone SOSSISSE still uses its own `INPUTS.PROJECT_NAME`.
+
+### Breaking migration
+
+Per-module `SUBDIRECTORY` keys have been removed. For existing configurations,
+remove those keys and set one `GLOBAL.PROJECT_NAME`; do not replace them with
+per-module `PROJECT_NAME` keys. The old module-first directory layout is no
+longer the default. There is **no automatic data move**: manually relocate data
+to the new project-first layout, or retain existing absolute path overrides.
+Existing absolute overrides continue to be used unchanged. If an old
+`GLOBAL.DATA_PATH` already ended in `data`, select its parent as the root when
+adopting the layout above. An explicitly configured `SOSSISSE.INPUTS.SOSSIOPATH`
+should equal that root, not the old SOSSISSE module directory.
+
 [Back to top](#table-of-contents)
 
 ---

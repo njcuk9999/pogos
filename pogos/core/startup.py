@@ -9,6 +9,7 @@ Created on 2024-10-29 at 10:16
 
 @author: cook
 """
+import copy
 import glob
 import os
 import string
@@ -57,6 +58,30 @@ INPUTARGS['pogos.recipes.test_run'] = ['GLOBAL.YAML_FILE']
 # Define allowed punctuation for sub-directory names
 VALID_PUNC = ['-', '+', '.', '_']
 
+def _validate_project_name(value):
+    if (not isinstance(value, str) or not value or value in {'.', '..'}
+            or any(char.isspace() or not char.isprintable() for char in value)
+            or any(char in string.punctuation and char not in VALID_PUNC
+                   for char in value)):
+        raise pogos_base.PogosException(
+            'GLOBAL.PROJECT_NAME must be a nonempty directory name, not "." '
+            'or "..", without whitespace or separators; allowed punctuation '
+            'is -+._.')
+    return value
+
+
+def ask_project_name(params: ParamDict):
+    value = params.get('GLOBAL.PROJECT_NAME', None)
+    if value is None:
+        value = drs_text.user_input('Please enter GLOBAL.PROJECT_NAME',
+                                    dtype=str, required=True)
+        value = _validate_project_name(value)
+        params.set('GLOBAL.PROJECT_NAME', value=value, source='user input')
+    else:
+        _validate_project_name(value)
+    return params
+
+
 def _load_demo_module():
     from pogos.resources import demos as demo_module
     return demo_module
@@ -102,6 +127,7 @@ def setup(params: ParamDict, start_from_demo: bool = True):
                                                demo_list,
                                                ask_for_missing_on_no_demo=False)
 
+    params = ask_project_name(params)
     # now set up yaml file name
     params = core_yaml_setup(params)
     # -------------------------------------------------------------------------
@@ -146,6 +172,7 @@ def setup(params: ParamDict, start_from_demo: bool = True):
     # -------------------------------------------------------------------------
     # create paths to sub modules
     data_path = None
+    project_name = params.rget('GLOBAL.PROJECT_NAME', required=True)
     for step in definitions.RED_STEPS:
         # don't create if we don't have the run key in params
         if step.run_key not in params:
@@ -162,7 +189,8 @@ def setup(params: ParamDict, start_from_demo: bool = True):
         # get run value
         run_value = step.name
         # get path to directory
-        run_path = os.path.join(data_path, run_value.lower())
+        run_path = os.path.join(data_path, 'projects', project_name,
+                       run_value.lower())
         # make directory if it doesn't already exist
         if not os.path.exists(run_path):
             # print making directory
@@ -171,7 +199,11 @@ def setup(params: ParamDict, start_from_demo: bool = True):
             os.makedirs(run_path)
         # update parameters
         if step.run_dir_key is not None:
-            params[step.run_dir_key] = run_path
+            if step.run_dir_key == 'SOSSISSE.INPUTS.SOSSIOPATH':
+                if params.get(step.run_dir_key, None) is None:
+                    params[step.run_dir_key] = data_path
+            else:
+                params[step.run_dir_key] = run_path
     # -------------------------------------------------------------------------
     # ask user for any missing arguments
     params = load_functions.ask_for_missing_args(params)
@@ -703,6 +735,12 @@ def initial_setup():
     # add any additional external ones
     const_list.update(pogos_base.EXTERNAL_CONST)
 
+    sossisse_config = copy.deepcopy(const_list['SOSSISSE'])
+    project_constant = sossisse_config.get('INPUTS.PROJECT_NAME')
+    project_constant.user = False
+    project_constant.not_none = False
+    const_list['SOSSISSE'] = sossisse_config
+
     # return the updated extenral constants list
     return const_list
 
@@ -893,26 +931,6 @@ def set_yaml_file(cmd_args):
         sys.argv[1] = '--yamlfile={0}'.format(cmd_args[1])
 
 
-def _find_subdirs(obj, key: str='SUBDIRECTORY'):
-    """
-    Recursively search for any "key" keys
-    anywhere inside the module dictionary. This will
-    :param obj:
-    :return:
-    """
-    found = []
-    if isinstance(obj, dict):
-        for k, v in obj.items():
-            if k == key:
-                found.append(v)
-            else:
-                found.extend(_find_subdirs(v))
-    elif isinstance(obj, list):
-        for item in obj:
-            found.extend(_find_subdirs(item))
-    return found
-
-
 def list_yamls():
 
     """
@@ -972,22 +990,32 @@ def list_yamls():
                 summary += '\n' + '='*70
                 summary += f'\n - {vstr}'
                 summary += f'\n - Inst Mode: {instmode}'
+                project_name = _validate_project_name(
+                    ydict['GLOBAL'].get('PROJECT_NAME'))
+                project_root = os.path.join(datadict, 'projects', project_name)
+                summary += f'\n - Project: {project_name}'
+                summary += f'\n - Project root: {project_root}'
                 # loop around modules a
                 for step in definitions.RED_STEPS:
                     module = step.name
-                    run_mod = ydict['RUN'].get(module, False)
+                    run_mod = ydict['RUN']
+                    for part in step.run_key.split('.')[1:]:
+                        if not isinstance(run_mod, dict):
+                            run_mod = False
+                            break
+                        run_mod = run_mod.get(part, False)
                     if not run_mod:
                         continue
 
-                    if module in ydict and run_mod:
-                        # Recursively search for any 'SUBDIRECTORY' keys
-                        # anywhere inside the module dictionary. This will
-                        # handle dicts or lists nested to any depth.
-                        subdirs = _find_subdirs(ydict[module])
-                        if len(subdirs) > 0:
-                            dpath = os.path.join(datadict, module.lower(),
-                                                 subdirs[0])
-                            summary += '\n - {0}: {1}'.format(module, dpath)
+                    module_prefix = step.parameter_prefix.split('.')[0]
+                    if not step.generic_run_dir:
+                        prefixes = step.shared_prefixes or step.sub_prefixes
+                        if prefixes:
+                            module_prefix = prefixes[0].split('.')[0]
+                    module_dir = {'STD_JWST': 'jwst'}.get(
+                        module_prefix, module_prefix.lower())
+                    dpath = os.path.join(project_root, module_dir)
+                    summary += '\n - {0}: {1}'.format(module, dpath)
                 pogos_summaries.append(summary)
                 pogos_yamls.append(yaml_file)
         except Exception:
@@ -1124,108 +1152,33 @@ def copy_ask_description(params: ParamDict):
     return params
 
 
-def copy_ask_subdirectories(params: ParamDict):
-
-    prev = None
-
-    for step in definitions.RED_STEPS:
-        submodule = step.name
-        # skip if we don't have this sub-module
-        if step.run_key not in params:
+def copy_ask_project_name(params: ParamDict):
+    previous_name = _validate_project_name(
+        params.rget('GLOBAL.PROJECT_NAME', required=True))
+    data_path = params.rget('GLOBAL.DATA_PATH', required=True)
+    previous_root = os.path.abspath(
+        os.path.join(data_path, 'projects', previous_name))
+    question = ('Please enter a new GLOBAL.PROJECT_NAME'
+                f'\n\nPrevious value = {previous_name}')
+    value = drs_text.user_input(question, dtype=str, required=True)
+    project_name = _validate_project_name(value)
+    if project_name == previous_name:
+        raise pogos_base.PogosException(
+            'The copied project must have a different GLOBAL.PROJECT_NAME.')
+    for key in params:
+        if key.startswith('GLOBAL.') or key == 'SOSSISSE.INPUTS.SOSSIOPATH':
             continue
-        # skip if not running
-        if not step.is_enabled(params):
+        instance = params.instances.get(key)
+        path_value = params[key]
+        if (instance is None or not isinstance(path_value, str)
+                or not os.path.isabs(path_value)):
             continue
-        # need to figure out if we are dealing with a submodule with multiple
-        # parts
-        if len(step.sub_prefixes) > 0:
-            subkeys = step.sub_prefixes
-        else:
-            subkeys = [submodule]
-        # need to loop around submodules (subkeys may have multiple submodules)
-        for subkey in subkeys:
-            # get sub-params
-            subparams = params.get(subkey)
-            # define sub-directory path
-            subdir, subdir_key, desc_key = None, None, None
-            if 'GENERAL.SUBDIRECTORY' in subparams:
-                subdir_key = 'GENERAL.SUBDIRECTORY'
-            elif 'INPUTS.SUBDIRECTORY' in subparams:
-                subdir_key = 'INPUTS.SUBDIRECTORY'
-            # skip if no sub-directory
-            if subdir_key is None:
-                continue
-            # set the sub-directory value
-            subdir = subparams[subdir_key]
-            # get the description from the params instance
-            subdir_inst = params.instances[f'{submodule}.{subdir_key}']
-            if subdir_inst is not None:
-                subdir_desc = subdir_inst.description
-            else:
-                subdir_desc = None
-            # -----------------------------------------------------------------
-            # print process
-            WLOG(params, 'info', '*'*50)
-            subtitle = ('Setting up new sub-directory for '
-                        '{0} module').format(submodule)
-            WLOG(params, 'info', subtitle)
-            WLOG(params, 'info', '*'*50)
-            time.sleep(0.1)
-            # -----------------------------------------------------------------
-            # ask question
-            question = ('For the {0} module, Please enter a new value for {1}  '
-                        '\n\nPrevious value = {2}'
-                        ).format(submodule, subdir_key, subdir)
-            if subdir_desc is not None:
-                question += '\n\n' + subdir_desc
-            # -----------------------------------------------------------------
-            # loop and ask the question
-            while True:
-                if prev is None:
-                    required = True
-                else:
-                    required = False
-
-                value = drs_text.user_input(question, dtype=str,
-                                            required=required, default=prev)
-                # -------------------------------------------------------------
-                # make sure there are no white spaces
-                if any([c.isspace() for c in value]):
-                    WLOG(params, '',
-                         'The value cannot contain any white spaces. Please '
-                         'try again.', no_timestamp=True, colour='yellow')
-                    continue
-
-                if len(value) == 0:
-                    WLOG(params, '',
-                         'The value cannot be empty. Please try again.',
-                         no_timestamp=True, colour='yellow')
-                    continue
-                # -------------------------------------------------------------
-                # make sure there are no special characters other
-                # than underscores
-                char_passed = True
-                for char in string.punctuation:
-                    if char not in VALID_PUNC and char in value:
-                        msg = ('The value cannot contain special characters '
-                               'other than {0}. Please try again.')
-                        margs = [', '.join(VALID_PUNC)]
-                        WLOG(params, '', msg.format(*margs),
-                             no_timestamp=True, colour='yellow')
-                        char_passed = False
-                        break
-                # re-check and ask the question again
-                if not char_passed:
-                    continue
-                # -------------------------------------------------------------
-                # break the loop
-                break
-            # set the new value
-            params.set(key=f'{submodule}.{subdir_key}', value=value,
-                       source='user input')
-            # update prev
-            prev = str(value)
-
+        absolute_path = os.path.abspath(path_value)
+        if os.path.commonpath([previous_root, absolute_path]) != previous_root:
+            continue
+        params.set(key, value=copy.deepcopy(instance.value),
+                   source=f'{__NAME__}.copy_ask_project_name()')
+    params.set('GLOBAL.PROJECT_NAME', value=project_name, source='user input')
     return params
 
 

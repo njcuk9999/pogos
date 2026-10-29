@@ -49,7 +49,7 @@ class PogoDemo():
     date: str
     # Author of the demo
     author: str
-    # id - used for setting sub-directory
+    # id - identifies the demo and selected reduction stages
     id: str
     # url - used for downloading the data
     url: str

@@ -69,6 +69,9 @@ class SossTrappist1bDemo(demos.PogoDemo):
         # =====================================================================
         cgroup = 'GLOBAL'
 
+        self.cdict.set('PROJECT_NAME', group=cgroup, source=__NAME__,
+                   value='DEMO_T1b.20220718.JWST.NIRISS.SOSS')
+
         # Instrument mode i.e. JWST.NIRISS.SOSS or JWST.NIRISS.PRISM
         self.cdict.set('INSTRUMENTMODE', group=cgroup, source=__NAME__,
                        value=self.instrument)
@@ -99,15 +102,6 @@ class SossTrappist1bDemo(demos.PogoDemo):
         # General settings
         # =====================================================================
         cgroup = 'TSOVORE.GENERAL'
-
-        # The sub-directory to use for this TSOVORE run.
-        # This should be descriptive and unique.
-        # It should contain no whitespaces or special
-        # characters other than underscoes
-        # All tsovore data will be stored in
-        #      {GLOBAL.DATA_PATH}/tsovore/{SUBDIRECTORY}/
-        self.cdict.set('SUBDIRECTORY', group=cgroup, source=__NAME__,
-                       value=self.get_prop('id'))
 
         # Description of the TSOVORE run e.g. object name, date of observation,
         # is it a transit or an eclipse etc.
@@ -171,15 +165,6 @@ class SossTrappist1bDemo(demos.PogoDemo):
         # Definition of inputs related to the data
         # =====================================================================
         cgroup = 'SOSSISSE.INPUTS'
-
-        # The sub-directory to use for this SOSSISSE run.
-        # This should be descriptive and unique.
-        # It should contain no whitespaces or special
-        # characters other than underscoes
-        # All sossisse data will be stored in
-        #      {GLOBAL.DATA_PATH}/sossisse/{SUBDIRECTORY}/
-        self.cdict.set('SUBDIRECTORY', group=cgroup, source=__NAME__,
-                       value=self.get_prop('id'))
 
         # Description of the SOSSISSE run e.g. object name, date of observation,
         # is it a transit or an eclipse etc.
@@ -307,14 +292,6 @@ class SossTrappist1bDemo(demos.PogoDemo):
         # =====================================================================
         cgroup = 'SORBET.GENERAL'
 
-        # The sub-directory to use for this SORBET run.
-        # This should be descriptive and unique.
-        # It should contain no whitespaces or special
-        # characters other than underscoes
-        # All sorbet data will be stored in
-        # {GLOBAL.DATA_PATH}/sorbet/{SUBDIRECTORY}/
-        self.cdict.set('SUBDIRECTORY', group=cgroup, source=__NAME__,
-                       value=self.get_prop('id'))
         # Description of the SORBET run e.g. object name, date of observation,
         # is it a transit or an eclipse etc.
         self.cdict.set('DESCRIPTION', group=cgroup, source=__NAME__,

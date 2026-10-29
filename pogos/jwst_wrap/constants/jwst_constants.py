@@ -64,17 +64,6 @@ cgroup = 'GENERAL'
 JWST_CDict.add_group(cgroup, description='General configs for the JWST pipeline',
                      source=__NAME__, user=True, active=True)
 
-# add the sub-directory (used when a default path is required)
-JWST_CDict.add('SUBDIRECTORY', value=None, dtype=str, source=__NAME__,
-               user=True, active=True, group=cgroup, not_none=True,
-               description='The sub-directory to use for this JWST run. '
-                           'This should be descriptive and unique. '
-                           '\nIt should contain no whitespaces or special '
-                           'characters other than underscores.'
-                           '\nAll JWST data will be stored in '
-                           '{GLOBAL.DATA_PATH}/jwst/{SUBDIRECTORY}/'
-                           '\n\nWe suggest {OBJNAME}-{INST.MODE}-{STEP}-{YYYYMMDD}')
-
 # describe what we are running through the JWST pipeline
 JWST_CDict.add('DESCRIPTION', value='', dtype=str, source=__NAME__,
                user=True, active=True, group=cgroup,

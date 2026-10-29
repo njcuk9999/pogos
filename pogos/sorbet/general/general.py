@@ -328,7 +328,7 @@ def run_sorbet_wlcta(params: ParamDict):
     # produce summary html
     stitle = params.get('SORBET.GENERAL.DESCRIPTION', '')
     pogos_io.summary_html(params, 'SORBET:WLCA', 'SORBET.WLCA.PLOT_PATH',
-                          'SORBET.GENERAL.SUBDIRECTORY',
+                          'GLOBAL.PROJECT_NAME',
                           'SORBET.WLCA.OUTPUT_PATH',
                           stitle)
     # return params
@@ -474,7 +474,7 @@ def run_sorbet_slcta(params: ParamDict):
     # produce summary html
     stitle = params.get('SORBET.GENERAL.DESCRIPTION', '')
     pogos_io.summary_html(params, 'SORBET:SLCA', 'SORBET.SLCA.PLOT_PATH',
-                          'SORBET.GENERAL.SUBDIRECTORY',
+                          'GLOBAL.PROJECT_NAME',
                           'SORBET.SLCA.OUTPUT_PATH',
                           stitle)
 
@@ -484,30 +484,27 @@ def run_sorbet_slcta(params: ParamDict):
 
 def prepare_directories(params: ParamDict, method: str, verbose: bool = True):
 
-    sid_path = 'SORBET.GENERAL.SUBDIRECTORY'
-    sid_null = sorbet_core.sorbet_unique_id()
     mode = f'sorbet'
     # -------------------------------------------------------------------------
     # set parameters for preparing directory
     pkind = 'input'
     file_path = f'SORBET.{method}.INPUT_PATH'
     # run the prepare directory function
-    pogos_general.prepare_directory(params, pkind, sid_path, sid_null,
-                                    file_path, mode, verbose=verbose)
+    pogos_general.prepare_directory(params, pkind, file_path, mode,
+                                    verbose=verbose)
     # -------------------------------------------------------------------------
     # prepare the plots directory
     pkind = 'plot'
     file_path = f'SORBET.{method}.PLOT_PATH'
     # run the prepare directory function
-    pogos_general.prepare_directory(params, pkind, sid_path, sid_null,
-                                    file_path, mode, verbose=verbose)
+    pogos_general.prepare_directory(params, pkind, file_path, mode,
+                                    verbose=verbose)
     # -------------------------------------------------------------------------
     # set parameters for preparing directory
     pkind = 'output'
     file_path = f'SORBET.{method}.OUTPUT_PATH'
     # runt the prepare directory function
-    pogos_general.prepare_directory(params, pkind, sid_path, sid_null,
-                                    file_path, mode, verbose)
+    pogos_general.prepare_directory(params, pkind, file_path, mode, verbose)
 
 
 # =============================================================================

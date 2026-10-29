@@ -19,7 +19,7 @@ POGOS flavour convention, the pre-extraction step returns the NAMELESS
 reduction object which is then handed to the extraction step via ``pre_inst``.
 NAMELESS normally stores outputs in a relative ``Reductions/`` directory; here
 we override ``red_dir`` (and its sub-directories) so it acts like the
-eureka_wrap topdir, i.e. {GLOBAL.DATA_PATH}/nameless/{SUBDIRECTORY}.
+eureka_wrap topdir, i.e. {GLOBAL.DATA_PATH}/projects/{GLOBAL.PROJECT_NAME}/nameless.
 
 Created on 2026-06-26
 
@@ -176,7 +176,7 @@ def run_nameless_extract(params: ParamDict,
     #   pre-extraction step to have run previously into the same sub-directory)
     wmsg = ('No NAMELESS pre-extraction instance found. Reconstructing from '
             'disk (requires RUN.PRE_NAMELESS to have been run into the same '
-            'SUBDIRECTORY).')
+            'GLOBAL.PROJECT_NAME).')
     WLOG(params, 'warning', wmsg)
     reduc = build_reduc(params, nameless_mod)
     if reduc is None:
@@ -331,7 +331,7 @@ def discover_files(params: ParamDict, in_path: str):
 def build_reduc(params: ParamDict, nameless_mod):
     """
     Construct a NAMELESS reduction object whose directories point at the POGOS
-    paths (red_dir == topdir == {GLOBAL.DATA_PATH}/nameless/{SUBDIRECTORY}).
+    paths (red_dir == {GLOBAL.DATA_PATH}/projects/{GLOBAL.PROJECT_NAME}/nameless).
 
     :param params: ParamDict, the parameters dictionary
     :param nameless_mod: the imported NAMELESS.nameless module
@@ -395,22 +395,17 @@ def make_nameless_dirs(params: ParamDict):
     # set the function name
     func_name = f'{__NAME__}.make_nameless_dirs()'
     # set basic prepare-directory parameters
-    sid_path = 'NAMELESS.GENERAL.SUBDIRECTORY'
-    sid_null = nameless_unique_id()
     mode = 'nameless'
     # -------------------------------------------------------------------------
     # prepare the input directory (where the uncal files live)
     inkey = 'NAMELESS.PATHS.IN_PATH'
     params.set(inkey, value=str(params['NAMELESS.GENERAL.INPUTDIR']),
                source=func_name)
-    pogos_general.prepare_directory(params, 'input', sid_path, sid_null, inkey,
-                                    mode)
+    pogos_general.prepare_directory(params, 'input', inkey, mode)
     # -------------------------------------------------------------------------
-    # set the reduction (top) directory == {DATA_PATH}/nameless/{SUBDIRECTORY}
-    #   (prepare_directory above guarantees sid_path is now set)
     data_path = params.rget('GLOBAL.DATA_PATH', required=True)
-    subdirectory = params.rget(sid_path, required=True)
-    topdir = os.path.join(data_path, mode, subdirectory)
+    project_name = params.rget('GLOBAL.PROJECT_NAME', required=True)
+    topdir = os.path.join(data_path, 'projects', project_name, mode)
     params.set('NAMELESS.PATHS.TOPDIR', value=topdir, source=func_name)
     # make the top directory
     if not os.path.exists(topdir):

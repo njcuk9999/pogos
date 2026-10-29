@@ -62,20 +62,6 @@ NAMELESS_CDict.add_group(cgroup, description='General configs for NAMELESS '
                                              '(JWST NIRISS/SOSS only)',
                          source=__NAME__, user=True, active=True)
 
-# add the sub-directory (used when a default path is required)
-#   the NAMELESS red_dir (reduction directory) is set to
-#   {GLOBAL.DATA_PATH}/nameless/{SUBDIRECTORY}
-NAMELESS_CDict.add('SUBDIRECTORY', value=None, dtype=str, source=__NAME__,
-                   user=True, active=True, group=cgroup, not_none=True,
-                   description='The sub-directory to use for this NAMELESS run. '
-                               'This should be descriptive and unique. '
-                               '\nIt should contain no whitespaces or special '
-                               'characters other than underscores.'
-                               '\nAll NAMELESS data will be stored in '
-                               '{GLOBAL.DATA_PATH}/nameless/{SUBDIRECTORY}/ '
-                               '(this is the NAMELESS red_dir)'
-                               '\n\nWe suggest {OBJNAME}-SOSS-{STEP}-{YYYYMMDD}')
-
 # describe what we are running through NAMELESS
 NAMELESS_CDict.add('DESCRIPTION', value='', dtype=str, source=__NAME__,
                    user=True, active=True, group=cgroup,

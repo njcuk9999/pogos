@@ -47,17 +47,6 @@ MIRIAM_CDict.title = MIRIAM_CDict.yaml_title('MIRIAM: MIRI Image Analysis '
 cgroup = 'GENERAL'
 MIRIAM_CDict.add_group(cgroup, description='General configs for MIRIAM',
                        source=__NAME__, user=True, active=True)
-# add the sid (to be used when default path required)
-MIRIAM_CDict.add('SUBDIRECTORY', value=None, dtype=str, source=__NAME__,
-                 user=True, active=True, group=cgroup,
-                 description='The sub-directory to use for this MIRIAM run. '
-                             'This should be descriptive and unique. '
-                             '\nIt should contain no whitespaces or special '
-                             'characters other than underscoes.'
-                             '\nAll miriam data will be stored in '
-                             '{GLOBAL.DATA_PATH}/miriam/{SUBDIRECTORY}/'
-                             '\n\nWe suggest {OBJNAME}-{INST.MODE}-{STEP}-{YYYYMMDD}')
-
 # define what we are running through MIRIAM
 MIRIAM_CDict.add('DESCRIPTION', value='', dtype=str, source=__NAME__,
                  user=True, active=True, group=cgroup,
@@ -85,7 +74,7 @@ MIRIAM_CDict.add('TEMP_PATH', value='temporary', dtype=str,
                  description='Temporary result folder or path to the output folder.'
                              '\nIf this is an aboslute path it will be used as is'
                              '\n otherwise it will be relative to '
-                             'GLOBAL.DATA_PATH/miriam/')
+                             '{GLOBAL.DATA_PATH}/projects/{GLOBAL.PROJECT_NAME}/miriam/')
 
 # Output results folder
 MIRIAM_CDict.add('OUTPUT_PATH', value='outputs', dtype=str,
@@ -94,7 +83,7 @@ MIRIAM_CDict.add('OUTPUT_PATH', value='outputs', dtype=str,
                  description='Output result folder or path to the output folder.'
                              '\nIf this is an aboslute path it will be used as is'
                              '\n otherwise it will be relative to '
-                             'GLOBAL.DATA_PATH/miriam/')
+                             '{GLOBAL.DATA_PATH}/projects/{GLOBAL.PROJECT_NAME}/miriam/')
 # the plot path
 MIRIAM_CDict.add('PLOT_PATH', value='plots', dtype=str,
                  source=__NAME__, active=False, user=False, group=cgroup,
@@ -135,8 +124,8 @@ MIRIAM_CDict.add_group(cgroup, source=__NAME__, user=True, active=True,
 fdesc = ('List of files to be processed in form: '
          '\nFILES:\n - file1\n - file2\n - file3'
          '\n\nBy default these should be placed in '
-         '{GLOBAL.DATA_PATH}/{MIRIAM.PATHS.INTPUT_PATH}/'
-         '\n or whatever is set in {MIRIAM.PATHS.INTPUT_PATH} (if absolute)')
+         '{GLOBAL.DATA_PATH}/projects/{GLOBAL.PROJECT_NAME}/miriam/inputs/'
+         '\n or whatever is set in {MIRIAM.PATHS.INPUT_PATH} (if absolute)')
 MIRIAM_CDict.add('FILES', value=None, dtype=list, dtypei=str, not_none=False,
                  source=__NAME__, user=True, active=True, group=cgroup,
                  description=fdesc)

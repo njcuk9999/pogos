@@ -14,7 +14,8 @@
 GLOBAL:
   # The data directory (required)
   #         Default value=None
-  DATA_PATH: /scratch3/jwst/pogos-data/data
+  DATA_PATH: /scratch3/jwst/pogos-data
+  PROJECT_NAME: DEMO-LHS-1140-20240707
   # Instrument mode e.g. one of the following: JWST.NIRISS.SOSS
   #         JWST.NIRISS.FGS
   #         JWST.NIRSPEC.PRISM
@@ -60,9 +61,6 @@ MIRIAM:
   # General configs for SORBET
   # =============================================================================
   GENERAL:
-    # A string ID for the observation (used for default paths etc)
-    #         Default value=None
-    SUBDIRECTORY: DEMO-LHS-1140-MIRIAM-20240707
     # Description of the MIRIAM run
     #         Default value=
     DESCRIPTION: LHS-1140 eclipse observed on 2024-07-07
@@ -92,8 +90,8 @@ MIRIAM:
     #  - file2
     #  - file3
 
-    # By default these should be placed in {GLOBAL.DATA_PATH}/{MIRIAM.PATHS.INTPUT_PATH}/
-    #  or whatever is set in {MIRIAM.PATHS.INTPUT_PATH} (if absolute)
+    # By default these should be placed in {GLOBAL.DATA_PATH}/projects/{GLOBAL.PROJECT_NAME}/miriam/inputs/
+    #  or whatever is set in {MIRIAM.PATHS.INPUT_PATH} (if absolute)
     #         Default value=None
     FILES:
     - jw03730009001_03101_00001-seg001_mirimage_calints.fits

@@ -79,7 +79,7 @@ def main(**kwargs):
     # Print some basic properties to make sure user has correct file
     WLOG(params, 'info', 'Loaded demo file:')
     # print some info loaded from the demo file
-    variables = ['GLOBAL.DEMO_FILE', 'GLOBAL.DATA_PATH',
+    variables = ['GLOBAL.DEMO_FILE', 'GLOBAL.DATA_PATH', 'GLOBAL.PROJECT_NAME',
                  'GLOBAL.INSTRUMENTMODE']
     # determine which submodules are being run
     for step in definitions.RED_STEPS:
@@ -110,9 +110,9 @@ def main(**kwargs):
     params = startup.copy_ask_description(params)
 
     # -------------------------------------------------------------------------
-    # question: new sub-directory
+    # question: new project name
     # -------------------------------------------------------------------------
-    params = startup.copy_ask_subdirectories(params)
+    params = startup.copy_ask_project_name(params)
 
     # -------------------------------------------------------------------------
     # clear out files

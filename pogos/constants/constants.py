@@ -68,6 +68,14 @@ CDict.add('DATA_PATH', value=None, dtype=str,
                       '\nE.g. /home/albert/pogo-data/'
                       '\nE.g. C:\\users\\bob\\pogo-data')
 
+CDict.add('PROJECT_NAME', value=None, dtype=str, not_none=True,
+          source=__NAME__, user=True, active=True, group=cgroup,
+          cmd_arg='project_name',
+          description='Project name shared by all POGOS modules. '
+                      'Run data defaults to '
+                      '{GLOBAL.DATA_PATH}/projects/{GLOBAL.PROJECT_NAME}/<module>/. '
+                      'Repeated runs reuse this project directory.')
+
 # Instrument mode i.e. JWST.NIRISS.SOSS or JWST.NIRISS.PRISM
 instrument_names = [mode.name for mode in definitions.ENABLED_INST_MODES]
 CDict.add('INSTRUMENTMODE', value=None, dtype=str, not_none=True,

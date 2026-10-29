@@ -248,7 +248,7 @@ stub_startup.check_crds = lambda params: None
 stub_startup.check_red_steps = lambda params: None
 stub_startup.check_instrument_modes = lambda params: None
 stub_startup.copy_ask_description = lambda params: params
-stub_startup.copy_ask_subdirectories = lambda params: params
+stub_startup.copy_ask_project_name = lambda params: params
 stub_startup.copy_clear_files = lambda params: {}
 stub_startup.copy_ask_req_module_params = lambda params: params
 

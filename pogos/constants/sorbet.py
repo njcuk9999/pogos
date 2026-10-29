@@ -46,17 +46,6 @@ SORBET_CDict.title = SORBET_CDict.yaml_title('SORBET: Suite Of Reduction tools '
 cgroup = 'GENERAL'
 SORBET_CDict.add_group(cgroup, description='General configs for SORBET',
                 source=__NAME__, user=True, active=True)
-# add the subdirectory (to be used when default path required)
-SORBET_CDict.add('SUBDIRECTORY', value=None, dtype=str, source=__NAME__,
-                 user=True, active=True, group=cgroup,
-                 description='The sub-directory to use for this SORBET run. '
-                             'This should be descriptive and unique. '
-                             '\nIt should contain no whitespaces or special '
-                             'characters other than underscoes.'
-                             '\nAll miriam data will be stored in '
-                             '{GLOBAL.DATA_PATH}/sorbet/{SUBDIRECTORY}/'
-                             '\n\nWe suggest {OBJNAME}-{INST.MODE}-{STEP}-{YYYYMMDD}')
-
 # define what we are running through SORBET
 SORBET_CDict.add('DESCRIPTION', value='', dtype=str, source=__NAME__,
                  user=True, active=True, group=cgroup,
@@ -104,8 +93,8 @@ SORBET_CDict.add('INPUT_PATH', value=f'wlca{os.sep}inputs',
                  dtype=str, source=__NAME__,
                  user=True, active=True, group=cgroup,
                  description='Input data path. If not absolute path'
-                             ' it will be set to GLOBAL.DATA_PATH/'
-                             'sorbet/{SUBDIRECTORY}/wlca/{INPUT_PATH}/')
+                             ' it will be relative to '
+                             '{GLOBAL.DATA_PATH}/projects/{GLOBAL.PROJECT_NAME}/sorbet/.')
 # Input data file
 SORBET_CDict.add('INPUT_FILE', value='white_light_curve.fits', dtype=str,
                  source=__NAME__, user=True, active=True, group=cgroup,
@@ -122,8 +111,7 @@ SORBET_CDict.add('OUTPUT_PATH', value=f'wlca{os.sep}outputs', dtype=str,
                 description='Output result folder or path to the output folder.'
                             '\nIf this is an aboslute path it will be used as is'
                             '\n otherwise it will be relative to '
-                            'GLOBAL.DATA_PATH/sorbet/'
-                            '{SUBDIRECTORY}/wlca/{OUTPUT_PATH}/')
+                            '{GLOBAL.DATA_PATH}/projects/{GLOBAL.PROJECT_NAME}/sorbet/.')
 
 # Whether to use previous juliet files (warning this will mean juliet ignores
 # any updates to parameters set here)
@@ -144,8 +132,7 @@ SORBET_CDict.add('PLOT_PATH', value=f'wlca{os.sep}plots', dtype=str,
                 description='Output plot folder or path to the output folder.'
                             '\nIf this is an aboslute path it will be used as is'
                             '\n otherwise it will be relative to '
-                            'GLOBAL.PLOT_PATH/sorbet/'
-                            '{SUBDIRECTORY}/wlca/{PLOT_PATH}/')
+                            '{GLOBAL.DATA_PATH}/projects/{GLOBAL.PROJECT_NAME}/sorbet/.')
 
 # Juliet parameters
 jps_desc = """
@@ -304,8 +291,8 @@ SORBET_CDict.add('INPUT_PATH', value=f'slca{os.sep}inputs',
                  dtype=str, source=__NAME__,
                  user=True, active=True, group=cgroup,
                  description='Input data path. If not absolute path'
-                             ' it will be set to GLOBAL.DATA_PATH/'
-                             'sorbet/{SUBDIRECTORY}/{INPUT_PATH}/')
+                             ' it will be relative to '
+                             '{GLOBAL.DATA_PATH}/projects/{GLOBAL.PROJECT_NAME}/sorbet/.')
 # Input data file
 SORBET_CDict.add('INPUT_FILE', value=['spectroscopy_light_curves.fits'],
                  dtype=list, source=__NAME__,
@@ -330,8 +317,7 @@ SORBET_CDict.add('OUTPUT_PATH', value=f'slca{os.sep}outputs',
                  description='Output result folder or path to the output folder.'
                              '\nIf this is an aboslute path it will be used as is'
                              '\n otherwise it will be relative to '
-                             'GLOBAL.DATA_PATH/sorbet/'
-                             '{SUBDIRECTORY}/slca/{OUTPUT_PATH}/')
+                             '{GLOBAL.DATA_PATH}/projects/{GLOBAL.PROJECT_NAME}/sorbet/.')
 
 # Whether to use previous juliet files (warning this will mean juliet ignores
 # any updates to parameters set here)
@@ -352,8 +338,7 @@ SORBET_CDict.add('PLOT_PATH', value=f'slca{os.sep}plots',  dtype=str,
                 description='Output plot folder or path to the output folder.'
                             '\nIf this is an aboslute path it will be used as is'
                             '\n otherwise it will be relative to '
-                            'GLOBAL.PLOT_PATH/sorbet/'
-                            '{SUBDIRECTORY}/wlca/{PLOT_PATH}/')
+                            '{GLOBAL.DATA_PATH}/projects/{GLOBAL.PROJECT_NAME}/sorbet/.')
 
 # Resolution to bin the spectral light curves
 SORBET_CDict.add('RESOLUTION_BIN', value=100, dtype=int, source=__NAME__,

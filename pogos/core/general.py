@@ -96,36 +96,43 @@ def unix_char_code() -> Tuple[float, str, str]:
     return unixtime, humantime, rval
 
 
-def prepare_directory(params: ParamDict, pkind: str, sid_path: str,
-                      sid_null: str, file_path: str, pmode: str,
+def prepare_directory(params: ParamDict, pkind: str, file_path: str, pmode: str,
                       verbose: bool = True):
     """
     Prepare either an input or output directory for use in POGOS
     :param params:
     :param pkind:
-    :param sid_path:
     :param file_path:
-    :param mode:
+    :param pmode:
+    :param verbose:
     :return:
     """
     func_name = f'{__NAME__}.prepare_directory()'
-    # generate SUBDIRECTORY if not given
-    if params[sid_path] is None:
-        params[sid_path] = sid_null
     # get the output path from the params
     path_constant = params[file_path]
     # get this to inputs by default
-    if os.path.exists(os.path.realpath(path_constant)):
-        my_path = os.path.realpath(path_constant)
+    if path_constant is not None and os.path.isabs(path_constant):
+        my_path = os.path.abspath(path_constant)
     else:
         data_path = params.rget('GLOBAL.DATA_PATH', required=True)
-        subdirectory = params.rget(sid_path, required=True)
+        project_name = params.rget('GLOBAL.PROJECT_NAME', required=True)
+        if (not isinstance(project_name, str) or not project_name
+                or project_name in {'.', '..'}
+                or any(char.isspace() or not char.isprintable()
+                       for char in project_name)
+                or any(char in string.punctuation and char not in '-+._'
+                       for char in project_name)):
+            raise base.PogosException(
+                'GLOBAL.PROJECT_NAME must be a nonempty directory name, not "." '
+                'or "..", without whitespace or separators; allowed punctuation '
+                'is -+._.')
         if path_constant is None:
             my_path = pkind
         else:
             my_path = str(path_constant)
         # if not, make it relative to the global database
-        my_path = os.path.join(data_path, pmode, subdirectory, my_path)
+        my_path = os.path.abspath(os.path.join(data_path, 'projects',
+                               project_name, pmode, my_path))
     # make sure the path is in the params
     if not os.path.exists(my_path):
         os.makedirs(my_path)

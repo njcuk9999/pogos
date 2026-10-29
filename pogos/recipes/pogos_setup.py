@@ -43,7 +43,7 @@ WLOG = drs_log.wlog
 # set description
 __description__ = ('Setup the POGOS recipes starting from a demo.'
                    'Creates a configuration (yaml) file and a file structure')
-__inputs__ = ['GLOBAL.YAML_FILE', 'GLOBAL.DATA_PATH',
+__inputs__ = ['GLOBAL.YAML_FILE', 'GLOBAL.DATA_PATH', 'GLOBAL.PROJECT_NAME',
               'GLOBAL.LOCAL_DOWNLOAD_DATA', 'GLOBAL.DEMO_SYMLINK_DATA',
               'GLOBAL.INSTRUMENT_SELECT', 'GLOBAL.INSTRUMENT_MODE',
               'GLOBAL.PREEXTRACT_STEP', 'GLOBAL.EXTRACT_STEP',

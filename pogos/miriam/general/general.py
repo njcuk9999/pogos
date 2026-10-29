@@ -116,7 +116,7 @@ def run_miriam(params: ParamDict, pre_inst: Dict[str, Any]) -> ParamDict:
     # produce summary html
     stitle = params.get('MIRIAM.GENERAL.DESCRIPTION', '')
     pogos_io.summary_html(params, 'MIRIAM', 'MIRIAM.PATHS.PLOT_PATH',
-                          'MIRIAM.GENERAL.SUBDIRECTORY',
+                          'GLOBAL.PROJECT_NAME',
                           'MIRIAM.PATHS.OUTPUT_PATH',
                           stitle)
     # return output params
@@ -145,35 +145,29 @@ def setup_miriam_module(params: ParamDict) -> ParamDict:
 
 def prepare_directories(params: ParamDict):
 
-    sid_path = 'MIRIAM.GENERAL.SUBDIRECTORY'
-    sid_null = mc_general.miriam_unique_id()
     mode = 'miriam'
     # -------------------------------------------------------------------------
     # set parameters for preparing directory
     pkind = 'input'
     file_path = f'MIRIAM.PATHS.INPUT_PATH'
     # run the prepare directory function
-    pogos_general.prepare_directory(params, pkind, sid_path, sid_null,
-                                    file_path, mode)
+    pogos_general.prepare_directory(params, pkind, file_path, mode)
     # -------------------------------------------------------------------------
     pkind = 'temp'
     file_path = f'MIRIAM.PATHS.TEMP_PATH'
     # run the prepare directory function
-    pogos_general.prepare_directory(params, pkind, sid_path, sid_null,
-                                    file_path, mode)
+    pogos_general.prepare_directory(params, pkind, file_path, mode)
     # -------------------------------------------------------------------------
     pkind = 'plot'
     file_path = f'MIRIAM.PATHS.PLOT_PATH'
     # runt the prepare directory function
-    pogos_general.prepare_directory(params, pkind, sid_path, sid_null,
-                                    file_path, mode)
+    pogos_general.prepare_directory(params, pkind, file_path, mode)
     # -------------------------------------------------------------------------
     # set parameters for preparing directory
     pkind = 'output'
     file_path = f'MIRIAM.PATHS.OUTPUT_PATH'
     # runt the prepare directory function
-    pogos_general.prepare_directory(params, pkind, sid_path, sid_null,
-                                    file_path, mode)
+    pogos_general.prepare_directory(params, pkind, file_path, mode)
 
 
 def tsovore_input(params: ParamDict,

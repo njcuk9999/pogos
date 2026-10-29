@@ -1,5 +1,28 @@
+import pytest
+
+from aperocore.constants.param_functions import ParamDict
+
 from pogos.core.general import make_step_result
 from pogos.nameless_wrap.core import general
+
+
+@pytest.mark.parametrize('absolute_input', [False, True])
+def test_make_nameless_dirs_uses_global_project(tmp_path, absolute_input):
+    inputdir = str(tmp_path / 'external') if absolute_input else 'input'
+    params = ParamDict({
+        'GLOBAL.DATA_PATH': str(tmp_path),
+        'GLOBAL.PROJECT_NAME': 'shared-project',
+        'NAMELESS.GENERAL.INPUTDIR': inputdir,
+    })
+
+    general.make_nameless_dirs(params)
+
+    topdir = tmp_path / 'projects' / 'shared-project' / 'nameless'
+    expected_input = tmp_path / 'external' if absolute_input else topdir / 'input'
+    assert params['NAMELESS.PATHS.TOPDIR'] == str(topdir)
+    assert params['NAMELESS.PATHS.IN_PATH'] == str(expected_input)
+    assert topdir.is_dir()
+    assert expected_input.is_dir()
 
 
 def test_check_soss_returns_true_for_supported_mode():

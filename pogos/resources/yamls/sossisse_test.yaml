@@ -15,7 +15,8 @@
 GLOBAL:
   # The data directory (required)
   #         Default value=None
-  DATA_PATH: /scratch3/jwst/pogos-data/data
+  DATA_PATH: /scratch3/jwst/pogos-data
+  PROJECT_NAME: SID-00017472301470485360-MF6R
   # Instrument mode e.g. one of the following: JWST.NIRISS.SOSS
   # JWST.NIRISS.FGS
   #         JWST.NIRSPEC.PRISM
@@ -76,12 +77,7 @@ SOSSISSE:
   INPUTS:
     # The data directory
     #         Default value=None
-    SOSSIOPATH: /scratch3/jwst/pogos-data/data/sossisse
-    # Set the SOSSISSE ID (SUBDIRECTORY) for using the same directory as before if left as None
-    # the code will work out whether this yaml is found before or whether we need to
-    # create a new SUBDIRECTORY
-    #         Default value=None
-    SUBDIRECTORY: SID-00017472301470485360-MF6R
+    SOSSIOPATH: /scratch3/jwst/pogos-data
     # Log level (DEBUG, INFO, WARNING, ERROR, NONE)
     #         Default value=INFO
     LOG_LEVEL: INFO

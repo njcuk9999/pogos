@@ -52,6 +52,8 @@ DOWNLOAD['TSOVORE.INPUTS.FILES'] = 'TSOVORE.PATHS.INPUT_PATH'
 # global settings (generally don't touch these)
 # =============================================================================
 cgroup = 'GLOBAL'
+Cdict.set('PROJECT_NAME', group=cgroup, source=__NAME__,
+          value='DEMO_LHS_1140_JWST.MIRI.IM_20240707')
 
 # Instrument mode i.e. JWST.NIRISS.SOSS or JWST.NIRISS.PRISM
 Cdict.set('INSTRUMENTMODE', group=cgroup, source=__NAME__,
@@ -82,13 +84,6 @@ Cdict.set('SORBET', group=cgroup, source=__NAME__,
 # General settings
 # =============================================================================
 cgroup = 'TSOVORE.GENERAL'
-
-# The sub-directory to use for this TSOVORE run.
-# This should be descriptive and unique.
-# It should contain no whitespaces or special
-# characters other than underscoes
-# All tsovore data will be stored in {GLOBAL.DATA_PATH}/tsovore/{SUBDIRECTORY}/
-Cdict.set('SUBDIRECTORY', group=cgroup, source=__NAME__, value=INFO['id'])
 
 # Description of the MIRIAM run e.g. object name, date of observation, 
 # is it a transit or an eclipse etc.
@@ -124,13 +119,6 @@ Cdict.set('REMOVE_INTERMEDIATES', group=cgroup, source=__NAME__,
 # General settings
 # =============================================================================
 cgroup = 'MIRIAM.GENERAL'
-
-# The sub-directory to use for this MIRIAM run. 
-# This should be descriptive and unique.
-# It should contain no whitespaces or special
-# characters other than underscoes
-# All miriam data will be stored in {GLOBAL.DATA_PATH}/miriam/{SUBDIRECTORY}/
-Cdict.set('SUBDIRECTORY', group=cgroup, source=__NAME__, value=INFO['id'])
 
 # Description of the MIRIAM run e.g. object name, date of observation, 
 # is it a transit or an eclipse etc.

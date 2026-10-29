@@ -55,6 +55,8 @@ DOWNLOAD['SOSSISSE.GENERAL.POS_FILE'] = 'SOSSISSE.PATHS.CALIBPATH'
 # global settings (generally don't touch these)
 # =============================================================================
 cgroup = 'GLOBAL'
+Cdict.set('PROJECT_NAME', group=cgroup, source=__NAME__,
+          value='DEMO_T1b_JWST.NIRISS.SOSS_20220718')
 
 # Instrument mode i.e. JWST.NIRISS.SOSS or JWST.NIRISS.PRISM
 Cdict.set('INSTRUMENTMODE', group=cgroup, source=__NAME__,
@@ -98,13 +100,6 @@ Cdict.set('SPECTRAL_EXTRACTION', group=cgroup, source=__NAME__,
 # Definition of inputs related to the data
 # =============================================================================
 cgroup = 'SOSSISSE.INPUTS'
-
-# The sub-directory to use for this SOSSISSE run.
-# This should be descriptive and unique.
-# It should contain no whitespaces or special
-# characters other than underscoes
-# All sossisse data will be stored in {GLOBAL.DATA_PATH}/sossisse/{SUBDIRECTORY}/
-Cdict.set('SUBDIRECTORY', group=cgroup, source=__NAME__, value=INFO['id'])
 
 # Description of the SOSSISSE run e.g. object name, date of observation,
 # is it a transit or an eclipse etc.
@@ -230,12 +225,6 @@ cgroup = 'SOSSISSE.SPEC_EXT'
 # General SORBET settings
 # =============================================================================
 cgroup = 'SORBET.GENERAL'
-# The sub-directory to use for this SORBET run.
-# This should be descriptive and unique.
-# It should contain no whitespaces or special
-# characters other than underscoes
-# All sorbet data will be stored in {GLOBAL.DATA_PATH}/sorbet/{SUBDIRECTORY}/
-Cdict.set('SUBDIRECTORY', group=cgroup, source=__NAME__, value=INFO['id'])
 # Description of the SORBET run e.g. object name, date of observation,
 # is it a transit or an eclipse etc.
 Cdict.set('DESCRIPTION', group=cgroup, source=__NAME__,

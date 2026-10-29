@@ -106,35 +106,29 @@ def setup_tsovore_module(params: ParamDict):
 
 def prepare_directories(params: ParamDict):
 
-    sid_path = 'TSOVORE.GENERAL.SUBDIRECTORY'
-    sid_null = tsovore_unique_id()
     mode = 'tsovore'
     # -------------------------------------------------------------------------
     # set parameters for preparing directory
     pkind = 'input'
     file_path = f'TSOVORE.PATHS.INPUT_PATH'
     # run the prepare directory function
-    pogos_general.prepare_directory(params, pkind, sid_path, sid_null,
-                                    file_path, mode)
+    pogos_general.prepare_directory(params, pkind, file_path, mode)
     # -------------------------------------------------------------------------
     pkind = 'temp'
     file_path = f'TSOVORE.PATHS.TEMP_PATH'
     # run the prepare directory function
-    pogos_general.prepare_directory(params, pkind, sid_path, sid_null,
-                                    file_path, mode)
+    pogos_general.prepare_directory(params, pkind, file_path, mode)
     # -------------------------------------------------------------------------
     pkind = 'plot'
     file_path = f'TSOVORE.PATHS.PLOT_PATH'
     # runt the prepare directory function
-    pogos_general.prepare_directory(params, pkind, sid_path, sid_null,
-                                    file_path, mode)
+    pogos_general.prepare_directory(params, pkind, file_path, mode)
     # -------------------------------------------------------------------------
     # set parameters for preparing directory
     pkind = 'output'
     file_path = f'TSOVORE.PATHS.OUTPUT_PATH'
     # runt the prepare directory function
-    pogos_general.prepare_directory(params, pkind, sid_path, sid_null,
-                                    file_path, mode)
+    pogos_general.prepare_directory(params, pkind, file_path, mode)
 
 # =============================================================================
 # Start of code

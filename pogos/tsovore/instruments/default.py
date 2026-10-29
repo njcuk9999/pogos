@@ -125,7 +125,8 @@ class Instrument:
         outdir = self.tparams.rget('PATHS.OUTPUT_PATH', required=True)
         # setup title
         title = f'TSOVORE Flow'
-        title += f'\n{self.tparams["GENERAL.SUBDIRECTORY"]}'
+        project_name = self.params.rget('GLOBAL.PROJECT_NAME', required=True)
+        title += f'\n{project_name}'
         title += f'\n{self.tparams["GENERAL.DESCRIPTION"]}'
 
         # starting box

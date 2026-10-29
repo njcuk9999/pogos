@@ -328,13 +328,11 @@ def make_jwst_dirs(params: ParamDict, stage: int = None):
     # set the function name
     func_name = f'{__NAME__}.make_jwst_dirs()'
     # set basic prepare-directory parameters
-    sid_path = 'STD_JWST.GENERAL.SUBDIRECTORY'
-    sid_null = jwst_unique_id()
     mode = 'jwst'
     data_path = params.rget('GLOBAL.DATA_PATH', required=True)
-    subdirectory = params.rget(sid_path, required=True)
+    project_name = params.rget('GLOBAL.PROJECT_NAME', required=True)
     # set topdir
-    topdir = os.path.join(data_path, mode, subdirectory)
+    topdir = os.path.join(data_path, 'projects', project_name, mode)
     # Deal with the stages
     for _stage in [1, 2, 3]:
         if stage in [None, _stage]:
@@ -348,10 +346,8 @@ def make_jwst_dirs(params: ParamDict, stage: int = None):
             params.set(pogos_inkey, value=j_inpath, source=func_name)
             params.set(pogos_outkey, value=j_outpath, source=func_name)
             # run the prepare directory function for input and output
-            pogos_general.prepare_directory(params, 'input', sid_path,
-                                            sid_null, pogos_inkey, mode)
-            pogos_general.prepare_directory(params, 'output', sid_path,
-                                            sid_null, pogos_outkey, mode)
+            pogos_general.prepare_directory(params, 'input', pogos_inkey, mode)
+            pogos_general.prepare_directory(params, 'output', pogos_outkey, mode)
             # set the top path
             params.set(f'STD_JWST.STAGE{_stage}.topdir', value=topdir,
                        source=func_name)
