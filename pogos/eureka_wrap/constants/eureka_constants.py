@@ -10,19 +10,18 @@ Created on 2024-10-29 at 09:30
 @author: cook
 """
 
+from importlib import metadata
+
 from aperocore.constants import constant_functions
 
 from pogos.core import base
 
-
+# read version from metadata: importing eureka itself takes several seconds
 try:
-    import eureka
-    eversion = eureka.__version__
-    edate = 'Unknown'
-
-except ImportError:
-    eversion  = 'Unknown'
-    edate = 'Unknown'
+    eversion = metadata.version('eureka-bang')
+except metadata.PackageNotFoundError:
+    eversion = 'Unknown'
+edate = 'Unknown'
 
 # =============================================================================
 # Define variables

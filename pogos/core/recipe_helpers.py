@@ -3,16 +3,62 @@
 """Shared helpers used by thin top-level POGOS recipes."""
 import os
 import sys
+import time
 from importlib import import_module
-from typing import Iterable, Tuple
 
 from aperocore.constants import load_functions
 from aperocore.core import drs_text
 
+from pogos.core import definitions
 
-def load_modules(names: Iterable[str]) -> Tuple[object, ...]:
-    """Import POGOS submodules lazily and return them in input order."""
-    return tuple(import_module(f'pogos.{name}') for name in names)
+# Module setup order: (steps enabling it, backend name, setup function name)
+SETUP_STEPS = (
+    ((definitions.TSOVORE,), 'tsovore', 'setup_tsovore_module'),
+    ((definitions.PRE_EUREKA,), 'eureka_wrap', 'setup_eureka_pre_extract'),
+    ((definitions.PRE_JWST,), 'jwst_wrap', 'setup_jwst_pre_extract'),
+    ((definitions.PRE_NAMELESS,), 'nameless_wrap',
+     'setup_nameless_pre_extract'),
+    ((definitions.SOSSISSE,), 'sossisse_wrap', 'setup_sossisse_module'),
+    ((definitions.MIRIAM,), 'miriam', 'setup_miriam_module'),
+    ((definitions.EXT_EUREKA,), 'eureka_wrap', 'setup_eureka_extract'),
+    ((definitions.EXT_JWST,), 'jwst_wrap', 'setup_jwst_extract'),
+    ((definitions.EXT_NAMELESS,), 'nameless_wrap', 'setup_nameless_extract'),
+    ((definitions.SORBET_WLCA, definitions.SORBET_SLCA), 'sorbet',
+     'setup_sorbet_module'),
+    ((definitions.POST_EUREKA,), 'eureka_wrap', 'setup_eureka_post_extract'),
+    ((definitions.POST_JWST,), 'jwst_wrap', 'setup_jwst_post_extract'),
+)
+
+
+def load_module(params, name: str, logger):
+    """Import one POGOS backend on first use and log how long it took."""
+    module_name = f'pogos.{name}'
+    if module_name in sys.modules:
+        return sys.modules[module_name]
+    logger(params, '', f'Loading {module_name}')
+    start = time.time()
+    module = import_module(module_name)
+    logger(params, '', f'Loaded {module_name} in {time.time() - start:.1f} s')
+    return module
+
+
+def any_enabled(params, steps) -> bool:
+    """Return whether any of the given reduction steps is enabled."""
+    return any(step.is_enabled(params) for step in steps)
+
+
+def setup_enabled_modules(params, cdict, logger):
+    """Run module setup only for enabled steps, importing backends lazily."""
+    for steps, name, func_name in SETUP_STEPS:
+        if not any_enabled(params, steps):
+            continue
+        module = load_module(params, name, logger)
+        setup_func = getattr(module, func_name)
+        if name == 'sossisse_wrap':
+            setup_func(params, cdict)
+        else:
+            params = setup_func(params)
+    return params
 
 
 def allow_stale_yaml_version(params, yaml_file: str, version: str,

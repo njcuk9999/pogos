@@ -11,6 +11,7 @@ Created on 2024-10-29 at 09:32
 """
 import os
 import sys
+import time
 from pathlib import Path
 
 # Fail fast if local folders would shadow installed packages.
@@ -60,12 +61,10 @@ WLOG = drs_log.wlog
 def main(**kwargs):
     # print splash
     general.start_splash('POGOS')
-    (tsovore, sossisse_wrap, miriam, sorbet,
-     jwst_wrap, nameless_wrap, eureka_wrap) = recipe_helpers.load_modules(
-        ['tsovore', 'sossisse_wrap', 'miriam', 'sorbet',
-         'jwst_wrap', 'nameless_wrap', 'eureka_wrap'])
     # quick_args functionality
     if startup.quick_args(sys.argv): return
+    WLOG(None, '', 'Initialising POGOS parameters')
+    start = time.time()
     # get other configs (either internal like SORBET or external like SOSSISSE)
     other_const = startup.initial_setup()
     # get parameters
@@ -77,6 +76,7 @@ def main(**kwargs):
                                            from_file=False,
                                            external_const=other_const,
                                            kwargs=kwargs)
+    WLOG(params, '', f'Parameters initialised in {time.time() - start:.1f} s')
     # get yaml path and run interactive version check gate
     yaml_file = load_functions.get_param_file(params, 'GLOBAL.YAML_FILE',
                                               __NAME__)
@@ -123,27 +123,33 @@ def main(**kwargs):
     # =========================================================================
     # Need to store all the pre-extraction instances in a dictionary so that
     # they can be passed to the extraction steps and used to determine inputs
+    # Backends are imported only when their step is enabled.
     pre_inst = dict()
     # run tsovore
     if definitions.TSOVORE.is_enabled(params):
+        tsovore = recipe_helpers.load_module(params, 'tsovore', WLOG)
         pre_inst['tsovore'] = tsovore.run_tsovore(params)
     else:
         pre_inst['tsovore'] = None
     # -------------------------------------------------------------------------
     # run pre-eureka
     if definitions.PRE_EUREKA.is_enabled(params):
+        eureka_wrap = recipe_helpers.load_module(params, 'eureka_wrap', WLOG)
         pre_inst['pre_eureka'] = eureka_wrap.run_eureka_pre_extract(params)
     else:
         pre_inst['pre_eureka'] = None
     # -------------------------------------------------------------------------
     # run pre jwst
     if definitions.PRE_JWST.is_enabled(params):
+        jwst_wrap = recipe_helpers.load_module(params, 'jwst_wrap', WLOG)
         pre_inst['pre_jwst'] = jwst_wrap.run_jwst_pre_extract(params)
     else:
         pre_inst['pre_jwst'] = None
     # -------------------------------------------------------------------------
     # run NAMELESS
     if definitions.PRE_NAMELESS.is_enabled(params):
+        nameless_wrap = recipe_helpers.load_module(params, 'nameless_wrap',
+                                                   WLOG)
         pre_inst['pre_nameless'] = nameless_wrap.run_nameless_pre_extract(params)
     else:
         pre_inst['pre_nameless'] = None
@@ -164,6 +170,7 @@ def main(**kwargs):
     # -------------------------------------------------------------------------
     # run eureka
     if definitions.EXT_EUREKA.is_enabled(params):
+        eureka_wrap = recipe_helpers.load_module(params, 'eureka_wrap', WLOG)
         ext_inst['ext_eureka'] = eureka_wrap.run_eureka_extract(params,
                                                                 pre_inst)
     else:
@@ -171,12 +178,15 @@ def main(**kwargs):
     # -------------------------------------------------------------------------
     # run jwst
     if definitions.EXT_JWST.is_enabled(params):
+        jwst_wrap = recipe_helpers.load_module(params, 'jwst_wrap', WLOG)
         ext_inst['ext_jwst'] = jwst_wrap.run_jwst_extract(params, pre_inst)
     else:
         ext_inst['ext_jwst']  = None
     # -------------------------------------------------------------------------
     # run nameless
     if definitions.EXT_NAMELESS.is_enabled(params):
+        nameless_wrap = recipe_helpers.load_module(params, 'nameless_wrap',
+                                                   WLOG)
         ext_inst['ext_nameless'] = nameless_wrap.run_nameless_extract(params,
                                                                       pre_inst)
     else:
@@ -184,12 +194,15 @@ def main(**kwargs):
     # -------------------------------------------------------------------------
     # run sossisse_wrap
     if definitions.SOSSISSE.is_enabled(params):
+        sossisse_wrap = recipe_helpers.load_module(params, 'sossisse_wrap',
+                                                   WLOG)
         ext_inst['sossisse'] = sossisse_wrap.run_sossisse(params, pre_inst)
     else:
         ext_inst['sossisse'] = None
     # -------------------------------------------------------------------------
     # run miriam
     if definitions.MIRIAM.is_enabled(params):
+        miriam = recipe_helpers.load_module(params, 'miriam', WLOG)
         ext_inst['miriam'] = miriam.run_miriam(params, pre_inst)
     else:
         ext_inst['miriam'] = None
@@ -198,15 +211,19 @@ def main(**kwargs):
     # Post-extraction steps
     # =========================================================================
     # run sorbet
-    if sorbet.any_sorbet_run(params):
+    sorbet_steps = (definitions.SORBET_WLCA, definitions.SORBET_SLCA)
+    if recipe_helpers.any_enabled(params, sorbet_steps):
+        sorbet = recipe_helpers.load_module(params, 'sorbet', WLOG)
         sorbet.run_sorbet(params, ext_inst)
     # -------------------------------------------------------------------------
     # run eureka post-extraction steps
     if definitions.POST_EUREKA.is_enabled(params):
+        eureka_wrap = recipe_helpers.load_module(params, 'eureka_wrap', WLOG)
         eureka_wrap.run_eureka_post_extract(params, ext_inst)
     # -------------------------------------------------------------------------
     # run jwst post-extraction steps
     if definitions.POST_JWST.is_enabled(params):
+        jwst_wrap = recipe_helpers.load_module(params, 'jwst_wrap', WLOG)
         jwst_wrap.run_jwst_post_extract(params, ext_inst)
     # -------------------------------------------------------------------------
     # print splash

@@ -10,6 +10,7 @@ Created on 2024-10-29 at 09:32
 @author: cook
 """
 import sys
+import time
 from pathlib import Path
 
 # Fail fast if local folders would shadow installed packages.
@@ -65,10 +66,8 @@ def main(**kwargs):
 def __main__(**kwargs):
     # print splash
     general.start_splash('POGOS Setup')
-    (tsovore, eureka_wrap, jwst_wrap, nameless_wrap,
-     sossisse_wrap, miriam, sorbet) = recipe_helpers.load_modules(
-        ['tsovore', 'eureka_wrap', 'jwst_wrap', 'nameless_wrap',
-         'sossisse_wrap', 'miriam', 'sorbet'])
+    WLOG(None, '', 'Initialising POGOS parameters')
+    start = time.time()
     # get other configs (either internal like SORBET or external like SOSSISSE)
     other_const = startup.initial_setup()
     # get parameters
@@ -79,27 +78,13 @@ def __main__(**kwargs):
                                            from_file=False,
                                            external_const=other_const,
                                            kwargs=kwargs)
+    WLOG(params, '', f'Parameters initialised in {time.time() - start:.1f} s')
     # -------------------------------------------------------------------------
     # setup using parameters
     cdict = startup.setup(params)
     # -------------------------------------------------------------------------
-    # setup pre-extract modules
-    params = tsovore.setup_tsovore_module(params)
-    params = eureka_wrap.setup_eureka_pre_extract(params)
-    params = jwst_wrap.setup_jwst_pre_extract(params)
-    params = nameless_wrap.setup_nameless_pre_extract(params)
-
-    # setup extract modules
-    sossisse_wrap.setup_sossisse_module(params, cdict)
-    params = miriam.setup_miriam_module(params)
-    params = eureka_wrap.setup_eureka_extract(params)
-    params = jwst_wrap.setup_jwst_extract(params)
-    params = nameless_wrap.setup_nameless_extract(params)
-
-    # setup post-extract modules
-    params = sorbet.setup_sorbet_module(params)
-    params = eureka_wrap.setup_eureka_post_extract(params)
-    params = jwst_wrap.setup_jwst_post_extract(params)
+    # setup enabled pre-extract, extract and post-extract modules
+    params = recipe_helpers.setup_enabled_modules(params, cdict, WLOG)
 
     # -------------------------------------------------------------------------
     # get the demo local value

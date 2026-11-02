@@ -1,6 +1,12 @@
+from importlib import import_module
+
 from pogos.recipes import pogos_run
 from pogos.recipes import pogos_setup
 from pogos.core import definitions
+
+
+def _load_backends(names):
+    return {name: import_module(f'pogos.{name}') for name in names}
 
 
 def test_pogos_setup_main_orchestrates_setup_steps(monkeypatch):
@@ -11,13 +17,19 @@ def test_pogos_setup_main_orchestrates_setup_steps(monkeypatch):
         "GLOBAL.YAML_FILE": "/tmp/pogos.yaml",
     }
     params.update({step.run_key: False for step in definitions.RED_STEPS})
-    modules = pogos_setup.recipe_helpers.load_modules(
+    params[definitions.SOSSISSE.run_key] = True
+    backends = _load_backends(
         ['tsovore', 'eureka_wrap', 'jwst_wrap', 'nameless_wrap',
          'sossisse_wrap', 'miriam', 'sorbet'])
-    (tsovore, eureka_wrap, jwst_wrap, nameless_wrap,
-     sossisse_wrap, miriam, sorbet) = modules
-    monkeypatch.setattr(pogos_setup.recipe_helpers, 'load_modules',
-                        lambda names: modules)
+    tsovore = backends['tsovore']
+    eureka_wrap = backends['eureka_wrap']
+    sossisse_wrap = backends['sossisse_wrap']
+    miriam = backends['miriam']
+    sorbet = backends['sorbet']
+    loaded = []
+    monkeypatch.setattr(
+        pogos_setup.recipe_helpers, 'load_module',
+        lambda in_params, name, logger: loaded.append(name) or backends[name])
 
     monkeypatch.setattr(pogos_setup.general, "start_splash", lambda name: calls.append(("start", name)))
     monkeypatch.setattr(pogos_setup.general, "end_splash", lambda: calls.append(("end", None)))
@@ -92,6 +104,7 @@ def test_pogos_setup_main_orchestrates_setup_steps(monkeypatch):
     assert ("start", "POGOS Setup") in calls
     assert ("get_all_params", {"yamlfile": "/tmp/pogos.yaml", "instrument_select": 1, "instrument_mode": 1, "preextract_step": 1, "extract_step": 1, "postextract_step": "1"}) in calls
     assert ("sossisse", True, True) in calls
+    assert loaded == ['sossisse_wrap']
     assert ("download", True, "/tmp/demo", True) in calls
     assert ("check_crds", True) in calls
     assert ("end", None) in calls
@@ -116,12 +129,13 @@ def test_pogos_run_main_routes_instances_between_steps(monkeypatch):
         "RUN.SORBET.WLCA": False,
         "RUN.SORBET.SLCA": False,
     }
-    modules = pogos_run.recipe_helpers.load_modules(
-        ['tsovore', 'sossisse_wrap', 'miriam', 'sorbet',
-         'jwst_wrap', 'nameless_wrap', 'eureka_wrap'])
-    tsovore, sossisse_wrap, _, sorbet, _, _, _ = modules
-    monkeypatch.setattr(pogos_run.recipe_helpers, 'load_modules',
-                        lambda names: modules)
+    backends = _load_backends(['tsovore', 'sossisse_wrap'])
+    tsovore = backends['tsovore']
+    sossisse_wrap = backends['sossisse_wrap']
+    loaded = []
+    monkeypatch.setattr(
+        pogos_run.recipe_helpers, 'load_module',
+        lambda in_params, name, logger: loaded.append(name) or backends[name])
 
     calls = []
     monkeypatch.setattr(pogos_run.general, "start_splash", lambda name: calls.append(("start", name)))
@@ -144,10 +158,10 @@ def test_pogos_run_main_routes_instances_between_steps(monkeypatch):
             ("run_sossisse", in_params is params, pre_inst.get("tsovore") is tsovore_inst)
         ) or {"name": "sossisse-inst"},
     )
-    monkeypatch.setattr(sorbet, "any_sorbet_run", lambda in_params: False)
 
     pogos_run.main(yamlfile="/tmp/pogos.yaml")
 
+    assert loaded == ['tsovore', 'sossisse_wrap']
     assert ("start", "POGOS") in calls
     assert ("run_tsovore", True) in calls
     assert ("run_sossisse", True, True) in calls

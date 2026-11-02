@@ -59,10 +59,6 @@ WLOG = drs_log.wlog
 def main(**kwargs):
     # print splash
     general.start_splash('POGOS Copy')
-    (tsovore, eureka_wrap, jwst_wrap, nameless_wrap,
-     sossisse_wrap, miriam, sorbet) = recipe_helpers.load_modules(
-        ['tsovore', 'eureka_wrap', 'jwst_wrap', 'nameless_wrap',
-         'sossisse_wrap', 'miriam', 'sorbet'])
     # listing functionality
     if startup.quick_args(sys.argv): return
     # get other configs (either internal like SORBET or external like SOSSISSE)
@@ -128,21 +124,8 @@ def main(**kwargs):
     # setup using parameters (same as pogos_setup)
     cdict = startup.setup(params, start_from_demo=False)
     # -------------------------------------------------------------------------
-    # setup individual modules (same as pogos_setup)
-    params = tsovore.setup_tsovore_module(params)
-    params = eureka_wrap.setup_eureka_pre_extract(params)
-    params = jwst_wrap.setup_jwst_pre_extract(params)
-    params = nameless_wrap.setup_nameless_pre_extract(params)
-
-    sossisse_wrap.setup_sossisse_module(params, cdict)
-    params = miriam.setup_miriam_module(params)
-    params = eureka_wrap.setup_eureka_extract(params)
-    params = jwst_wrap.setup_jwst_extract(params)
-    params = nameless_wrap.setup_nameless_extract(params)
-
-    params = sorbet.setup_sorbet_module(params)
-    params = eureka_wrap.setup_eureka_post_extract(params)
-    params = jwst_wrap.setup_jwst_post_extract(params)
+    # setup enabled modules (same as pogos_setup)
+    params = recipe_helpers.setup_enabled_modules(params, cdict, WLOG)
 
     # -------------------------------------------------------------------------
     # Tell user where they may need to copy files
