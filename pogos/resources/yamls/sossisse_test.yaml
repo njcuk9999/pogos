@@ -147,7 +147,7 @@ SOSSISSE:
     #  - 1 
     #  - 2
     #         Default value=None
-    TRACE_ORDERS:
+    TRACES:
     - 1
     - 2
     # wavelength domain for the white light curve e.g. 

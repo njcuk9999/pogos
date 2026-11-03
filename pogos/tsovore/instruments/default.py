@@ -914,6 +914,12 @@ class Instrument:
         rkwargs['INFILES'] = infiles
         # deal with skipping step
         rkwargs = self.skip_step(rkwargs)
+        # Announce each file that the enabled step will open as a data model.
+        if rkwargs['RUN_STEP']:
+            for filename in infiles:
+                # JWST data models open the complete file, not one FITS HDU.
+                msg = f'Loading JWST data model from file: {filename}'
+                WLOG(self.params, 'info', msg)
         # ---------------------------------------------------------------------
         # update history
         step_name = f'{rkwargs["STEP_NAME"]} ({rkwargs["FLAVOUR"]})'

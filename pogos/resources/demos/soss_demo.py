@@ -222,7 +222,7 @@ class SossTrappist1bDemo(demos.PogoDemo):
         # Define which orders to use e.g.
         # - 1
         # - 2
-        self.cdict.set('TRACE_ORDERS', group=cgroup, source=__NAME__,
+        self.cdict.set('TRACES', group=cgroup, source=__NAME__,
                        value=[1, 2])
 
         # =====================================================================
@@ -383,7 +383,7 @@ class SossTrappist1bDemo(demos.PogoDemo):
         # Trace orders, must be a list the same length as INPUT_FILE
         #     (Set each item to 1 if there is only one order) otherwise set each item
         #     to the order number
-        self.cdict.set('TRACE_ORDERS', group=cgroup, source=__NAME__,
+        self.cdict.set('TRACES', group=cgroup, source=__NAME__,
                        value=[1])
 
         # Degrading spectral resolution before fitting

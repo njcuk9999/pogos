@@ -1,4 +1,7 @@
+import sys
 from types import SimpleNamespace
+
+import pytest
 
 from aperocore.constants.param_functions import ParamDict
 
@@ -60,7 +63,7 @@ def test_tsovore_input_copies_outputs_and_calib_files(tmp_path, monkeypatch):
     assert copied_calib.exists()
     assert updated["GENERAL.FILES"] == [str(out_file)]
     assert updated["GENERAL.WAVE_FILE"] == calib_file.name
-    assert updated["GENERAL.WAVE_FILE_TYPE"] == "ext_1d"
+    assert updated['GENERAL.WAVE_FILE_TYPE'] == 'ext1d'
     assert updated['INPUTS.PROJECT_NAME'] == 'shared-project'
     assert updated['INPUTS.SOSSIOPATH'] == str(tmp_path)
 
@@ -127,4 +130,76 @@ def test_run_sossisse_module_returns_early_when_disabled():
     params = {"RUN.SOSSISSE": False}
 
     assert core.run_sossisse_module(params, pre_inst={}) is None
+
+
+@pytest.mark.parametrize('detectors', [('NRS2', 'NRS1'), ('NRS1', 'NRS1'),
+                                     ('UNKNOWN',)])
+@pytest.mark.parametrize('same_basename', [False, True])
+def test_tsovore_nirspec_calibrations(tmp_path, monkeypatch, detectors,
+                                    same_basename):
+    """Associate NIRSpec wave files by detector without basename collisions."""
+    # Use real copy destinations but stub header reads and backend setup.
+    raw_dir = tmp_path / 'raw'
+    calib_dir = tmp_path / 'calib'
+    raw_dir.mkdir()
+    calib_dir.mkdir()
+    output = tmp_path / 'rateints.fits'
+    output.write_text('science')
+    # Map each calibration path to its detector header independently.
+    calibrations = []
+    headers = dict()
+    for index, detector in enumerate(detectors):
+        # Equal basenames in separate directories must survive both copies.
+        if same_basename:
+            directory = tmp_path / str(index)
+            directory.mkdir()
+            path = directory / 'wave_x1d.fits'
+        else:
+            path = tmp_path / f'{index}_x1d.fits'
+        path.write_text(detector)
+        calibrations.append(str(path))
+        headers[str(path)] = dict(DETECTOR=detector)
+    # Keep Astropy lazy while supplying deterministic per-path metadata.
+    fits_module = SimpleNamespace(
+        getheader=lambda filename: headers[str(filename)])
+    monkeypatch.setitem(sys.modules, 'astropy.io',
+                        SimpleNamespace(fits=fits_module))
+    # Start with unset wave files, as in the actual wrapper transfer workflow.
+    sossisse_params = FakeSubParams()
+    sossisse_params['GENERAL.FILES'] = []
+    sossisse_params['GENERAL.WAVE_FILE'] = None
+    sossisse_params['GENERAL.WAVE_FILE_TYPE'] = None
+    sossisse_params['PATHS.RAWPATH'] = str(raw_dir)
+    sossisse_params['PATHS.CALIBPATH'] = str(calib_dir)
+    params = ParamDict()
+    params['GLOBAL.PROJECT_NAME'] = 'visit'
+    params['GLOBAL.DATA_PATH'] = str(tmp_path)
+    params['GLOBAL.INSTRUMENTMODE'] = 'JWST.NIRSPEC.BOTS.G395H'
+    params['SOSSISSE'] = sossisse_params
+    # Avoid backend directory configuration; the fixture created both paths.
+    monkeypatch.setattr(core.const_funcs, 'run_time_params',
+                        lambda sparams, only_create=False: sparams)
+    calibration_products = dict(X1D=calibrations)
+    tsovore_products = dict(OUT=[str(output)], CALIBS=calibration_products)
+    tsovore = SimpleNamespace(variables=tsovore_products)
+    # Invalid associations must fail rather than overwrite another wave file.
+    duplicate_detectors = len(set(detectors)) != len(detectors)
+    unknown_detector = 'UNKNOWN' in detectors
+    if duplicate_detectors or unknown_detector:
+        with pytest.raises(core.SossisseFileException):
+            core.tsovore_input(params, tsovore)
+    else:
+        # Input order is NRS2/NRS1; output must be sorted by detector name.
+        updated = core.tsovore_input(params, tsovore)
+        if same_basename:
+            expected_files = ['nrs1_wave_x1d.fits', 'nrs2_wave_x1d.fits']
+        else:
+            expected_files = ['nrs1_1_x1d.fits', 'nrs2_0_x1d.fits']
+        assert updated['GENERAL.WAVE_FILE'] == expected_files
+        assert updated['GENERAL.WAVE_FILE_TYPE'] == 'ext1d'
+        # Confirm both advertised paths exist and contain the right detector.
+        assert all((calib_dir / filename).exists()
+                   for filename in updated['GENERAL.WAVE_FILE'])
+        for detector, filename in zip(['NRS1', 'NRS2'], expected_files):
+            assert (calib_dir / filename).read_text() == detector
 

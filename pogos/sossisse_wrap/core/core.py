@@ -163,6 +163,19 @@ def setup_sossisse_module(params: ParamDict, cdict):
 
 def tsovore_input(params: ParamDict,
                   tsovore_inst: Optional[ts_default.JWST] = None):
+    """
+    Copy TSOVORE science and wavelength files into SOSSISSE directories.
+
+    NIRSpec calibrations are identified by their DETECTOR headers, copied
+    with detector-prefixed basenames, and forwarded in NRS1/NRS2 order.
+    Other instruments retain the last calibration as a single wave file.
+
+    :param params: POGOS parameters; the SOSSISSE view is updated in place.
+    :param tsovore_inst: Completed TSOVORE instance with OUT and CALIBS
+        products. Required when the SOSSISSE parameter view exists.
+    :return: Updated SOSSISSE parameters, or None without a SOSSISSE view.
+    :raises SossisseFileException: Unknown or duplicate NIRSpec detector.
+    """
     # set function name
     func_name = f'{__NAME__}.tsovore_input'
     # -------------------------------------------------------------------------
@@ -211,21 +224,54 @@ def tsovore_input(params: ParamDict,
             calib_files = [calib_files]
         if len(calib_files) > 0:
             calib_dir = sparams.rget('PATHS.CALIBPATH', required=True)
-        # loop around and use the last one as the wave file
+        # Keep detector-to-file associations independent of input ordering.
+        wave_files = dict()
+        # Prefer the backend mode while retaining the global fallback.
+        instrument_mode = str(sossisse_params.get(
+            'INPUTS.INSTRUMENTMODE',
+            params.get('GLOBAL.INSTRUMENTMODE', '')))
+        is_nirspec = instrument_mode.startswith('JWST.NIRSPEC')
+        # Only NIRSpec needs detector headers to associate calibrations.
         for calib_file in calib_files:
+            if is_nirspec:
+                # Defer the FITS dependency until detector metadata is needed.
+                from astropy.io import fits
+
+                # Reject ambiguous associations instead of replacing a trace.
+                calibration_header = fits.getheader(calib_file)
+                detector = calibration_header.get('DETECTOR', '').upper()
+                if detector not in ('NRS1', 'NRS2'):
+                    message = f'Unknown calibration DETECTOR: {calib_file}'
+                    raise SossisseFileException(message)
+                if detector in wave_files:
+                    message = f'Duplicate {detector} wavelength calibration'
+                    raise SossisseFileException(message)
+            else:
+                # Reuse one slot to preserve legacy last-calibration behavior.
+                detector = 'single'
             # define source and destination
             source = str(calib_file)
-            dest = str(os.path.join(calib_dir, os.path.basename(calib_file)))
+            basename = os.path.basename(calib_file)
+            # Prevent equal input basenames from overwriting another detector.
+            if is_nirspec:
+                basename = f'{detector.lower()}_{basename}'
+            dest = str(os.path.join(calib_dir, basename))
             # log the copy
             msg = (f'Copying TSOVORE calibration file to SOSSISSE calib dir: '
                    f'{os.path.basename(calib_file)}')
             WLOG(params, '', msg)
             # copy file
             shutil.copy(source, dest)
-            # update the SOSSISSE wavelength solution file
-            sossisse_params['GENERAL.WAVE_FILE'] = os.path.basename(calib_file)
-            # update the SOSSISSE wavelength solution file type
-            sossisse_params['GENERAL.WAVE_FILE_TYPE'] = 'ext_1d'
+            # Store the copied basename, not its original absolute path.
+            wave_files[detector] = basename
+        # NIRSpec consumes an ordered list; other modes consume one filename.
+        if wave_files:
+            ordered_files = [wave_files[detector]
+                             for detector in sorted(wave_files)]
+            sossisse_params['GENERAL.WAVE_FILE'] = (
+                ordered_files if is_nirspec else ordered_files[-1])
+            # Use the backend's extension-1D wavelength format identifier.
+            sossisse_params['GENERAL.WAVE_FILE_TYPE'] = 'ext1d'
     # ---------------------------------------------------------------------
     # push back into sossisse_params (for return) - as before this only in
     # sparams (due to being populated in run_time_params)

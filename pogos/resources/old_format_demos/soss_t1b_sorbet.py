@@ -171,7 +171,7 @@ Cdict.set('INPUT_FILE', group=cgroup, source=__NAME__,
 # Trace orders, must be a list the same length as INPUT_FILES
 #     (Set each item to 1 if there is only one order) otherwise set each item
 #     to the order number
-Cdict.set('TRACE_ORDERS', group=cgroup, source=__NAME__,
+Cdict.set('TRACES', group=cgroup, source=__NAME__,
           value=[1])
 
 # Degrading spectral resolution before fitting

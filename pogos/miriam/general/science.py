@@ -200,6 +200,10 @@ def merge_inputs(params: ParamDict) -> MergedReturn:
         # load this iterations cube
         cube = fits.getdata(input_paths[ncube], extname='SCI')
         cube_err = fits.getdata(input_paths[ncube], extname='ERR')
+        # Report both arrays only after both selected HDUs loaded successfully.
+        loaded_msg = (f'Loaded data from {input_paths[ncube]} '
+                  '(extname=SCI, extname=ERR)')
+        WLOG(params, 'info', loaded_msg)
         # storage of the x-pixels
         xpix = np.arange(cube.shape[2])
         # loop around integrations

@@ -99,6 +99,39 @@ SORBET_CDict.add('INPUT_PATH', value=f'wlca{os.sep}inputs',
 SORBET_CDict.add('INPUT_FILE', value='white_light_curve.fits', dtype=str,
                  source=__NAME__, user=True, active=True, group=cgroup,
                  description='Input data file or path to the data file')
+# Keep identifiers uncoerced so runtime validation can reject bools/floats.
+SORBET_CDict.add('TRACES', value=None, dtype=list,
+                source=__NAME__, user=True, active=True, group=cgroup,
+                description='User selection of traces to fit independently '
+                            'from INPUT_FILE: a nonempty list of unique '
+                            'positive integer identifiers, or None for one '
+                            'unlabelled light curve. Numbered FITS products '
+                            'require explicit selection. Each selected trace '
+                            'uses WLC_TABLE_<trace> and independent fitting '
+                            'parameters and output/plot locations. Legacy '
+                            'files with only a shared WLC_TABLE are '
+                            'supported: the same table is fitted separately '
+                            'for every selected trace. Applicability: SOSS '
+                            'diffraction orders 1,2; NIRSpec detectors 1,2; '
+                            'all others None/unlabelled or an explicit '
+                            'numbered product.')
+# Only the WLCA orchestration loop sets this single-fit runtime selector.
+SORBET_CDict.add('TRACE', value=None, dtype=int,
+                source=__NAME__, user=False, active=False, group=cgroup,
+                description='Internal selector for the currently fitted '
+                            'WLC_TABLE_<trace>, or None for an unlabelled '
+                            'table. Set by the WLCA loop from the user-facing '
+                            'TRACES list; not a user configuration option.')
+# Store independent fitted state for reuse by the matching spectral trace.
+SORBET_CDict.add('TRACE_FIT_PARAMS', value=None, dtype=dict,
+                source=__NAME__, user=False, active=False, group=cgroup,
+                description='Runtime-only mapping from trace identifier to '
+                            'an independent ParamDict containing the fitted '
+                            'WLCA configuration and output/plot locations. '
+                            'SLCA reuses the matching trace configuration '
+                            'without modifying the stored fit or other '
+                            'traces. Populated by WLCA; never user '
+                            'configuration.')
 # Output sub directory path for channel/bin (set internally)
 SORBET_CDict.add('OUTPUT_SUBPATH', value=None, dtype=str, source=__NAME__,
                 user=False, active=False, group=cgroup,
@@ -298,13 +331,20 @@ SORBET_CDict.add('INPUT_FILE', value=['spectroscopy_light_curves.fits'],
                  dtype=list, source=__NAME__,
                  user=True, active=True, group=cgroup,
                  description='Input data file or path to the data file')
-# Trace orders, must be a list the same length as INPUT_FILE or None for
-#    modes without orders'
-SORBET_CDict.add('TRACE_ORDERS', value=None, dtype=list, dtypei=int,
-                 source=__NAME__, user=True, active=True, group=cgroup,
-                 modes=['JWST.NIRISS.SOSS'],
-                 description='Trace orders, must be a list the same length as'
-                             'INPUT_FILE or None for modes without orders')
+# Pair explicit traces with files; None keeps one unnumbered input product.
+SORBET_CDict.add('TRACES', value=None, dtype=list,
+                source=__NAME__, user=True, active=True, group=cgroup,
+                description='User selection of spectral traces: a nonempty '
+                            'list of unique positive integer identifiers '
+                            'paired with INPUT_FILE, or None for one '
+                            'unlabelled input file. Repeat a combined '
+                            'filename once per selected trace. Numbered '
+                            'products require explicit selection; each trace '
+                            'reads its matching numbered extensions and '
+                            'reuses its fitted WLCA configuration when '
+                            'available. Applicability: SOSS diffraction '
+                            'orders 1,2; NIRSpec detectors 1,2; all others '
+                            'None/unlabelled or an explicit numbered product.')
 # Output sub directory path for channel/bin (set internally)
 SORBET_CDict.add('OUTPUT_SUBPATH', value=None, dtype=str, source=__NAME__,
                 user=False, active=False, group=cgroup,

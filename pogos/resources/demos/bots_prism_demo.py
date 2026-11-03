@@ -167,7 +167,7 @@ class BotsPrismDemo_WASP39b(demos.PogoDemo):
         # Define which orders to use e.g.
         # - 1
         # - 2
-        self.cdict.set('TRACE_ORDERS', group=cgroup, source=__NAME__,
+        self.cdict.set('TRACES', group=cgroup, source=__NAME__,
                        value=None)
 
         # =====================================================================

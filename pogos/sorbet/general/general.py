@@ -12,6 +12,7 @@ Created on 2025-10-16 at 13:39
 import shutil
 import string
 import os
+from copy import deepcopy
 from typing import Any, Dict, List, Optional, Tuple
 
 import numpy as np
@@ -174,8 +175,24 @@ def run_sorbet_module(params: ParamDict, ext_inst: Dict[str, Any]):
 
 
 def sossisse_input(params: ParamDict,
-                   sossisse_inst: Optional[sdefault.Instrument] = None
-                   ) -> ParamDict:
+                  sossisse_inst: Optional[sdefault.Instrument] = None
+                  ) -> ParamDict:
+    """
+    Copy SOSSISSE light curves and forward its selected traces to SORBET.
+
+    A trace is a SOSS diffraction order or a NIRSpec detector (1=NRS1,
+    2=NRS2). Other instruments may use one unnumbered trace. A combined
+    spectral file is repeated once per selection; SOSS white-light tables
+    may still contain shared reconstruction amplitudes rather than
+    independently measured order light curves.
+
+    :param params: POGOS parameters, updated in place with input basenames
+        and user-facing WLCA/SLCA trace selections.
+    :param sossisse_inst: Completed instance owning the output paths,
+        filename prefix, and GENERAL.TRACES selection.
+    :return: Updated params after copying products for enabled analyses.
+    :raises sorbet_base.SorbetException: Invalid trace selection.
+    """
     # set function name
     func_name = f'{__NAME__}.sossisse_input'
     # -------------------------------------------------------------------------
@@ -186,7 +203,7 @@ def sossisse_input(params: ParamDict,
     # get sorbet parameters
     sb_params = params.get('SORBET')
     # get sossisse parameters
-    s_params = params.get('SOSSISSE')
+    sossisse_params = sossisse_inst.params
     # get sossisse files to copy
     sossisse_wlc_file = sossisse_inst.get_variable('OUT_WLC_FILE',
                                                    func_name)
@@ -194,14 +211,23 @@ def sossisse_input(params: ParamDict,
                                                        func_name)
     # -------------------------------------------------------------------------
     # get the prefix used for the sossisse files
-    sossisse_prefix = s_params['GENERAL.PREFIX']
+    sossisse_prefix = sossisse_params['GENERAL.PREFIX']
     if sossisse_prefix is None:
-        sossisse_files = s_params.rget('GENERAL.FILES', required=True,
-                                       func=func_name)
+        sossisse_files = sossisse_params.rget('GENERAL.FILES', required=True,
+                                             func=func_name)
         sossisse_prefix = load_functions.common_prefix(sossisse_files)
     # add the prefix to wlc and spec file
     sossisse_wlc_file = sossisse_wlc_file.format(prefix=sossisse_prefix)
     sossisse_spec_lc_file = sossisse_spec_lc_file.format(prefix=sossisse_prefix)
+    # Use the completed instance's selection, not stale wrapper parameters.
+    traces = sossisse_params.get('GENERAL.TRACES')
+    _validate_traces(traces, 'GENERAL.TRACES')
+    # Give both analyses independent copies of the user-facing selection.
+    for method in ('WLCA', 'SLCA'):
+        trace_key = f'SORBET.{method}.TRACES'
+        params[trace_key] = list(traces) if traces is not None else None
+        # Record that the selection came from this completed backend run.
+        params.set_source(trace_key, func_name)
 
     # ---------------------------------------------------------------------
     # deal with WLCA files
@@ -234,8 +260,10 @@ def sossisse_input(params: ParamDict,
         sorbet_file = str(os.path.join(sorbet_slcta_indir, sossisse_spec_lc_base))
         # copy linear recon coeffs csv file
         shutil.copy(sossisse_spec_lc_file, sorbet_file)
-        # update params
-        params['SORBET.SLCA.INPUT_FILE'] = [os.path.basename(sorbet_file)]
+        # Pair each selected trace with the same combined spectral product.
+        trace_count = len(traces) if traces is not None else 1
+        params['SORBET.SLCA.INPUT_FILE'] = (
+            [os.path.basename(sorbet_file)] * trace_count)
         params.set_source('SORBET.SLCA.INPUT_FILE', func_name)
     # return params
     return params
@@ -276,7 +304,92 @@ def miriam_input(params: ParamDict,
     return params
 
 
+def _validate_traces(traces, parameter: str):
+    """
+    Validate a user-facing trace selection without coercing identifiers.
+
+    :param traces: None for one unnumbered trace, or a nonempty list of
+        unique positive integers. Booleans are not trace identifiers.
+    :param parameter: Parameter name included in validation errors.
+    :return: None; the selection is not modified.
+    :raises sorbet_base.SorbetException: Invalid container or identifier.
+    """
+    # None deliberately preserves the single unnumbered-product workflow.
+    if traces is None:
+        return
+    # Reject containers before iterating or attempting duplicate detection.
+    invalid_selection = not isinstance(traces, list) or not traces
+    if not invalid_selection:
+        # Check types first so malformed entries never reach set().
+        invalid_identifiers = any(
+            isinstance(trace, bool) or not isinstance(trace, int) or trace < 1
+            for trace in traces)
+        invalid_selection = (
+            invalid_identifiers or len(set(traces)) != len(traces))
+    # Keep one diagnostic for invalid containers, entries, and duplicates.
+    if invalid_selection:
+        raise sorbet_base.SorbetException(
+            f'{parameter} must be None or a nonempty list of unique positive '
+            'integer trace identifiers.')
+
+
 def run_sorbet_wlcta(params: ParamDict):
+    """
+    Fit selected traces separately, or run once for an unnumbered product.
+
+    :param params: POGOS parameters with optional user-facing WLCA.TRACES.
+        Mutated with the runtime-only TRACE_FIT_PARAMS mapping after fits.
+    :return: Updated params, or the single unnumbered runner's result.
+    :raises sorbet_base.SorbetException: Invalid trace selection.
+    """
+    # Validate before resetting fit state or invoking a scientific runner.
+    traces = params.get('SORBET.WLCA.TRACES')
+    _validate_traces(traces, 'SORBET.WLCA.TRACES')
+    # Do not reuse fitted state from an earlier invocation.
+    params['SORBET.WLCA.TRACE_FIT_PARAMS'] = None
+    if traces is None:
+        # Preserve the legacy runner's in-place parameter updates.
+        params['SORBET.WLCA.TRACE'] = None
+        return _run_sorbet_wlcta(params)
+    # Resolve common paths before deriving isolated per-trace directories.
+    prepare_directories(params, method='WLCA')
+    trace_fit_params = dict()
+    # Deep copies keep priors and fitted parameters independent per trace.
+    for trace in traces:
+        fit_params = _trace_fit_params(params, trace)
+        trace_fit_params[trace] = _run_sorbet_wlcta(fit_params)
+    # SLCA will retrieve only the fit corresponding to its selected trace.
+    params['SORBET.WLCA.TRACE_FIT_PARAMS'] = trace_fit_params
+    return params
+
+
+def _trace_fit_params(params: ParamDict, trace: Optional[int]):
+    """
+    Copy fit configuration and isolate a numbered trace's WLCA locations.
+
+    :param params: POGOS parameters, including resolved WLCA paths when a
+        numbered trace is selected. Nested fit state is copied, not shared.
+    :param trace: Positive trace identifier, or None for unnumbered data.
+    :return: Independent parameters with runtime-only TRACE set and any
+        cached trace fits cleared. Numbered paths end in trace<identifier>.
+    """
+    # Include nested priors in the copy to prevent cross-trace mutations.
+    fit_params = deepcopy(params)
+    # A trace's configuration must not retain the parent cache of fits.
+    fit_params['SORBET.WLCA.TRACE_FIT_PARAMS'] = None
+    fit_params['SORBET.WLCA.TRACE'] = trace
+    # Unnumbered products keep their original output locations.
+    if trace is None:
+        return fit_params
+    # Isolate both saved results and diagnostics without changing the parent.
+    for path_kind in ('OUTPUT_PATH', 'PLOT_PATH'):
+        path_key = f'SORBET.WLCA.{path_kind}'
+        base_path = params.rget(path_key, required=True)
+        fit_params[path_key] = os.path.join(base_path, f'trace{trace}')
+    return fit_params
+
+
+def _run_sorbet_wlcta(params: ParamDict):
     """
     Run the SORBET White Light Curve Transit Analysis recipe
 
@@ -334,44 +447,86 @@ def run_sorbet_wlcta(params: ParamDict):
     # return params
     return params
 
+
 def _deal_with_slcta_input_file(params) -> Tuple[List[str], List[int | None]]:
+    """
+    Pair spectral filenames with explicit traces or one unnumbered trace.
+
+    :param params: POGOS parameters containing SLCA.INPUT_FILE and optional
+        user-facing SLCA.TRACES. A string filename is accepted as one file.
+    :return: Input-file list and equally sized trace list; [None] denotes
+        the single unnumbered case. The parameter dictionary is not mutated.
+    :raises sorbet_base.SorbetException: Invalid traces, empty input, or
+        ambiguous pairing between input files and trace identifiers.
+    """
     func_name = f'{__NAME__}._deal_with_slcta_input_file'
     # get the sorbet parameters
     slcta_params = params.get('SORBET.SLCA')
-    # check the dataset (multiple channels/orders?)
+    # check the dataset (multiple channels/traces?)
     input_files = slcta_params.rget('INPUT_FILE', required=True, func=func_name)
-    # get the trace order
-    trace_orders = slcta_params['TRACE_ORDERS']
-    inst_mode = params.rget('GLOBAL.INSTRUMENTMODE', required=True,
-                            func=func_name)
-    # deal with no trace orders (fine for modes which don't have trace orders)
-    if trace_orders is None and inst_mode != 'JWST.NIRISS.SOSS':
-        if isinstance(input_files, str):
-            return [input_files], [None]
-        if len(input_files) > 1:
-            emsg = ("TRACE_ORDERS must be provided for multiple input files "
-                    "in SORBET.SLCA.INPUT_FILE")
-            raise sorbet_base.SorbetException(emsg)
-        return [input_files[0]], [None]
-
-    elif trace_orders is None:
-        emsg = ("TRACE_ORDERS must be provided for SORBET.SLCA.INPUT_FILE when "
-                "using JWST.NIRISS.SOSS mode")
-        raise sorbet_base.SorbetException(emsg)
-
-    # deal with single string input
+    # None is meaningful here and must not become a required setting.
+    traces = slcta_params.get('TRACES')
+    _validate_traces(traces, 'SORBET.SLCA.TRACES')
+    # Normalize a single filename locally without mutating its stored value.
     if isinstance(input_files, str):
-        emsg = "Input file of SORBET.SLCA must be a list."
+        input_files = [input_files]
+    # An empty file list cannot describe even an unnumbered trace.
+    if not input_files:
+        raise sorbet_base.SorbetException(
+            'SORBET.SLCA.INPUT_FILE must contain at least one file.')
+    # Multiple files require an explicit one-to-one trace selection.
+    if traces is None:
+        if len(input_files) != 1:
+            raise sorbet_base.SorbetException(
+                'SORBET.SLCA.TRACES must be provided '
+                'for multiple input files.')
+        return input_files, [None]
+    # Repeated combined filenames are allowed, but every trace needs a file.
+    if len(traces) != len(input_files):
+        emsg = (f'The number of traces ({len(traces)}) must match '
+                f'the number of input files ({len(input_files)}).')
         raise sorbet_base.SorbetException(emsg)
 
-    if len(trace_orders) != len(input_files):
-        emsg = (f"The number of trace orders ({len(trace_orders)}) must match "
-                f"the number of input files ({len(input_files)}).")
-        raise sorbet_base.SorbetException(emsg)
+    return input_files, traces
 
-    return input_files, trace_orders
 
 def run_sorbet_slcta(params: ParamDict):
+    """
+    Run spectral fits with the matching trace's independent WLCA state.
+
+    :param params: POGOS parameters with spectral files, optional selected
+        traces, and any runtime-only WLCA.TRACE_FIT_PARAMS cache.
+    :return: Parent params, or the unnumbered runner's result. Numbered
+        fits use copies and do not mutate cached WLCA fits or other traces.
+    :raises sorbet_base.SorbetException: Invalid spectral file/trace pairing.
+    """
+    # Resolve and validate selection before preparing paths or running fits.
+    input_files, traces = _deal_with_slcta_input_file(params)
+    if traces == [None]:
+        # Preserve the existing single-run behavior and parameter identity.
+        return _run_sorbet_slcta(params)
+    # Resolve shared paths before deriving trace-specific fit configurations.
+    prepare_directories(params, method='WLCA', verbose=False)
+    prepare_directories(params, method='SLCA')
+    # A standalone SLCA run may not have a previous WLCA fit cache.
+    trace_fit_params = params.get('SORBET.WLCA.TRACE_FIT_PARAMS') or dict()
+    # Pair traces by identifier, never by another trace's fitted state.
+    for input_file, trace in zip(input_files, traces):
+        if trace in trace_fit_params:
+            # SLCA may mutate fit parameters without changing the stored fit.
+            fit_params = deepcopy(trace_fit_params[trace])
+        else:
+            # Standalone fits still need independent priors and locations.
+            fit_params = _trace_fit_params(params, trace)
+        # Restrict the delegated runner to this one file/trace pair.
+        fit_params['SORBET.SLCA.INPUT_FILE'] = [input_file]
+        fit_params['SORBET.SLCA.TRACES'] = [trace]
+        # Keep scientific fitting within the existing runtime boundary.
+        _run_sorbet_slcta(fit_params)
+    return params
+
+
+def _run_sorbet_slcta(params: ParamDict):
     """
     Run the SORBET Spectral Light Curves Transit Analysis recipe
 
@@ -387,15 +542,15 @@ def run_sorbet_slcta(params: ParamDict):
     # --------------------------------------------------------------------------
     # prepare directories
     prepare_directories(params, method='SLCA')
-    # get input files and trace ordeers
-    input_files, trace_orders = _deal_with_slcta_input_file(params)
+    # get input files and traces
+    input_files, traces = _deal_with_slcta_input_file(params)
     # --------------------------------------------------------------------------
     # loop around channels
     for chl in range(len(input_files)):
         # load the dataset
-        sout = sorbet_science.load_slc(params, input_files[chl],
-                                       trace_orders[chl])
-        bjd, wave_tuple, flux_bin, eflux_bin, channel = sout
+        spectral_outputs = sorbet_science.load_slc(params, input_files[chl],
+                               traces[chl])
+        bjd, wave_tuple, flux_bin, eflux_bin, channel = spectral_outputs
         # eflux_bin = np.ones_like(flux_bin) * 10e-6
         # initiate transmission spectrum table
         tout = sorbet_science.initiate_transmission_spectrum(wave_tuple)

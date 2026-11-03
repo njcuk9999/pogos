@@ -151,7 +151,7 @@ Cdict.set('WAVE_FILE_TYPE', group=cgroup, source=__NAME__,
 # Define which orders to use e.g.
 # - 1
 # - 2
-Cdict.set('TRACE_ORDERS', group=cgroup, source=__NAME__,
+Cdict.set('TRACES', group=cgroup, source=__NAME__,
           value=[1,2])
 
 # =============================================================================

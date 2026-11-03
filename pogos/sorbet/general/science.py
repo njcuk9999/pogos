@@ -54,11 +54,19 @@ WLOG = drs_log.wlog
 # =============================================================================
 def load_wlc(params: ParamDict):
     """
-    Load the WLC dataset using configs from the yaml file
+    Load the selected white-light table without mixing numbered traces.
 
-    :param params: ParamDict, the parameter dictionary of constants
+    NIRSpec products may contain independent detector tables. Legacy SOSS
+    products may contain a shared reconstruction-amplitude WLC_TABLE, which
+    is read separately for each selected order rather than interpreted as
+    an independently measured order light curve. Other instruments can use
+    a single unnumbered table or explicitly selected numbered products.
 
-    :return: dataset table, astropy.table
+    :param params: POGOS parameters with input file/path and runtime-only
+        WLCA.TRACE (None for an unnumbered product).
+    :return: Astropy table retaining the selected product's time samples.
+    :raises sorbet_base.SorbetException: Missing file, unselected numbered
+        product, absent selected trace, or table-read failure.
     """
     # get function name
     func_name = __NAME__ + '.load_wlc()'
@@ -88,7 +96,39 @@ def load_wlc(params: ParamDict):
     # input_validation.check_input_data_headers(params, [filename])
     # load the light curve table
     try:
-        dataset = io.load_table(filename)
+        # The orchestration layer sets this runtime-only trace selector.
+        trace = params.get('SORBET.WLCA.TRACE')
+        try:
+            # Inspect FITS extensions before allowing any legacy fallback.
+            hdulist = fits.open(filename)
+        except OSError:
+            # Non-FITS inputs retain the existing generic table loader.
+            dataset = io.load_table(filename)
+        else:
+            with hdulist:
+                # Numbered tables require selection even if one is present.
+                extensions = hdulist.info(output=False) or []
+                has_numbered_tables = any(
+                    extension[1].startswith('WLC_TABLE_')
+                    for extension in extensions)
+                if trace is None and has_numbered_tables:
+                    raise sorbet_base.SorbetException(
+                        'Numbered WLC tables require SORBET.WLCA.TRACES '
+                        'to select trace identifiers.')
+                # Never substitute another numbered trace for the selection.
+                extension = ('WLC_TABLE' if trace is None
+                             else f'WLC_TABLE_{trace}')
+                if extension in hdulist:
+                    dataset = Table.read(filename, hdu=extension)
+                elif has_numbered_tables:
+                    raise sorbet_base.SorbetException(
+                        f'Could not find {extension}')
+                elif 'WLC_TABLE' in hdulist:
+                    # Legacy SOSS orders may intentionally share this table.
+                    dataset = Table.read(filename, hdu='WLC_TABLE')
+                else:
+                    # Retain generic loading for other unnumbered layouts.
+                    dataset = io.load_table(filename)
     except Exception as e:
         msg = (f'Failed to load data from file "{filename}": {e}'
                f'\n\tFunction = {func_name}')
@@ -98,14 +138,23 @@ def load_wlc(params: ParamDict):
 
 
 def load_slc(params: ParamDict, input_file: str,
-             trace_order: Union[int, None] = None):
+             trace: Union[int, None] = None):
     """
-    Load the wavelength grid and spectral light curves for the
-    transmission spectrum
+    Load one trace's wavelengths, spectral flux, errors, and timestamps.
 
-    :param params: ParamDict, the parameter dictionary of constants
+    :param params: POGOS parameters with instrument mode, spectral input
+        path, and resolution binning. The dictionary is not modified.
+    :param input_file: Existing filename, or filename relative to INPUT_PATH.
+    :param trace: SOSS diffraction order, NIRSpec detector (1=NRS1, 2=NRS2),
+        or another product's numbered trace. None selects unnumbered data.
+        Only SOSS trace 2 is restricted to 0.6 < wavelength < 0.85 microns.
 
-    :return: bjd, wave_tuple, flux_bin, eflux_bin, channel
+    :return: BJD time array; wavelength centers/lower/upper bounds in
+        microns; relative flux and error arrays, shaped (epochs, bins);
+        and the selected trace as channel (possibly None). Timestamps come
+        from the same trace extensions as the spectral arrays.
+    :raises sorbet_base.SorbetException: Missing file or trace, unselected
+        numbered product, or failure to read spectral extensions.
     """
     # get function name
     func_name = __NAME__ + '.load_slc()'
@@ -119,9 +168,6 @@ def load_slc(params: ParamDict, input_file: str,
     slcta_params = params.get('SORBET.SLCA')
     resolution_bin = slcta_params.rget('RESOLUTION_BIN', required=True,
                                        func=func_name)
-    # deal with trace_order being None
-    if inst_mode != 'JWST.NIRISS.SOSS':
-        trace_order = None
     # check if the file exists
     if os.path.exists(input_file):
         filename = input_file
@@ -143,20 +189,34 @@ def load_slc(params: ParamDict, input_file: str,
     # load the light curve data
     try:
         with fits.open(filename) as hdulist:
-            # deal with not having trace_orders (<1)
-            if trace_order is None:
-                wave = np.array(hdulist[f'WAVELENGTH'].data)
-                flux = np.array(hdulist[f'RELFLUX'].data)
-                eflux = np.array(hdulist[f'RELFLUX_ERROR'].data)
-                bjd = np.array(hdulist[f'BJD'].data)
-            elif f'WAVELENGTH_{trace_order}' in hdulist:
-                wave = np.array(hdulist[f'WAVELENGTH_{trace_order}'].data)
-                flux = np.array(hdulist[f'RELFLUX_{trace_order}'].data)
-                eflux = np.array(hdulist[f'RELFLUX_ERROR_{trace_order}'].data)
-                bjd = np.array(hdulist[f'BJD_{trace_order}'].data)
+            # Detect numbered layouts without assuming an instrument mode.
+            extensions = hdulist.info(output=False) or []
+            has_numbered_spectra = any(
+                extension[1].startswith('WAVELENGTH_')
+                for extension in extensions)
+            if trace is None and has_numbered_spectra:
+                raise sorbet_base.SorbetException(
+                    'Numbered spectral products require SORBET.SLCA.TRACES '
+                    'to select trace identifiers.')
+            # Require the selected numbered wavelength extension to exist.
+            has_selected_trace = (
+                trace is not None and f'WAVELENGTH_{trace}' in hdulist)
+            if has_selected_trace:
+                suffix = f'_{trace}'
+            elif not has_numbered_spectra and 'WAVELENGTH' in hdulist:
+                # An entirely unnumbered file can serve a selected trace.
+                suffix = ''
             else:
-                msg = (f'Could not find WAVELENGTH_{trace_order}')
+                # Missing selections must not silently read another trace.
+                extension = ('WAVELENGTH' if trace is None
+                             else f'WAVELENGTH_{trace}')
+                msg = f'Could not find {extension}'
                 raise sorbet_base.SorbetException(msg)
+            # Apply one suffix to all arrays, including independent times.
+            wave = np.array(hdulist[f'WAVELENGTH{suffix}'].data)
+            flux = np.array(hdulist[f'RELFLUX{suffix}'].data)
+            eflux = np.array(hdulist[f'RELFLUX_ERROR{suffix}'].data)
+            bjd = np.array(hdulist[f'BJD{suffix}'].data)
             # cast as np.float64
             wave = wave.astype(np.float64)
             flux = flux.astype(np.float64)
@@ -173,22 +233,18 @@ def load_slc(params: ParamDict, input_file: str,
         # we take the first wave solution and apply it to all integrations
         wave = np.tile(wave[0], flux.shape[0]).reshape(flux.shape)
 
-    # determine order (NIRISS SOSS)
+    # Keep the explicit selection; wavelength coverage must not infer order.
+    channel = trace
     if inst_mode == 'JWST.NIRISS.SOSS':
-        valid = np.isfinite(flux)
-        w = 1 / eflux[valid]**2
-        weighted_wave = np.nansum(wave[valid] * w) / np.nansum(w)
-        if weighted_wave < 1.:
-            channel = 2
-        else:
-            channel = 1
         if channel == 2:
-            good = (wave[0, :] > 0.6) & (wave[0, :] < 0.85)
-            wave = wave[:, good]
-            flux = flux[:, good]
-            eflux = eflux[:, good]
-    else:
-        channel = None
+            # Preserve the existing SOSS order-2 cut, in microns, only here.
+            above_lower_bound = wave[0, :] > 0.6
+            below_upper_bound = wave[0, :] < 0.85
+            valid_wavelengths = above_lower_bound & below_upper_bound
+            # Apply identical spectral columns without changing time samples.
+            wave = wave[:, valid_wavelengths]
+            flux = flux[:, valid_wavelengths]
+            eflux = eflux[:, valid_wavelengths]
 
     # -------------------------------------------------------------------------
     # bin data to right resolution
