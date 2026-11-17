@@ -137,7 +137,7 @@ def setup_sossisse_module(params: ParamDict, cdict):
     sparams['INPUTS.PARAM_FILE'] = str(yaml_file)
     # setup for SOSSISSE just uses "get_parameters" function
     inst = sossisse.get_parameters(__NAME__=__NAME__, setup_mode=True,
-                                   log_level='setup', __YAML_DICT__=sparams)
+                                   __YAML_DICT__=sparams)
     # -------------------------------------------------------------------------
     # get the SOSSISSE PATH params out of instrument class
     spaths = inst.params.get('PATHS')

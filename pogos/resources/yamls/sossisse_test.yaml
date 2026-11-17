@@ -78,9 +78,6 @@ SOSSISSE:
     # The data directory
     #         Default value=None
     SOSSIOPATH: /scratch3/jwst/pogos-data
-    # Log level (DEBUG, INFO, WARNING, ERROR, NONE)
-    #         Default value=INFO
-    LOG_LEVEL: INFO
     # Name of the object (must match the object directory name)
     #         Default
     # value=None
@@ -191,13 +188,11 @@ SOSSISSE:
       # Apply DQ flags
       #         Default value=True
       APPLY_DQ_FLAGS: true
-      # DQ flags that we should use (list) e.g. 
-      #  -0 
-      #  -2
-      #         Default value=[0, 2]
+      # Exact DQ values and maximum occurrence fractions (inclusive).
+      #         Default value={0: 1.0, 2: 1.0}
       VALID_DQ:
-      - 0
-      - 2
+        0: 1.0
+        2: 1.0
       # Apply 1/f correction
       #         Default value=True
       APPLY_1F_CORR: true
