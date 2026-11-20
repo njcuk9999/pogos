@@ -288,23 +288,13 @@ SOSSISSE:
       # fit the dy -- along the cross-dispersion
       #         Default value=True
       FIT_DY: true
-      # fit the before - after morphological change
-      #         Default value=False
-      FIT_BEFORE_AFTER: false
       # fit the rotation in the linear reconstruction of the trace
       #         Default
       # value=True
       FIT_ROTATION: true
-      # fit the zero point offset in the linear model for the trace, should not be used
-      # at the time as the quadratic term
+      # fit the zero point offset in the linear model for the trace
       #         Default value=True
       FIT_ZERO_POINT_OFFSET: true
-      # fit a flux^2 dependency. This is mostly meant as a test of the quality of the
-      # non-linearity correction. Normally this term should be de-correlated with the
-      # amplitude term. Set to false for actual science analysis should not be used at
-      # the same time as the zero point offset
-      #         Default value=False
-      FIT_QUAD_TERM: false
       # fit the 2nd derivative in y, good to find glitches!
       #         Default value=True
       FIT_DDY: true
@@ -317,9 +307,6 @@ SOSSISSE:
       # Bin the input data cube in time
       #         Default value=False
       DATA_BIN_TIME: false
-      # Number of frames in each bin
-      #         Default value=1
-      DATA_BIN_NUMBER: 1
 
 
     # =============================================================================
@@ -367,7 +354,7 @@ SOSSISSE:
       USE_FANCY_CENTERING: true
       # Whether to fit a per pixel baseline correction
       #         Default value=True
-      PER_PIXEL_BASELINE_CORRECTION: true
+      # PER_PIXEL_BASELINE_CORRECTION: true
       # out of transit polynomial level correction
       #         Default value=2
       TRANSIT_BASELINE_POLYORD: 2
@@ -396,7 +383,7 @@ SOSSISSE:
   SPEC_EXT:
     # remove trend from out-of-transit
     #         Default value=True
-    REMOVE_TREND: true
+    # REMOVE_TREND: true
     # define how the "white" transit depth is computed/assigned 
     # "compute": Compute
     # transit depth using median OOT relative flux from WLC, and mean in-transit
