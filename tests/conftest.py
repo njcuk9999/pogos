@@ -88,7 +88,7 @@ if 'aperocore.constants.custom_const_classes' not in sys.modules:
 file_sources = _ensure_module("aperocore.constants.file_sources")
 file_sources.find_file_keys = lambda params: []
 file_sources.module_prefix = lambda key, instance: ''
-file_sources.needs_download = lambda fileobj, directory: False
+file_sources.needs_download = lambda fileobj, directory, *args: False
 file_sources.resolve_files = lambda params, **kwargs: {}
 file_sources.ask_download_now = lambda params, summary: (False, None, False)
 aperocore_constants.file_sources = file_sources

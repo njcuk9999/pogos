@@ -446,8 +446,13 @@ P.setup.fillModeCounts = function () {
         // null = still probing, false = the probe failed
         var ndemo = counts === null ? '...' : counts === false ? '?' :
             (counts[name] || 0);
-        el.textContent = 'Supported flavours (' + nflav + ')   demos (' +
-            ndemo + ')';
+        // green when there are some, red when none (grey while probing)
+        var cls = function (n) {
+            return typeof n !== 'number' ? 'muted' : n > 0 ? 'cnt-ok' :
+                'cnt-none'; };
+        el.innerHTML = 'Supported <span class="' + cls(nflav) +
+            '">flavours (' + nflav + ')</span>   <span class="' +
+            cls(ndemo) + '">demos (' + ndemo + ')</span>';
         el.title = 'flavours: reduction steps that support this mode; ' +
             'demos: every demo object x combination of its flavours';
     });
@@ -569,8 +574,8 @@ P.setup.loadDemos = function (force) {
     var key = mode.name + JSON.stringify(steps);
     if (key === P.setup.demoCacheKey) { return; }
     P.setup.demoCacheKey = key;
-    P.$('setup-demo-note').textContent = 'loading demos (a few seconds the ' +
-        'first time)...';
+    P.$('setup-demo-note').textContent = 'loading demos (preloading at ' +
+        'start up - a few seconds)...';
     holder.style.opacity = 0.5;
     GUI.get('api/pogos/demos', {instmode: mode.name,
                                 steps: JSON.stringify(steps)})
@@ -1749,7 +1754,7 @@ P.edit.copyProject = function () {
 /* ==========================================================================
    Run
    ========================================================================== */
-P.run = {};
+P.run = {info: null, infoFor: null, loading: null};
 
 P.run.yaml = function () { return P.$('run-select').value; };
 
@@ -1757,8 +1762,201 @@ P.run.selected = function () {
     var path = P.run.yaml();
     if (path) { GUI.store('yaml-run-select', path); }
     P.$('run-summary').innerHTML = path ? P.pills(P.summaryOf(path)) : '';
+    P.run.loadInfo();
     P.run.updateCli();
     P.run.previewBatch();
+};
+
+P.run.init = function () {
+    // files may have been downloaded meanwhile: re-check on entering Run
+    GUI.onTab('run', function () {
+        if (P.run.yaml() && !P.run.loading) { P.run.loadInfo(); }
+    });
+    P.run.setReady(false, 'choose a yaml first');
+};
+
+P.run.setReady = function (ready, note) {
+    // the run buttons wait for the yaml summary (and its file checks)
+    document.querySelectorAll('#tab-run .run-go').forEach(function (btn) {
+        btn.disabled = !ready;
+    });
+    document.querySelectorAll('#tab-run .run-go-note').forEach(function (el) {
+        el.textContent = note || '';
+    });
+};
+
+P.run.loadInfo = function () {
+    // load the yaml summary + input file status (before a run is allowed)
+    var path = P.run.yaml();
+    var holder = P.$('run-info');
+    P.run.info = null;
+    P.run.infoFor = null;
+    P.run.loading = path || null;
+    if (!path) {
+        holder.innerHTML = '';
+        P.run.setReady(false, 'choose a yaml first');
+        return;
+    }
+    P.run.setReady(false, 'checking the yaml input files...');
+    if (!holder.innerHTML) {
+        holder.innerHTML = '<div class="notice">Loading the yaml summary ' +
+            'and checking its input files (a few seconds the first time)' +
+            '...</div>';
+    } else {
+        holder.style.opacity = 0.5;
+    }
+    GUI.get('api/pogos/yaml_files', {yaml: path}).then(function (info) {
+        if (P.run.loading !== path) { return; }
+        P.run.loading = null;
+        P.run.info = info;
+        P.run.infoFor = path;
+        holder.style.opacity = 1;
+        P.run.renderInfo();
+        P.run.setReady(true, '');
+    }).catch(function (err) {
+        if (P.run.loading !== path) { return; }
+        P.run.loading = null;
+        holder.style.opacity = 1;
+        holder.innerHTML = '<div class="notice bad">Could not check the ' +
+            'yaml: ' + GUI.esc(err.message || err) + ' <button ' +
+            'class="small" id="run-info-retry">Retry</button></div>';
+        P.$('run-info-retry').onclick = P.run.loadInfo;
+        // still allow the run (pogos_run reports the problem itself)
+        P.run.setReady(true, 'yaml check failed - see above');
+    });
+};
+
+P.run.fileStates = {
+    ok: ['ok', 'on disk'],
+    cached: ['run', 'in download cache (linked at run start)'],
+    download: ['warn', 'to download at run start'],
+    pending: ['warn', 'not retrieved yet (downloads at run start)'],
+    missing: ['bad', 'missing'],
+    chained: ['', 'made by an earlier step'],
+    unset: ['', 'not set'],
+    error: ['bad', 'error']
+};
+
+P.run.renderInfo = function () {
+    var info = P.run.info;
+    var holder = P.$('run-info');
+    if (!info) { holder.innerHTML = ''; return; }
+    var sum = info.summary || {};
+    var demo = info.demo;
+    var tile = function (label, html, wide) {
+        return '<div class="demo-tile' + (wide ? ' wide' : '') + '"><div ' +
+            'class="demo-label">' + label + '</div><div class="demo-value">' +
+            html + '</div></div>';
+    };
+    var code = function (text) {
+        return text ? '<code>' + GUI.esc(text) + '</code>' :
+            '<span class="muted">-</span>';
+    };
+    // ---- header (as the demo cards) ----
+    var html = '<div class="demo-row run-card"><div class="demo-head">' +
+        '<div class="demo-head-text"><div class="demo-title">' +
+        GUI.esc(demo ? (demo.object || demo.key) : sum.name) +
+        (sum.instmode ? ' <span class="pill run">' +
+         GUI.esc(sum.instmode) + '</span>' : '') +
+        (demo ? (demo.keywords || []).map(function (kw) {
+            return ' <span class="pill">' + GUI.esc(kw) + '</span>';
+        }).join('') : '') + '</div><div class="demo-desc">' +
+        GUI.esc(demo ? (demo.description || demo.title || '') :
+                'Not a known demo project - the summary comes from the ' +
+                'yaml itself.') + '</div></div><button class="small" ' +
+        'id="run-info-refresh" title="check the files on disk again">' +
+        '&#8635; Re-check files</button></div><div class="demo-tiles">';
+    html += tile('Project name', code(sum.project));
+    html += tile('Yaml file', code(sum.name) + '<div class="muted small">' +
+                 (sum.version ? 'POGOS v' + GUI.esc(sum.version) : '') +
+                 (info.version_ok ? '' : ' <span class="pill warn">older ' +
+                  'version - needs Accept old</span>') + '</div>');
+    html += tile('Flavours', (sum.steps || []).length ?
+                 (sum.steps || []).map(function (st) {
+                     return '<span class="pill ok">' + GUI.esc(st) +
+                         '</span>'; }).join(' ') :
+                 '<span class="pill bad">no steps enabled</span>');
+    html += tile('Data path', code(sum.data_path));
+    if (demo) {
+        html += tile('Demo', code(demo.key) + '<div class="muted small">' +
+                     GUI.esc(demo.author || '') + ' &middot; ' +
+                     GUI.esc(demo.date || '') + '</div>');
+    }
+    // ---- input file status ----
+    var files = info.files || [];
+    var counts = info.counts || {};
+    var bad = counts.missing || 0;
+    var errs = counts.error || 0;
+    var fetch = (counts.download || 0) + (counts.pending || 0);
+    var notice;
+    if (bad || errs) {
+        notice = '<div class="notice bad">' + (bad ? bad + ' input file ' +
+            'parameter(s) point at local files that are not on disk' : '') +
+            (bad && errs ? '; ' : '') + (errs ? errs + ' could not be ' +
+            'checked' : '') + '.</div>';
+    } else if (fetch) {
+        notice = '<div class="notice warn">' + fetch + ' input file ' +
+            'parameter(s) are not retrieved yet - <code>pogos_run</code> ' +
+            'downloads them at the start of the run (a batch job needs ' +
+            'internet access on its node).</div>';
+    } else {
+        notice = '<div class="notice ok">All input files of the enabled ' +
+            'steps are ready.</div>';
+    }
+    var rows = files.map(function (f, it) {
+        var st = P.run.fileStates[f.status] || ['', f.status];
+        var nfile = f.files.length;
+        var nok = nfile - f.nmissing;
+        var detail = '';
+        if (nfile) {
+            detail = '<details><summary class="small">' + nok + ' / ' +
+                nfile + ' on disk' + '</summary><ul class="run-files">' +
+                f.files.map(function (item) {
+                    return '<li class="' + (item.exists ? 'ok' : 'bad') +
+                        '"><span class="run-file-mark">' + (item.exists ?
+                        '&#10004;' : (item.cached ? '&#8635;' : '&#10008;')) +
+                        '</span><code title="' + GUI.esc(item.path) + '">' +
+                        GUI.esc(item.name) + '</code>' + (item.link ?
+                        ' <span class="muted small">(link)</span>' : '') +
+                        (!item.exists && item.cached ? ' <span class="muted' +
+                         ' small">in download cache</span>' : '') + '</li>';
+                }).join('') + '</ul></details>';
+        } else if (f.status === 'pending') {
+            detail = '<span class="muted small">file list comes from the ' +
+                'source</span>';
+        }
+        return '<tr class="run-file-row ' + GUI.esc(f.status) + '"><td>' +
+            '<span class="mono small" data-param="' + GUI.esc(f.key) + '">' +
+            GUI.esc(f.key) + '</span></td><td class="small">' +
+            GUI.esc(f.label || (f.set ? f.source : '')) + '</td><td>' +
+            '<span class="pill ' + st[0] + '">' + GUI.esc(st[1]) +
+            '</span>' + (f.error ? '<div class="small st-error">' +
+            GUI.esc(f.error) + '</div>' : '') + '</td><td>' + detail +
+            '</td><td class="mono small run-dir">' + GUI.esc(f.directory ||
+            '') + '</td></tr>';
+    }).join('');
+    html += tile('Input files (' + files.length + ' parameter(s) of the ' +
+                 'enabled steps)', notice + (files.length ? '<div ' +
+                 'class="table-wrap"><table class="run-files-table"><thead>' +
+                 '<tr><th>Parameter</th><th>Source</th><th>Status</th>' +
+                 '<th>Files</th><th>Directory</th></tr></thead><tbody>' +
+                 rows + '</tbody></table></div>' : ''), true);
+    html += '</div></div>';
+    holder.innerHTML = html;
+    P.$('run-info-refresh').onclick = P.run.loadInfo;
+};
+
+P.run.checkFiles = function () {
+    // resolve true to go ahead (asks first if local files are missing)
+    var info = P.run.info;
+    if (!info || P.run.infoFor !== P.run.yaml() || !info.counts ||
+        !info.counts.missing) {
+        return Promise.resolve(true);
+    }
+    return GUI.confirm('Input files missing', info.counts.missing +
+                       ' input file parameter(s) point at local files ' +
+                       'that are not on disk - the run will probably ' +
+                       'fail. Run anyway?', 'Run anyway');
 };
 
 P.run.browse = function () {
@@ -1785,7 +1983,11 @@ P.run.updateCli = function () {
 
 P.run.runLocal = function () {
     if (!P.run.yaml()) { GUI.toast('Choose a yaml first', 'bad'); return; }
-    GUI.startJob('api/pogos/run', P.run.form(), GUI.consoles.run);
+    if (P.run.loading) { GUI.toast('Still checking the yaml', 'bad'); return; }
+    P.run.checkFiles().then(function (ok) {
+        if (ok) { GUI.startJob('api/pogos/run', P.run.form(),
+                               GUI.consoles.run); }
+    });
 };
 
 P.run.batchForm = function (extra) {
@@ -1809,6 +2011,11 @@ P.run.previewBatch = P.debounce(function () {
 
 P.run.batch = function () {
     if (!P.run.yaml()) { GUI.toast('Choose a yaml first', 'bad'); return; }
+    if (P.run.loading) { GUI.toast('Still checking the yaml', 'bad'); return; }
+    P.run.checkFiles().then(function (ok) { if (ok) { P.run.doBatch(); } });
+};
+
+P.run.doBatch = function () {
     GUI.post('api/pogos/batch', P.run.batchForm()).then(function (res) {
         var box = P.$('batch-result');
         box.style.display = '';
@@ -3063,18 +3270,41 @@ P.plots.render = function () {
    ========================================================================== */
 P.files = {root: null, rootLabel: '', project: null, dir: null, data: null,
            projects: null, checked: {}, sort: {key: 'name', asc: true},
-           stats: {}};
+           stats: {}, view: 'home', downloads: null, dlChecked: {},
+           dlSort: {key: 'downloaded', asc: false}};
 
 P.files.init = function () {
     GUI.onTab('files', P.files.refresh);
     P.$('files-filter').oninput = P.debounce(P.files.render, 150);
-    P.$('pm-filter').oninput = P.debounce(P.files.renderProjects, 120);
+    P.$('pm-filter').oninput = P.debounce(function () {
+        if (P.files.view === 'downloads') { P.files.renderDownloads(); }
+        else { P.files.renderProjects(); }
+    }, 120);
     document.querySelectorAll('#tab-files th[data-sort]').forEach(function (th) {
         th.onclick = function () {
             var key = th.getAttribute('data-sort');
             P.files.sort = {key: key, asc: P.files.sort.key === key ?
                             !P.files.sort.asc : true};
             P.files.render();
+        };
+    });
+    document.querySelectorAll('#tab-files th[data-dlsort]').forEach(
+        function (th) {
+            th.onclick = function () {
+                var key = th.getAttribute('data-dlsort');
+                P.files.dlSort = {key: key, asc: P.files.dlSort.key === key ?
+                                  !P.files.dlSort.asc : true};
+                P.files.renderDownloads();
+            };
+        });
+    // the home page cards open their page
+    document.querySelectorAll('#pm-home .pm-card').forEach(function (card) {
+        var open = function () {
+            P.files.openView(card.getAttribute('data-view'));
+        };
+        card.onclick = open;
+        card.onkeydown = function (ev) {
+            if (ev.key === 'Enter' || ev.key === ' ') { open(); }
         };
     });
     GUI.onDataChange(function () {
@@ -3084,33 +3314,101 @@ P.files.init = function () {
 
 P.files.refresh = function () {
     if (!P.path) { return; }
+    var view = P.files.view;
     GUI.get('api/pogos/projects').then(function (data) {
         P.files.projects = data;
-        if (P.files.root) {
+        if (view === 'browse') {
             // the open project may have been deleted
             if (P.files.project && !data.projects.some(function (p) {
                 return p.name === P.files.project.name; })) {
-                P.files.home();
+                P.files.openView('projects');
                 return;
             }
             P.files.list(P.files.dir || P.files.root);
-        } else { P.files.renderProjects(); }
+        } else if (view === 'projects') {
+            P.files.renderProjects();
+        } else if (view === 'home') {
+            P.files.renderHome();
+        }
     }).catch(GUI.fail);
+    // the download list (home card counts / downloads page)
+    if (view === 'home' || view === 'downloads') {
+        P.files.loadDownloads();
+    }
+};
+
+P.files.showView = function (view, title) {
+    // show one page of the project manager (home / projects / downloads /
+    //   browse)
+    P.files.view = view;
+    var home = view === 'home';
+    P.$('pm-home').style.display = home ? '' : 'none';
+    P.$('pm-bar').style.display = home ? 'none' : '';
+    P.$('pm-projects').style.display = view === 'projects' ? '' : 'none';
+    P.$('pm-downloads').style.display = view === 'downloads' ? '' : 'none';
+    P.$('pm-browser').style.display = view === 'browse' ? '' : 'none';
+    var filtered = view === 'projects' || view === 'downloads';
+    P.$('pm-filter').style.display = filtered ? '' : 'none';
+    P.$('pm-count').style.display = filtered ? '' : 'none';
+    P.$('pm-filter').placeholder = view === 'downloads' ?
+        'Filter downloads by file, type, project or parameter' :
+        'Filter projects by name';
+    if (title) { P.$('pm-title').textContent = title; }
+    // the back button goes up one level
+    P.$('pm-back').innerHTML = view === 'browse' && P.files.project ?
+        '&larr; All projects' : '&larr; Project manager';
 };
 
 P.files.home = function () {
-    // back to the project list
+    // back to the four cards
     P.files.root = null;
     P.files.project = null;
     P.files.dir = null;
-    P.$('pm-other').value = '';
-    P.$('pm-back').style.display = 'none';
-    P.$('pm-title').textContent = 'Projects';
-    P.$('pm-filter').style.display = '';
-    P.$('pm-count').style.display = '';
-    P.$('pm-browser').style.display = 'none';
-    P.$('pm-projects').style.display = '';
-    P.files.renderProjects();
+    P.files.showView('home');
+    P.files.refresh();
+};
+
+P.files.back = function () {
+    if (P.files.view === 'browse' && P.files.project) {
+        P.files.openView('projects');
+    } else {
+        P.files.home();
+    }
+};
+
+P.files.openView = function (view) {
+    // open a page from the home cards
+    var data = P.files.projects;
+    P.$('pm-filter').value = '';
+    if (view === 'projects') {
+        P.files.root = null;
+        P.files.project = null;
+        P.files.showView('projects', 'Projects data');
+        P.files.renderProjects();
+    } else if (view === 'downloads') {
+        P.files.showView('downloads', 'Downloaded data');
+        P.files.loadDownloads();
+    } else if (view === 'yamls' && data) {
+        P.files.openRoot(data.yaml_dir, 'Yaml files');
+    } else if (view === 'state' && data) {
+        P.files.openRoot(data.state_dir, 'GUI files');
+    }
+};
+
+P.files.renderHome = function () {
+    // the counts shown on the home cards
+    var data = P.files.projects;
+    if (data) {
+        P.$('pm-card-projects').textContent = data.projects.length +
+            ' project(s)';
+        P.$('pm-card-yamls').textContent = data.yamls.length +
+            ' yaml file(s)';
+        P.$('pm-card-state').textContent = data.state_dir;
+    }
+    var dl = P.files.downloads;
+    P.$('pm-card-downloads').textContent = dl ? dl.nfiles + ' file(s) ' +
+        '\u00b7 ' + GUI.fmtBytes(dl.size) + ' \u00b7 ' + dl.nlinks +
+        ' link(s) in projects' : '...';
 };
 
 P.files.statsText = function (stats) {
@@ -3195,28 +3493,12 @@ P.files.openRoot = function (root, label, project) {
     P.files.root = root;
     P.files.rootLabel = label;
     P.files.project = project || null;
-    P.$('pm-back').style.display = '';
-    P.$('pm-title').textContent = label;
-    P.$('pm-filter').style.display = 'none';
-    P.$('pm-count').style.display = 'none';
-    P.$('pm-projects').style.display = 'none';
-    P.$('pm-browser').style.display = '';
+    P.files.showView('browse', label);
     P.files.list(root);
 };
 
 P.files.openProject = function (proj) {
-    P.$('pm-other').value = '';
     P.files.openRoot(proj.path, 'Project: ' + proj.name, proj);
-};
-
-P.files.openOther = function (kind) {
-    var data = P.files.projects;
-    if (!kind || !data) { return; }
-    if (kind === 'yamls') {
-        P.files.openRoot(data.yaml_dir, 'Other data: yamls');
-    } else if (kind === 'state') {
-        P.files.openRoot(data.state_dir, 'Other data: gui state');
-    }
 };
 
 P.files.list = function (dir) {
@@ -3462,9 +3744,215 @@ P.files.deleteAll = function (proj, alsoYamls) {
             GUI.toast(res.message, res.success ? 'ok' : 'bad');
             delete P.files.stats[proj.name];
             P.loadYamls();
-            P.files.home();
+            P.files.openView('projects');
             P.files.refresh();
         }).catch(GUI.fail);
+    });
+};
+
+/* ---- Downloaded data (the shared download cache) ---- */
+P.files.loadDownloads = function () {
+    return GUI.get('api/pogos/downloads').then(function (data) {
+        P.files.downloads = data;
+        // forget ticked files that are gone
+        var have = {};
+        data.files.forEach(function (f) { have[f.path] = true; });
+        Object.keys(P.files.dlChecked).forEach(function (path) {
+            if (!have[path]) { delete P.files.dlChecked[path]; }
+        });
+        if (P.files.view === 'downloads') { P.files.renderDownloads(); }
+        if (P.files.view === 'home') { P.files.renderHome(); }
+    }).catch(GUI.fail);
+};
+
+P.files.dlLinkText = function (link) {
+    // "project: KEY" (or the link path if it is outside the projects)
+    return (link.project ? link.project : '(outside projects)') + ': ' +
+        (link.key || 'unknown parameter');
+};
+
+P.files.dlShown = function () {
+    // the downloads matching the filter, sorted
+    var data = P.files.downloads;
+    if (!data) { return []; }
+    var filter = P.$('pm-filter').value.trim().toLowerCase();
+    var shown = data.files.filter(function (f) {
+        if (!filter) { return true; }
+        var text = [f.rel, f.source, f.product || '', f.origin || '']
+            .concat(f.links.map(P.files.dlLinkText)).join(' ').toLowerCase();
+        return text.indexOf(filter) >= 0;
+    });
+    var sort = P.files.dlSort;
+    shown.sort(function (a, b) {
+        var va = a[sort.key], vb = b[sort.key];
+        if (typeof va === 'string' || typeof vb === 'string') {
+            va = String(va || '').toLowerCase();
+            vb = String(vb || '').toLowerCase();
+        } else { va = va || 0; vb = vb || 0; }
+        var cmp = va < vb ? -1 : (va > vb ? 1 : 0);
+        return sort.asc ? cmp : -cmp;
+    });
+    return shown;
+};
+
+P.files.renderDownloads = function () {
+    var data = P.files.downloads;
+    var body = P.$('dl-body');
+    if (!data) { body.innerHTML = ''; return; }
+    var shown = P.files.dlShown();
+    P.$('pm-count').textContent = (shown.length !== data.files.length ?
+        shown.length + ' of ' : '') + data.files.length + ' file(s) \u00b7 ' +
+        GUI.fmtBytes(data.size);
+    P.$('dl-note').innerHTML = 'Stored in <code>' + GUI.esc(data.path) +
+        '</code>';
+    P.$('dl-all').checked = false;
+    if (data.files.length === 0) {
+        body.innerHTML = '<tr><td colspan="8" class="muted">Nothing ' +
+            'downloaded yet - online inputs (MAST / POGOS server) are ' +
+            'stored here the first time a project needs them.</td></tr>';
+        return;
+    }
+    if (shown.length === 0) {
+        body.innerHTML = '<tr><td colspan="8" class="muted">No download ' +
+            'matches the filter.</td></tr>';
+        return;
+    }
+    body.innerHTML = shown.map(function (f, index) {
+        var links = f.links.length ? f.links.map(function (link) {
+            return '<div class="dl-link" title="' + GUI.esc(link.path) +
+                '">' + (link.project ? '<span class="pill">' +
+                GUI.esc(link.project) + '</span>' : '<span class="muted">' +
+                '(outside projects)</span>') + ' <code>' +
+                GUI.esc(link.key || 'unknown parameter') + '</code></div>';
+        }).join('') : '<span class="muted">not used</span>';
+        return '<tr data-index="' + index + '"><td><input type="checkbox"' +
+            (P.files.dlChecked[f.path] ? ' checked' : '') + '></td>' +
+            '<td class="dl-name" title="' + GUI.esc(f.path) + '"><span ' +
+            'class="mono">' + GUI.esc(f.name) + '</span><div class="muted ' +
+            'small">' + GUI.esc(f.origin || GUI.dirname(f.rel)) +
+            '</div></td><td class="small nowrap">' +
+            GUI.fmtTime(f.downloaded) + '</td><td><span class="pill dl-src-' +
+            GUI.esc(f.source) + '">' + GUI.esc(f.source) + '</span></td>' +
+            '<td class="mono small">' + GUI.esc(f.product || '-') + '</td>' +
+            '<td class="num small nowrap">' + GUI.fmtBytes(f.size) + '</td>' +
+            '<td class="dl-links small">' + links + '</td><td class="row-' +
+            'actions nowrap"><button class="small" data-act="view">View' +
+            '</button><button class="small danger" data-act="delete">' +
+            'Delete...</button></td></tr>';
+    }).join('');
+    body.querySelectorAll('tr').forEach(function (tr) {
+        var f = shown[Number(tr.getAttribute('data-index'))];
+        tr.querySelector('input').onchange = function () {
+            P.files.dlChecked[f.path] = this.checked;
+        };
+        tr.querySelector('[data-act="view"]').onclick = function () {
+            GUI.viewFile(f.path);
+        };
+        tr.querySelector('[data-act="delete"]').onclick = function () {
+            P.files.dlDelete([f]);
+        };
+    });
+};
+
+P.files.dlSelectAll = function (on) {
+    P.files.dlShown().forEach(function (f) { P.files.dlChecked[f.path] = on; });
+    document.querySelectorAll('#dl-body input[type=checkbox]')
+        .forEach(function (box) { box.checked = on; });
+};
+
+P.files.dlDeleteSelected = function () {
+    var data = P.files.downloads;
+    var chosen = data ? data.files.filter(function (f) {
+        return P.files.dlChecked[f.path]; }) : [];
+    if (chosen.length === 0) { GUI.toast('Select downloaded files first');
+                               return; }
+    P.files.dlDelete(chosen);
+};
+
+P.files.dlLinksHtml = function (files, limit) {
+    // the symlinks that break when these files are deleted (grouped by
+    //   project)
+    var links = [];
+    files.forEach(function (f) { links = links.concat(f.links); });
+    if (links.length === 0) {
+        return {count: 0, html: '<p class="muted">No project links to ' +
+                'these files - nothing breaks.</p>'};
+    }
+    var projects = {};
+    links.forEach(function (link) {
+        projects[link.project || '(outside projects)'] = true; });
+    var names = Object.keys(projects).sort();
+    var shown = links.slice(0, limit);
+    var html = '<p class="notice warn small"><b>This breaks ' +
+        names.length + ' project(s)</b> (' + names.map(GUI.esc).join(', ') +
+        '): these ' + links.length + ' link(s) will point to missing files ' +
+        'until the data are downloaded again (the next pogos_run of each ' +
+        'project downloads them).</p><ul class="dl-break-list">' +
+        shown.map(function (link) {
+            return '<li><code>' + GUI.esc(link.path) + '</code><br><span ' +
+                'class="muted small">' + GUI.esc(P.files.dlLinkText(link)) +
+                '</span></li>';
+        }).join('') + (links.length > shown.length ? '<li>... and ' +
+        (links.length - shown.length) + ' more</li>' : '') + '</ul>';
+    return {count: links.length, html: html};
+};
+
+P.files.dlDelete = function (files) {
+    var size = files.reduce(function (sum, f) { return sum + f.size; }, 0);
+    var list = files.slice(0, 8).map(function (f) {
+        return '<li><code>' + GUI.esc(f.rel) + '</code></li>'; }).join('') +
+        (files.length > 8 ? '<li>... and ' + (files.length - 8) +
+         ' more</li>' : '');
+    var broken = P.files.dlLinksHtml(files, 40);
+    var html = '<p>Permanently delete ' + files.length + ' downloaded ' +
+        'file(s) (' + GUI.fmtBytes(size) + '):</p><ul>' + list + '</ul>' +
+        broken.html;
+    var post = function () {
+        GUI.post('api/pogos/downloads_delete', {
+            files: files.map(function (f) { return f.path; }), confirm: true
+        }).then(function (res) {
+            GUI.toast(res.message, res.success ? 'ok' : 'bad');
+            P.files.stats = {};
+            P.files.loadDownloads();
+        }).catch(GUI.fail);
+    };
+    var title = 'Delete ' + files.length + ' downloaded file(s)';
+    if (broken.count === 0) {
+        GUI.confirm(title, html, 'Delete').then(function (ok) {
+            if (ok) { post(); } });
+        return;
+    }
+    // breaking projects needs the word typed
+    GUI.confirmTyped({title: title, word: 'DELETE', label: 'Delete',
+                      html: html}).then(function (ok) {
+        if (ok) { post(); } });
+};
+
+P.files.dlReset = function () {
+    var data = P.files.downloads;
+    if (!data || data.files.length === 0) {
+        GUI.toast('Nothing downloaded');
+        return;
+    }
+    var broken = P.files.dlLinksHtml(data.files, 60);
+    GUI.confirmTyped({
+        title: 'RESET: remove all downloaded data', word: 'RESET',
+        label: 'Remove all downloaded data',
+        html: '<p class="notice bad"><b>This deletes everything in</b> ' +
+              '<code>' + GUI.esc(data.path) + '</code>: ' + data.nfiles +
+              ' file(s), ' + GUI.fmtBytes(data.size) + '. Every project ' +
+              'using downloaded data is broken until it is downloaded ' +
+              'again.</p>' + broken.html +
+              '<p class="muted">This cannot be undone.</p>'
+    }).then(function (ok) {
+        if (!ok) { return; }
+        GUI.post('api/pogos/downloads_reset', {confirm: 'RESET'})
+            .then(function (res) {
+                GUI.toast(res.message, res.success ? 'ok' : 'bad');
+                P.files.dlChecked = {};
+                P.files.stats = {};
+                P.files.loadDownloads();
+            }).catch(GUI.fail);
     });
 };
 
@@ -4030,6 +4518,7 @@ document.addEventListener('DOMContentLoaded', function () {
     P.files.init();
     P.docs.init();
     P.status.init();
+    P.run.init();
     P.stream.init();
     P.$('batch-submit').onchange = P.run.previewBatch;
     GUI.onDataChange(function () { if (P.path) { P.loadYamls(); } });

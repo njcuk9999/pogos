@@ -390,6 +390,31 @@ input[data-param], select[data-param], textarea[data-param] { cursor: auto; }
     .pm-row { grid-template-columns: 1fr 1fr; }
     .pm-del-choices { grid-template-columns: 1fr; }
 }
+/* project manager home cards */
+.pm-home { display: grid; gap: 14px; margin-top: 10px;
+           grid-template-columns: repeat(auto-fill, minmax(240px, 1fr)); }
+.pm-card { border: 1px solid var(--border); border-radius: 10px;
+           background: var(--panel); padding: 18px 18px 14px; cursor: pointer;
+           display: flex; flex-direction: column; gap: 6px;
+           box-shadow: 0 1px 3px var(--shadow);
+           transition: border-color 0.12s, background 0.12s; }
+.pm-card:hover, .pm-card:focus { border-color: var(--accent);
+                                 background: var(--panel3); outline: none; }
+.pm-card-icon { font-size: 26px; line-height: 1; }
+.pm-card-title { font-weight: 700; font-size: 15px; color: var(--strong); }
+.pm-card-desc { font-size: 12.5px; }
+.pm-card-info { margin-top: auto; padding-top: 6px; word-break: break-all; }
+/* downloaded data table */
+.dl-table { max-height: 68vh; overflow-y: auto; }
+.dl-name { word-break: break-all; min-width: 260px; }
+.dl-links { min-width: 220px; }
+.dl-link { margin: 1px 0; word-break: break-all; }
+.dl-src-mast { background: #8250df; color: #fff; }
+.dl-src-pogos { background: var(--accent); color: #fff; }
+.dl-src-local { background: var(--ok); color: #fff; }
+.dl-break-list { max-height: 260px; overflow-y: auto; margin: 6px 0;
+                 padding-left: 18px; }
+.dl-break-list li { margin-bottom: 4px; word-break: break-all; }
 #pm-browser .fb-path { align-items: center; }
 #pm-browser .fb-path .grow { flex: 1; }
 #pm-browser .fb-crumbs { margin: 0; }
@@ -473,3 +498,20 @@ input[data-param], select[data-param], textarea[data-param] { cursor: auto; }
 
 /* flavour / demo counts on the setup mode cards */
 .choice-desc.mode-counts { display: block; white-space: pre; font-size: 11px; }
+.mode-counts .cnt-ok { color: var(--ok); font-weight: 600; }
+.mode-counts .cnt-none { color: var(--danger); font-weight: 600; }
+
+/* Run tab: yaml summary + input file status */
+.run-info { margin-top: 10px; }
+.run-card { cursor: default; }
+.run-card:hover { border-color: var(--border); }
+.run-files-table td { vertical-align: top; }
+.run-files-table tr.unset td, .run-files-table tr.chained td { color: var(--muted); }
+.run-files { margin: 4px 0 0 0; padding: 0; list-style: none; max-height: 220px;
+    overflow: auto; }
+.run-files li { margin: 1px 0; font-size: 12px; }
+.run-files li.bad code { color: var(--danger); }
+.run-file-mark { display: inline-block; width: 16px; }
+.run-files li.ok .run-file-mark { color: var(--ok); }
+.run-files li.bad .run-file-mark { color: var(--danger); }
+.run-dir { word-break: break-all; max-width: 380px; }

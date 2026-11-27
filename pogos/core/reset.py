@@ -262,7 +262,9 @@ def _dir_stats(path: str) -> Tuple[int, float]:
         for filename in files:
             nfiles += 1
             try:
-                nbytes += os.path.getsize(os.path.join(root, filename))
+                # lstat: symlinks into the download cache are not counted
+                #   (deleting the link does not free the cached file)
+                nbytes += os.lstat(os.path.join(root, filename)).st_size
             except OSError:
                 pass
     return nfiles, nbytes / (1024.0 ** 2)

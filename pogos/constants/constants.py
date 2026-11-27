@@ -102,13 +102,17 @@ CDict.add('LIST_YAMLS', value=False, dtype=bool, source=__NAME__, user=False,
 CDict.add('LOCAL_DOWNLOAD_DATA', value=None, dtype=str, source=__NAME__,
           user=False, active=False, cmd_arg='demolocal', group=cgroup,
           description='the absolute path to where demo data is stored locally'
-                      ' this overrides any downloading of data from online.')
+                      ' this overrides any downloading of data from online. '
+                      'Files are copied into {DATA_PATH}/downloads and '
+                      'symlinked into the projects (or symlinked straight '
+                      'from here with --demosymlink).')
 
 # only used for donwloading data
 CDict.add('DEMO_SYMLINK_DATA', value=False, dtype=bool, source=__NAME__,
           user=False, active=False, cmd_arg='demosymlink', group=cgroup,
           description='if downloading demo data, symlink the data from the '
-                      'local download location rather than copying it.')
+                      'local download location rather than copying it into '
+                      '{DATA_PATH}/downloads.')
 
 # Override whether every flavour shows its plots (pogos_run --showplots):
 #   on = show them (from the gui they stream to its Plots / Status tabs),

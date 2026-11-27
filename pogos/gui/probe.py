@@ -106,6 +106,174 @@ def probe_demo_counts() -> Dict[str, Any]:
     return dict(counts=counts)
 
 
+def step_selections(instmode: str) -> List[List[str]]:
+    """
+    Every "level:step" selection pogos_setup can make for a mode (one step
+    or skip per level, any subset on multiple choice levels, at least one
+    step) - in the order the gui sends them (level order, then step order)
+
+    :param instmode: str, the instrument mode
+
+    :return: list of list of str, the selections
+    """
+    import itertools
+    from pogos.core import definitions
+    mode = definitions.MODE_BY_NAME[instmode]
+    options = []
+    for level in definitions.REDUCTION_LEVELS:
+        names = ['{0}:{1}'.format(level.name, step.name)
+                 for step in definitions.steps_for_level(level)
+                 if step.supports(mode)]
+        if len(names) == 0:
+            continue
+        if level.allow_multiple:
+            # every subset (in step order)
+            options.append([[name for bit, name in enumerate(names)
+                             if mask >> bit & 1]
+                            for mask in range(2 ** len(names))])
+        else:
+            options.append([[]] + [[name] for name in names])
+    out = []
+    for combo in itertools.product(*options):
+        selection = [name for part in combo for name in part]
+        if selection:
+            out.append(selection)
+    return out
+
+
+def _mode_demos(instmode: str) -> Dict[str, Any]:
+    """
+    The demos of every step selection of one instrument mode
+
+    :param instmode: str, the instrument mode
+
+    :return: dict "{instmode}|{steps joined by ,}" -> the probe_demos
+             result (only selections with at least one demo)
+    """
+    out: Dict[str, Any] = dict()
+    for selection in step_selections(instmode):
+        result = probe_demos(instmode, selection)
+        if result['demos']:
+            out['{0}|{1}'.format(instmode, ','.join(selection))] = result
+    return out
+
+
+def probe_demos_all(instmodes: List[str]) -> Dict[str, Any]:
+    """
+    The demo counts and the demos of every step selection of some
+    instrument modes (all modes with demos if none given) - preloaded by
+    the gui at start up; the modes run in parallel (forked after the
+    slow import)
+
+    :param instmodes: list of str, the instrument modes (empty = all)
+
+    :return: dict(instmodes, counts (see probe_demo_counts), demos=dict
+             "{instmode}|{steps joined by ,}" -> the probe_demos result)
+    """
+    import multiprocessing
+    from pogos import demos as demo_module
+    if not instmodes:
+        instmodes = list(demo_module.DEMOS)
+    counts = probe_demo_counts()['counts']
+    todo = [mode for mode in instmodes if demo_module.DEMOS.get(mode)]
+    out: Dict[str, Any] = dict()
+    if len(todo) > 1:
+        ctx = multiprocessing.get_context('fork')
+        with ctx.Pool(min(len(todo), os.cpu_count() or 2)) as pool:
+            for part in pool.map(_mode_demos, todo):
+                out.update(part)
+    else:
+        for mode in todo:
+            out.update(_mode_demos(mode))
+    return dict(instmodes=instmodes, counts=counts, demos=out)
+
+
+def _load_yaml_params(yaml_file: str) -> Any:
+    """
+    Load the parameters of a yaml as pogos_run does (without running)
+
+    :param yaml_file: str, the yaml file (absolute)
+
+    :return: tuple, (ParamDict, bool version ok)
+    """
+    from aperocore.constants import load_functions
+    from pogos.constants.constants import CDict
+    from pogos.core import base as pogos_base
+    from pogos.core import definitions
+    from pogos.core import startup
+    # the recipes parse sys.argv - only give them the yaml file
+    sys.argv = [sys.argv[0], '--yamlfile={0}'.format(yaml_file)]
+    other_const = startup.initial_setup()
+    gkwargs = dict(name='pogos.gui.probe', description='yaml probe',
+                   inputargs=['GLOBAL.YAML_FILE', 'GLOBAL.LIST_YAMLS'],
+                   param_file_path='GLOBAL.YAML_FILE', config_list=[CDict],
+                   from_file=False, external_const=other_const)
+    params = load_functions.get_all_params(**gkwargs)
+    version_ok = load_functions._check_yaml_version(
+        yaml_file, pogos_base.__version__, VERR, raise_exception=False)
+    largs = dict(files=[yaml_file], params=params, version=None,
+                 version_err=None)
+    params = load_functions.load_from_yaml(**largs)
+    # out of date yamls may lack run switches (as pogos_run / pogos_reset)
+    for step in definitions.RED_STEPS:
+        if params.get(step.run_key) is None:
+            params[step.run_key] = False
+    return params, bool(version_ok)
+
+
+def probe_yaml_files(yaml_file: str) -> Dict[str, Any]:
+    """
+    Describe the input files (FileObjectConst parameters) of the enabled
+    reduction steps of a yaml: where they come from, which directory they
+    belong in and the files listed - the gui checks the disk itself (so
+    this result can be cached until the yaml changes)
+
+    :param yaml_file: str, the yaml file
+
+    :return: dict(yaml, version_ok, download_dir, files=list of dict(key,
+             step, source, label, chained, set, directory, cache_dir,
+             files, always_download, error))
+    """
+    from aperocore.constants import custom_const_classes as ccc
+    from aperocore.constants import file_sources
+    from pogos.core import file_download
+    yaml_file = os.path.realpath(yaml_file)
+    params, version_ok = _load_yaml_params(yaml_file)
+    chained = set(key.upper() for key in file_download.chained_keys(params))
+    download_dir = file_download.download_directory(params)
+    out = []
+    for key in file_download.enabled_file_keys(params):
+        step = file_download.step_for_key(key)
+        instance = params.instances.get(key)
+        fileobj = ccc.get_fileobj(params[key])
+        entry: Dict[str, Any] = dict(
+            key=key, step=None if step is None else step.name,
+            source=None, label=None, chained=key.upper() in chained,
+            set=fileobj is not None, directory=None, cache_dir=None,
+            files=[], always_download=False, error=None)
+        if fileobj is not None:
+            entry['source'] = fileobj.source
+            entry['label'] = file_sources._source_label(fileobj)
+            if fileobj.source == 'mast':
+                entry['label'] += ' ({0})'.format(fileobj.product)
+            entry['files'] = fileobj.files
+            entry['always_download'] = bool(fileobj.always_download)
+            entry['cache_dir'] = file_sources.cache_directory(download_dir,
+                                                              fileobj)
+            try:
+                if instance.path_key is not None:
+                    path_key = (file_sources.module_prefix(key, instance)
+                                + instance.path_key)
+                    entry['directory'] = file_download.module_directory(
+                        params, key, path_key)
+            except Exception as error:
+                entry['error'] = '{0}: {1}'.format(type(error).__name__,
+                                                   error)
+        out.append(entry)
+    return dict(yaml=yaml_file, version_ok=version_ok,
+                download_dir=download_dir, files=out)
+
+
 def probe_reset(yaml_file: str) -> Dict[str, Any]:
     """
     Get the directories pogos_reset would delete (without deleting)
@@ -404,7 +572,8 @@ def main(argv: List[str]) -> int:
     :return: int, the exit code (0 = success)
     """
     parser = argparse.ArgumentParser(description='POGOS gui probes')
-    parser.add_argument('probe', choices=['demos', 'demo-counts',
+    parser.add_argument('probe', choices=['demos', 'demo-counts', 'demos-all',
+                                          'yaml-files',
                                           'reset-preview', 'params',
                                           'algorithms'])
     parser.add_argument('--instmode', default='')
@@ -415,6 +584,11 @@ def main(argv: List[str]) -> int:
         if args.probe == 'demos':
             steps = [step for step in args.steps.split(',') if step]
             result = probe_demos(args.instmode, steps)
+        elif args.probe == 'yaml-files':
+            result = probe_yaml_files(args.yamlfile)
+        elif args.probe == 'demos-all':
+            result = probe_demos_all([mode for mode in
+                                      args.instmode.split(',') if mode])
         elif args.probe == 'demo-counts':
             result = probe_demo_counts()
         elif args.probe == 'params':

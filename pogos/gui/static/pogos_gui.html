@@ -167,7 +167,9 @@ data. Choosing a demo also fills in its project name (section 1).</div>
 <div class="step-num">6</div>
 <h3>Input data download</h3>
 <div class="muted small">Online input files (MAST / POGOS data server) can
-be fetched now, at the first run, or from a local mirror.</div>
+be fetched now, at the first run, or from a local mirror. They are kept once
+in <code>downloads/</code> of the POGOS path and symlinked into the project
+(files another project already downloaded are reused).</div>
 <div class="choice-grid" id="setup-download" style="margin-top:8px"
      data-param="GLOBAL.DOWNLOAD_MODE">
 <label class="choice"><input type="radio" name="setup-dl" value="run"
@@ -180,8 +182,9 @@ be fetched now, at the first run, or from a local mirror.</div>
 it finishes.</span></span></label>
 <label class="choice"><input type="radio" name="setup-dl" value="local">
 <span><span class="choice-title">Local mirror</span>
-<span class="choice-desc">Copy / symlink POGOS server files from a
-directory on disk (the rest is downloaded).</span></span></label>
+<span class="choice-desc">Copy POGOS server files from a directory on
+disk into <code>downloads/</code> (or symlink straight to it); the rest is
+downloaded.</span></span></label>
 </div>
 <div class="field-row" id="setup-local-row" style="display:none">
 <div class="field grow">
@@ -322,6 +325,7 @@ or as a Slurm batch job.</div>
 </div>
 </div>
 <div id="run-summary" class="yaml-summary"></div>
+<div id="run-info" class="run-info"></div>
 <label class="inline" style="margin-top:8px"><input id="run-accept-old"
        type="checkbox" onchange="P.run.updateCli()"> Accept a yaml from an
     older POGOS version (POGOS_ACCEPT_OLD_YAML)</label>
@@ -357,7 +361,9 @@ browser; the Processes tab finds it again).</div>
 </button>
 </div>
 <div class="field-actions" style="margin-top:10px">
-<button class="primary" onclick="P.run.runLocal()">&#9654; Run</button>
+<button class="primary run-go" id="run-btn-local"
+        onclick="P.run.runLocal()">&#9654; Run</button>
+<span class="muted small run-go-note"></span>
 </div>
 </div>
 </div>
@@ -379,8 +385,10 @@ but not submitted from here.</div>
 <div class="cli-title">Script preview</div>
 <pre id="batch-preview" class="text-view small"></pre>
 <div class="field-actions" style="margin-top:10px">
-<button class="primary" onclick="P.run.batch()">&#9654; Create batch
+<button class="primary run-go" id="run-btn-batch"
+        onclick="P.run.batch()">&#9654; Create batch
     script</button>
+<span class="muted small run-go-note"></span>
 </div>
 <div id="batch-result" class="notice" style="display:none"></div>
 </div>
@@ -705,27 +713,71 @@ for runs started from this gui (Run tab, single process or batch).</div>
      Files (project organiser)
      =================================================================== -->
 <div id="tab-files" class="tabpage">
-<div class="tabdesc">Project manager: choose a project to browse its files
-(inputs, outputs and plots of each flavour), view FITS headers / images /
-tables, delete files, or reset / delete the whole project. Use <b>Other
-data</b> to browse the yaml files or the gui state instead.</div>
-<div class="section-card pm-bar">
-<button id="pm-back" onclick="P.files.home()" style="display:none">&larr;
-    All projects</button>
+<div class="tabdesc">Project manager: <b>Projects data</b> holds the
+inputs, outputs and plots of each project (browse files, view FITS headers /
+images / tables, delete files, reset / delete a project). <b>Downloaded
+data</b> is the shared cache of online inputs (MAST / POGOS server) that the
+projects link to. <b>Yaml files</b> and <b>GUI files</b> browse the
+configuration files and the gui state.</div>
+<div class="section-card pm-bar" id="pm-bar" style="display:none">
+<button id="pm-back" onclick="P.files.back()">&larr; Back</button>
 <span id="pm-title" class="pm-title">Projects</span>
 <input id="pm-filter" type="search" spellcheck="false"
        placeholder="Filter projects by name">
 <span id="pm-count" class="muted small"></span>
 <span class="grow"></span>
-<label class="inline" for="pm-other">Other data</label>
-<select id="pm-other" onchange="P.files.openOther(this.value)">
-<option value="">-- choose --</option>
-<option value="yamls">yamls (configuration files)</option>
-<option value="state">gui state (logs, scripts, backups, streams)</option>
-<option value="downloaded" disabled>downloaded data (coming later)</option>
-</select>
 </div>
-<div id="pm-projects" class="section-card pm-list-card">
+<div id="pm-home" class="pm-home">
+<div class="pm-card" data-view="projects" tabindex="0">
+<div class="pm-card-icon">&#128193;</div>
+<div class="pm-card-title">Projects data</div>
+<div class="pm-card-desc">Inputs, outputs and plots of every project.</div>
+<div class="pm-card-info muted small" id="pm-card-projects">...</div>
+</div>
+<div class="pm-card" data-view="downloads" tabindex="0">
+<div class="pm-card-icon">&#11015;</div>
+<div class="pm-card-title">Downloaded data</div>
+<div class="pm-card-desc">Shared cache of online inputs (MAST / POGOS
+server / local mirror copies) linked into projects.</div>
+<div class="pm-card-info muted small" id="pm-card-downloads">...</div>
+</div>
+<div class="pm-card" data-view="yamls" tabindex="0">
+<div class="pm-card-icon">&#128221;</div>
+<div class="pm-card-title">Yaml files</div>
+<div class="pm-card-desc">The yaml configuration files.</div>
+<div class="pm-card-info muted small" id="pm-card-yamls">...</div>
+</div>
+<div class="pm-card" data-view="state" tabindex="0">
+<div class="pm-card-icon">&#9881;</div>
+<div class="pm-card-title">GUI files</div>
+<div class="pm-card-desc">Gui state: logs, batch scripts, yaml backups,
+plot streams.</div>
+<div class="pm-card-info muted small" id="pm-card-state">...</div>
+</div>
+</div>
+<div id="pm-downloads" class="section-card" style="display:none">
+<div class="field-actions" style="margin-bottom:8px">
+<label class="inline small"><input type="checkbox" id="dl-all"
+    onclick="P.files.dlSelectAll(this.checked)"> Select all</label>
+<button class="small danger" onclick="P.files.dlDeleteSelected()">Delete
+    selected...</button>
+<span id="dl-note" class="muted small"></span>
+<span class="grow"></span>
+<button class="danger" onclick="P.files.dlReset()">Remove all downloaded
+    data (RESET)...</button>
+</div>
+<div class="table-wrap dl-table">
+<table><thead><tr><th></th>
+<th class="sortable" data-dlsort="name">File</th>
+<th class="sortable" data-dlsort="downloaded">Downloaded</th>
+<th class="sortable" data-dlsort="source">Source</th>
+<th class="sortable" data-dlsort="product">Type</th>
+<th class="sortable num" data-dlsort="size">Size</th>
+<th>Used by (project: parameter)</th><th></th></tr></thead>
+<tbody id="dl-body"></tbody></table>
+</div>
+</div>
+<div id="pm-projects" class="section-card pm-list-card" style="display:none">
 <div class="pm-list-head"><span>Project</span><span>Flavours</span>
 <span>Used by yaml(s)</span><span class="num">Size</span>
 <span>Modified</span><span></span></div>

@@ -47,6 +47,7 @@ from aperocore.gui import webapp
 
 from pogos.core import base as pogos_base
 from pogos.gui import commands
+from pogos.gui import downloads as gui_downloads
 from pogos.gui import layout
 from pogos.gui import probe
 from pogos.gui import status as run_status
@@ -89,6 +90,58 @@ STREAM_RE = re.compile(r'^[\w.+-]+$')
 # =============================================================================
 # Define classes
 # =============================================================================
+def file_status(entry: Dict[str, Any]) -> Dict[str, Any]:
+    """
+    Check one input file parameter on disk (see probe.probe_yaml_files)
+
+    status: ok (all files on disk), cached (in the download cache - linked
+    at the run start), download (fetched at the run start), pending (online,
+    nothing listed yet - fetched at the run start), missing (local files
+    not on disk), chained (made by an earlier step of the run), unset (no
+    file given) or error
+
+    :param entry: dict, one probed file parameter
+
+    :return: dict, the entry with status and files = list of dict(name,
+             path, exists, link, cached)
+    """
+    out = dict(entry)
+    directory = entry.get('directory')
+    cache_dir = entry.get('cache_dir')
+    files = []
+    for name in entry.get('files') or []:
+        path = name if os.path.isabs(name) or not directory else \
+            os.path.join(directory, name)
+        cpath = (os.path.join(cache_dir, os.path.basename(name))
+                 if cache_dir and not os.path.isabs(name) else None)
+        files.append(dict(name=name, path=path,
+                          exists=os.path.exists(path),
+                          link=os.path.islink(path),
+                          cached=bool(cpath and os.path.exists(cpath))))
+    out['files'] = files
+    online = entry.get('source') in ('mast', 'pogos')
+    nmiss = len([item for item in files if not item['exists']])
+    if entry.get('error'):
+        status = 'error'
+    elif entry.get('chained'):
+        status = 'chained'
+    elif not entry.get('set'):
+        status = 'unset'
+    elif online and (len(files) == 0 or entry.get('always_download')):
+        status = 'pending'
+    elif nmiss == 0:
+        status = 'ok'
+    elif online and all(item['exists'] or item['cached'] for item in files):
+        status = 'cached'
+    elif online:
+        status = 'download'
+    else:
+        status = 'missing'
+    out['status'] = status
+    out['nmissing'] = nmiss
+    return out
+
+
 class PogosGuiApp(webapp.GuiApp):
     """
     The POGOS gui application (see module doc string)
@@ -124,11 +177,64 @@ class PogosGuiApp(webapp.GuiApp):
         # the algorithm steps of every reduction step (docs page, cached)
         self.algorithm_info: Optional[Dict[str, Any]] = None
         self.algorithm_lock = threading.Lock()
+        # the demo counts of every instrument mode (setup mode cards) - the
+        #   probe starts with the gui so they are ready when Setup opens
+        self.demo_counts: Optional[Dict[str, Any]] = None
+        self.demo_counts_lock = threading.Lock()
+        # every demo list of every step selection (setup section 5) and
+        #   the demo counts: one probe started with the gui (its modes run
+        #   in parallel); once demo_ready is set a selection missing from
+        #   demo_preload (of a mode in demo_loaded) has no demos
+        self.demo_preload: Dict[str, Any] = dict()
+        self.demo_loaded: set = set()
+        self.demo_ready = threading.Event()
+        # yaml input file probes (Run tab): path -> dict(stamp, result, lock)
+        self.yaml_files_cache: Dict[str, Any] = dict()
+        self.yaml_files_lock = threading.Lock()
         super().__init__()
         if path:
             result = self.set_path(path, create=False)
             if not result['success']:
                 self.state.add_message(result['message'])
+        threading.Thread(target=self.preload_demos, daemon=True,
+                         name='demo-preload').start()
+
+    def preload_demos(self) -> None:
+        """
+        Probe the demo counts and every demo list of every mode and cache
+        them (on failure the routes fall back to probing on demand)
+
+        :return: None
+        """
+        try:
+            result = self._run_probe(['demos-all'])
+            if 'error' in result:
+                self.state.add_message('demo preload failed: ' +
+                                       str(result['error'])[:300])
+                return
+            with self.demo_lock:
+                self.demo_preload.update(result['demos'])
+                self.demo_loaded.update(result['instmodes'])
+            with self.demo_counts_lock:
+                if self.demo_counts is None:
+                    self.demo_counts = dict(counts=result['counts'])
+        finally:
+            self.demo_ready.set()
+
+    def get_demo_counts(self) -> Dict[str, Any]:
+        """
+        Get the demo counts (probed once, then cached; not path dependent)
+
+        :return: dict, see probe.probe_demo_counts (dict(error) on failure)
+        """
+        self.demo_ready.wait(PROBE_TIMEOUT)
+        with self.demo_counts_lock:
+            if self.demo_counts is None:
+                result = self._run_probe(['demo-counts'])
+                if 'error' in result:
+                    return result
+                self.demo_counts = result
+            return self.demo_counts
 
     # -------------------------------------------------------------------------
     # framework overrides
@@ -230,6 +336,7 @@ class PogosGuiApp(webapp.GuiApp):
             lambda req: webapp.Response.json(commands.setup_choices()))
         get('/api/pogos/demos', self.api_demos)
         get('/api/pogos/demo_counts', self.api_demo_counts)
+        get('/api/pogos/yaml_files', self.api_yaml_files)
         get('/api/pogos/param_info', self.api_param_info)
         get('/api/pogos/algorithms', self.api_algorithms)
         post('/api/pogos/project_name', self.api_project_name)
@@ -248,6 +355,10 @@ class PogosGuiApp(webapp.GuiApp):
         get('/api/pogos/projects', self.api_projects)
         get('/api/pogos/project_stats', self.api_project_stats)
         post('/api/pogos/project_delete', self.api_project_delete)
+        # the shared download cache (Files tab: Downloaded data)
+        get('/api/pogos/downloads', self.api_downloads)
+        post('/api/pogos/downloads_delete', self.api_downloads_delete)
+        post('/api/pogos/downloads_reset', self.api_downloads_reset)
         get('/api/pogos/runs', self.api_runs)
         get('/api/pogos/run', self.api_run_detail)
         get('/api/pogos/run_log', self.api_run_log)
@@ -287,6 +398,9 @@ class PogosGuiApp(webapp.GuiApp):
                         message='not writable: ' + info['path'])
         self.path = info['path']
         self.demo_cache.clear()
+        # pre-check the input files of every yaml (Run tab summaries)
+        threading.Thread(target=self.preload_yaml_files, args=(self.path,),
+                         daemon=True, name='yaml-files').start()
         message = 'POGOS path set to {0}'.format(self.path)
         self.state.add_message(message)
         self.state.bump()
@@ -921,7 +1035,14 @@ class PogosGuiApp(webapp.GuiApp):
         except (ValueError, commands.CommandError) as error:
             return webapp.Response.error(str(error))
         key = '{0}|{1}'.format(instmode, ','.join(modes))
+        # the start up preload (wait for it if it is still running)
+        self.demo_ready.wait(PROBE_TIMEOUT)
         with self.demo_lock:
+            if key in self.demo_preload:
+                return webapp.Response.json(self.demo_preload[key])
+            if instmode in self.demo_loaded:
+                return webapp.Response.json(dict(instmode=instmode,
+                                                 steps=modes, demos=[]))
             if key not in self.demo_cache:
                 pargs = ['demos', '--instmode=' + instmode,
                          '--steps=' + ','.join(modes)]
@@ -941,13 +1062,115 @@ class PogosGuiApp(webapp.GuiApp):
         :return: Response, json (see probe.probe_demo_counts)
         """
         _ = request
+        result = self.get_demo_counts()
+        if 'error' in result:
+            return webapp.Response.error(result['error'])
+        return webapp.Response.json(result)
+
+    def demo_for_project(self, project: Any) -> Optional[Dict[str, Any]]:
+        """
+        Find the preloaded demo a project name comes from (if any)
+
+        :param project: str or None, the yaml project name
+
+        :return: dict or None, the demo (see probe.probe_demos)
+        """
+        if not project:
+            return None
+        # the demo lists load with the gui (a few seconds)
+        self.demo_ready.wait(PROBE_TIMEOUT)
         with self.demo_lock:
-            if '__counts__' not in self.demo_cache:
-                result = self._run_probe(['demo-counts'])
+            for result in self.demo_preload.values():
+                for demo in result['demos']:
+                    if demo.get('project') == project:
+                        return dict(demo, instmode=result['instmode'])
+        return None
+
+    def yaml_files_probe(self, yaml_path: str) -> Dict[str, Any]:
+        """
+        The (cached) input file probe of one yaml (see probe_yaml_files)
+
+        :param yaml_path: str, the absolute yaml path
+
+        :return: dict, the probe result (dict(error) on failure)
+        """
+        try:
+            info = os.stat(yaml_path)
+        except OSError as error:
+            return dict(error=str(error))
+        stamp = (info.st_mtime, info.st_size)
+        with self.yaml_files_lock:
+            entry = self.yaml_files_cache.get(yaml_path)
+            if entry is None:
+                entry = self.yaml_files_cache[yaml_path] = dict(
+                    stamp=None, result=None, lock=threading.Lock())
+        # one probe per yaml at a time (others wait for its result)
+        with entry['lock']:
+            if entry['stamp'] != stamp:
+                result = self._run_probe(['yaml-files',
+                                          '--yamlfile=' + yaml_path])
                 if 'error' in result:
-                    return webapp.Response.error(result['error'])
-                self.demo_cache['__counts__'] = result
-            return webapp.Response.json(self.demo_cache['__counts__'])
+                    return result
+                entry['stamp'], entry['result'] = stamp, result
+            return entry['result']
+
+    def preload_yaml_files(self, path: str) -> None:
+        """
+        Probe the input files of every yaml of a POGOS path (two at a time)
+        so the Run tab summaries are ready when a yaml is chosen
+
+        :param path: str, the POGOS path
+
+        :return: None
+        """
+        yamls = [os.path.realpath(ypath)
+                 for ypath in layout.list_yaml_files(path)]
+        lock = threading.Lock()
+
+        def _worker() -> None:
+            while self.path == path:
+                with lock:
+                    if not yamls:
+                        return
+                    ypath = yamls.pop(0)
+                self.yaml_files_probe(ypath)
+
+        workers = [threading.Thread(target=_worker, daemon=True)
+                   for _ in range(2)]
+        for worker in workers:
+            worker.start()
+
+    def api_yaml_files(self, request: webapp.Request) -> webapp.Response:
+        """
+        GET /api/pogos/yaml_files?yaml=: the Run tab summary of a yaml - its
+        summary, the demo it comes from (if known) and the status of every
+        input file of its enabled steps (probed once per yaml version, the
+        disk is checked on every call)
+
+        :param request: Request, the request
+
+        :return: Response, json dict(summary, demo, version_ok,
+                 download_dir, files, counts)
+        """
+        missing = self._need_path()
+        if missing is not None:
+            return missing
+        try:
+            yaml_path = commands._check_yaml(request.arg('yaml', ''))
+        except commands.CommandError as error:
+            return webapp.Response.error(str(error))
+        result = self.yaml_files_probe(yaml_path)
+        if 'error' in result:
+            return webapp.Response.error(result['error'])
+        files = [file_status(entry) for entry in result['files']]
+        counts: Dict[str, int] = dict()
+        for entry in files:
+            counts[entry['status']] = counts.get(entry['status'], 0) + 1
+        summary = layout.yaml_summary(yaml_path)
+        return webapp.Response.json(dict(
+            summary=summary, demo=self.demo_for_project(summary['project']),
+            version_ok=result['version_ok'],
+            download_dir=result['download_dir'], files=files, counts=counts))
 
     def api_param_info(self, request: webapp.Request) -> webapp.Response:
         """
@@ -1329,7 +1552,8 @@ class PogosGuiApp(webapp.GuiApp):
             projects=layout.list_projects(self.path), yamls=yamls,
             path=self.path, projects_dir=layout.project_dir(self.path),
             yaml_dir=layout.yaml_dir(self.path),
-            state_dir=layout.state_dir(self.path)))
+            state_dir=layout.state_dir(self.path),
+            download_dir=gui_downloads.download_dir(self.path)))
 
     def api_project_stats(self, request: webapp.Request) -> webapp.Response:
         """
@@ -1376,6 +1600,65 @@ class PogosGuiApp(webapp.GuiApp):
         self.state.add_message('Project {0}: {1}'.format(name,
                                                           result['message']),
                                'files')
+        self.state.bump()
+        return webapp.Response.json(result)
+
+    def api_downloads(self, request: webapp.Request) -> webapp.Response:
+        """
+        GET /api/pogos/downloads: the cached downloads with the projects /
+        parameters linking to each
+
+        :param request: Request, the request
+
+        :return: Response, json (see downloads.list_downloads)
+        """
+        _ = request
+        missing = self._need_path()
+        if missing is not None:
+            return missing
+        return webapp.Response.json(gui_downloads.list_downloads(self.path))
+
+    def api_downloads_delete(self, request: webapp.Request
+                             ) -> webapp.Response:
+        """
+        POST /api/pogos/downloads_delete {files, confirm}: delete cached
+        files (confirm must be true - the gui listed the links that break)
+
+        :param request: Request, the request
+
+        :return: Response, json (see downloads.delete_downloads)
+        """
+        missing = self._need_path()
+        if missing is not None:
+            return missing
+        if not request.arg('confirm', False):
+            return webapp.Response.error('deleting needs confirmation')
+        files = request.arg('files', []) or []
+        if not isinstance(files, list) or len(files) == 0:
+            return webapp.Response.error('choose downloaded files first')
+        result = gui_downloads.delete_downloads(self.path,
+                                                [str(f) for f in files])
+        self.state.add_message(result['message'], 'files')
+        self.state.bump()
+        return webapp.Response.json(result)
+
+    def api_downloads_reset(self, request: webapp.Request
+                            ) -> webapp.Response:
+        """
+        POST /api/pogos/downloads_reset {confirm}: delete all downloaded
+        data (only after the user typed RESET)
+
+        :param request: Request, the request
+
+        :return: Response, json (see downloads.reset_downloads)
+        """
+        missing = self._need_path()
+        if missing is not None:
+            return missing
+        if str(request.arg('confirm', '')) != 'RESET':
+            return webapp.Response.error('type RESET to confirm')
+        result = gui_downloads.reset_downloads(self.path)
+        self.state.add_message(result['message'], 'files')
         self.state.bump()
         return webapp.Response.json(result)
 

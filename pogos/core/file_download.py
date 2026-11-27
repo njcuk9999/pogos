@@ -11,6 +11,10 @@ The main input of a step (e.g. SOSSISSE.GENERAL.FILES) is not downloaded
 when an earlier reduction level is enabled in the same run - it will be
 produced by that step instead (e.g. TSOVORE -> SOSSISSE).
 
+Online files are kept once in {GLOBAL.DATA_PATH}/downloads/ (see
+aperocore.constants.file_sources) and symlinked into the run directories;
+files already there are linked instead of downloaded again.
+
 Created on 2026-11-25
 
 @author: cook
@@ -41,6 +45,8 @@ MAIN_INPUTS = {'TSOVORE.INPUTS.FILES': 'TSOVORE',
                'SORBET.SLCA.INPUT_FILE': 'SORBET.SLCA'}
 # The default directory names for SOSSISSE path keys (relative to RUN_PATH)
 SOSSISSE_DIRS = {'RAWPATH': 'inputs', 'CALIBPATH': 'calibration'}
+# The download cache directory (relative to GLOBAL.DATA_PATH)
+DOWNLOAD_DIR = 'downloads'
 # Ordered reduction levels
 LEVELS = [level.name for level in definitions.REDUCTION_LEVELS]
 
@@ -106,6 +112,18 @@ def enabled_file_keys(params: ParamDict) -> List[str]:
     return keys
 
 
+def download_directory(params: ParamDict) -> str:
+    """
+    The shared download cache of a POGOS path
+
+    :param params: ParamDict, the parameter dictionary of constants
+
+    :return: str, {GLOBAL.DATA_PATH}/downloads
+    """
+    data_path = params.rget('GLOBAL.DATA_PATH', required=True)
+    return os.path.join(os.path.abspath(str(data_path)), DOWNLOAD_DIR)
+
+
 def module_directory(params: ParamDict, key: str, path_key: str) -> str:
     """
     Absolute directory for a module path key (even if still relative)
@@ -149,7 +167,8 @@ def online_summary(params: ParamDict,
         path_key = (file_sources.module_prefix(key, instance)
                     + instance.path_key)
         directory = module_directory(params, key, path_key)
-        if file_sources.needs_download(fileobj, directory):
+        download_dir = download_directory(params)
+        if file_sources.needs_download(fileobj, directory, download_dir):
             summary[key] = fileobj.source
     return summary
 
@@ -175,8 +194,25 @@ def download_files(params: ParamDict, yaml_file: Optional[str] = None,
     WLOG(params, 'info', 'Checking online input files')
     rkwargs = dict(keys=keys, skip_keys=skip, yaml_file=yaml_file,
                    demolocal=demolocal, demosymlink=demosymlink,
-                   get_directory=module_directory)
+                   get_directory=module_directory,
+                   download_dir=download_directory(params))
     return file_sources.resolve_files(params, **rkwargs)
+
+
+def link_downloaded(params: ParamDict) -> None:
+    """
+    Symlink files already in the download cache into the run directories
+    (never goes online)
+
+    :param params: ParamDict, the parameter dictionary of constants
+
+    :return: None
+    """
+    rkwargs = dict(keys=enabled_file_keys(params),
+                   skip_keys=chained_keys(params),
+                   get_directory=module_directory,
+                   download_dir=download_directory(params), link_only=True)
+    file_sources.resolve_files(params, **rkwargs)
 
 
 def setup_downloads(params: ParamDict, ask: bool = True) -> Dict[str, Any]:
@@ -191,6 +227,8 @@ def setup_downloads(params: ParamDict, ask: bool = True) -> Dict[str, Any]:
 
     :return: dict, key -> new yaml value for updated keys
     """
+    # files downloaded before (e.g. by another project) are linked first
+    link_downloaded(params)
     summary = online_summary(params)
     # nothing to download
     if len(summary) == 0:
