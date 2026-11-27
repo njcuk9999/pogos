@@ -16,8 +16,9 @@ the whole page is locked until it is set - and these tabs:
     Run        pogos_run on this machine (single process) or as a Slurm
                batch script; edit the batch templates
     Actions    pogos_config (check / fix with a diff of the changes),
-               pogos_reset (preview + typed RESET confirmation) and a side
-               by side diff of any two files
+               pogos_reset (preview + typed RESET confirmation), a side
+               by side diff of any two files and (Developer) set up and
+               run every demo (pogos_run_demos, typed "alldemos")
     Processes  every process started from the gui (logs, stop)
     Plots      the plot images of every project (tree + gallery)
     Files      project organiser / file browser (view FITS headers,
@@ -67,8 +68,12 @@ WORKER_ENV = 'POGOS_GUI_WORKER_PORT'
 # the default port of the pogos gui
 DEFAULT_PORT = 8097
 # the activity log / console channels (one per page)
-CHANNELS = ['setup', 'edit', 'run', 'actions', 'processes', 'files',
-            'main']
+CHANNELS = ['setup', 'edit', 'run', 'actions', 'developer', 'processes',
+            'files', 'main']
+# the all-demos developer tool (Actions tab: Developer)
+ALLDEMOS_MODULE = 'pogos.tools.pogos_run_demos'
+# the word the user types to confirm an all-demos run (any case)
+ALLDEMOS_WORD = 'alldemos'
 # default batch template values for pogos_run jobs
 POGOS_BATCH_DEFAULTS = dict(gui_slurm.BATCH_DEFAULTS, job_name='pogos_run',
                             time='24:00:00', cpus_per_task=8, mem='64G')
@@ -367,6 +372,9 @@ class PogosGuiApp(webapp.GuiApp):
         post('/api/pogos/runs_reset', self.api_runs_reset)
         post('/api/pogos/stop_all', self.api_stop_all)
         post('/api/pogos/retry_failed', self.api_retry_failed)
+        # developer actions (Actions tab): set up + run every demo
+        post('/api/pogos/alldemos_list', self.api_alldemos_list)
+        post('/api/pogos/alldemos', self.api_alldemos)
         get('/api/pogos/streams', self.api_streams)
         get('/api/pogos/stream', self.api_stream)
         post('/api/pogos/stream_remove', self.api_stream_remove)
@@ -1515,6 +1523,110 @@ class PogosGuiApp(webapp.GuiApp):
             return webapp.Response.error(str(error))
         return self._start('actions', 'reset', built, interactive=False,
                            stdin_text='Y\n')
+
+    # -------------------------------------------------------------------------
+    # developer routes (all demos)
+    # -------------------------------------------------------------------------
+    def _alldemos_args(self, form: Dict[str, Any]) -> List[str]:
+        """
+        The pogos_run_demos arguments of the Developer form
+
+        :param form: dict(path, cores, only, exclude, setup_only, reset,
+                     all)
+                     - path defaults to the gui POGOS path, only / exclude
+                     are comma separated
+
+        :raises CommandError: for an invalid form
+
+        :return: list of str, the arguments
+        """
+        path = str(form.get('path') or '').strip() or str(self.path)
+        path = os.path.realpath(os.path.expanduser(path))
+        if os.path.exists(path) and not os.path.isdir(path):
+            raise commands.CommandError('not a directory: ' + path)
+        try:
+            cores = int(form.get('cores') or 1)
+        except (TypeError, ValueError):
+            raise commands.CommandError('cores must be a whole number')
+        if cores < 1:
+            raise commands.CommandError('cores must be at least 1')
+        args = [path, '--cores={0}'.format(cores)]
+        for key in ['only', 'exclude']:
+            for item in str(form.get(key) or '').split(','):
+                if item.strip():
+                    args.append('--{0}={1}'.format(key, item.strip()))
+        if form.get('setup_only'):
+            args.append('--setup_only')
+        if form.get('reset'):
+            args.append('--reset')
+        if form.get('all'):
+            args.append('--all')
+        return args
+
+    def api_alldemos_list(self, request: webapp.Request) -> webapp.Response:
+        """
+        POST /api/pogos/alldemos_list {form}: the tasks an all-demos run
+        would try (pogos_run_demos --list)
+
+        :param request: Request, the request
+
+        :return: Response, json dict(path, tasks, display)
+        """
+        missing = self._need_path()
+        if missing is not None:
+            return missing
+        try:
+            args = self._alldemos_args(request.arg('form', dict()) or {})
+        except commands.CommandError as error:
+            return webapp.Response.error(str(error))
+        cmd = [sys.executable, '-m', ALLDEMOS_MODULE] + args + \
+            ['--list', '--json']
+        env = dict(os.environ, PYTHONUNBUFFERED='1')
+        try:
+            output = subprocess.run(cmd, capture_output=True, text=True,
+                                    timeout=PROBE_TIMEOUT, cwd=self.path,
+                                    stdin=subprocess.DEVNULL, env=env)
+        except (OSError, subprocess.SubprocessError) as error:
+            return webapp.Response.error(str(error))
+        prefix = 'POGOS_RUN_DEMOS: '
+        for line in reversed(output.stdout.splitlines()):
+            if line.startswith(prefix):
+                result = json.loads(line[len(prefix):])
+                result['display'] = shlex.join(['pogos_run_demos'] + args)
+                return webapp.Response.json(result)
+        tail = (output.stdout + output.stderr).strip().splitlines()[-8:]
+        return webapp.Response.error('\n'.join(tail) or 'listing failed')
+
+    def api_alldemos(self, request: webapp.Request) -> webapp.Response:
+        """
+        POST /api/pogos/alldemos {form, confirm}: set up and run every demo
+        (pogos_run_demos) - only after the user typed "alldemos". Every
+        task is recorded in the Processes tab (kind alldemo, pending until
+        it starts) and every run shows in the Run tab status.
+
+        :param request: Request, the request
+
+        :return: Response, json dict(started, message, display)
+        """
+        missing = self._need_path()
+        if missing is not None:
+            return missing
+        confirm = str(request.arg('confirm', '')).strip().lower()
+        if confirm != ALLDEMOS_WORD:
+            return webapp.Response.error('type {0} to confirm'.format(
+                ALLDEMOS_WORD))
+        try:
+            args = self._alldemos_args(request.arg('form', dict()) or {})
+        except commands.CommandError as error:
+            return webapp.Response.error(str(error))
+        # tasks go into this gui's process registry and Run tab
+        gui_args = ['--gui', '--registry={0}'.format(self.proc_dir()),
+                    '--status_dir={0}'.format(run_status.run_dir(self.path))]
+        built = dict(cmd=[sys.executable, '-m', ALLDEMOS_MODULE] + args +
+                     gui_args,
+                     display=shlex.join(['pogos_run_demos'] + args),
+                     env=dict())
+        return self._start('developer', 'alldemo', built, interactive=False)
 
     # -------------------------------------------------------------------------
     # plots / projects routes

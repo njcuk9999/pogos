@@ -2105,6 +2105,8 @@ P.act.selected = function () {
     P.act.preview = null;
     P.act.updateCli();
     P.act.loadBackups();
+    // the Developer cli chip shows the gui path until a path is typed
+    GUI.setCli('cli-alldemos', P.dev.cli());
 };
 
 P.act.browse = function () {
@@ -2319,6 +2321,112 @@ P.act.reset = function () {
     if (P.act.preview && P.act.preview.yaml === P.act.yaml()) {
         go(P.act.preview);
     } else { P.act.resetPreview().then(go); }
+};
+
+/* ==========================================================================
+   Actions: Developer (pogos_run_demos - set up and run every demo)
+   ========================================================================== */
+P.dev = {tasks: null};
+
+P.dev.form = function () {
+    return {path: P.$('dev-path').value.trim(),
+            cores: parseInt(P.$('dev-cores').value, 10) || 1,
+            only: P.$('dev-only').value, exclude: P.$('dev-exclude').value,
+            setup_only: P.$('dev-setup-only').checked,
+            reset: P.$('dev-reset').checked, all: P.$('dev-all').checked};
+};
+
+P.dev.cli = function () {
+    // the cli equivalent (same arguments as the gui sends)
+    var form = P.dev.form();
+    var quote = function (text) {
+        return /^[\w@%+=:,.\/-]+$/.test(text) ? text :
+            "'" + text.replace(/'/g, "'\"'\"'") + "'"; };
+    var args = ['pogos_run_demos', quote(form.path || P.path || ''),
+                '--cores=' + form.cores];
+    ['only', 'exclude'].forEach(function (key) {
+        form[key].split(',').forEach(function (item) {
+            if (item.trim()) { args.push(quote('--' + key + '=' +
+                                               item.trim())); }
+        });
+    });
+    if (form.setup_only) { args.push('--setup_only'); }
+    if (form.reset) { args.push('--reset'); }
+    if (form.all) { args.push('--all'); }
+    return args.join(' ');
+};
+
+P.dev.changed = function () {
+    P.dev.tasks = null;
+    P.$('dev-list').textContent = '';
+    GUI.setCli('cli-alldemos', P.dev.cli());
+};
+
+P.dev.list = function () {
+    // the tasks this run would try
+    if (!P.path) { GUI.toast('Set the POGOS path first', 'bad');
+                   return Promise.resolve(null); }
+    var box = P.$('dev-list');
+    box.textContent = 'Finding the demos...';
+    return GUI.post('api/pogos/alldemos_list', {form: P.dev.form()})
+        .then(function (res) {
+            if (res.success === false || res.error) {
+                box.textContent = res.message || res.error;
+                return null;
+            }
+            P.dev.tasks = res.tasks;
+            var nbad = res.tasks.filter(function (task) {
+                return !task.runnable; }).length;
+            var number = 0;
+            box.innerHTML = '<b>' + res.nrun + ' tasks to run</b> in <code>' +
+                GUI.esc(res.path) + '</code> (' + res.tasks.length +
+                ' found, ' + nbad + ' without input files' + (nbad ?
+                (res.include_all ? ' - tried anyway' : ' - not run') : '') +
+                '):<br>' + res.tasks.map(function (task) {
+                    var runs = task.runnable || res.include_all;
+                    var line = (runs ? (++number) + '. ' : '&ndash; ') +
+                        GUI.esc(task.name);
+                    if (!task.runnable) {
+                        line = '<span style="color:var(--danger)">' + line + ' <b>[cannot ' +
+                            'run: no inputs]</b></span><br><span ' +
+                            'class="small" style="margin-left:2em">' +
+                            task.problems.map(GUI.esc).join('<br>') +
+                            '</span>';
+                    }
+                    return line;
+                }).join('<br>');
+            return res;
+        }).catch(function (error) { box.textContent = ''; GUI.fail(error);
+                                    return null; });
+};
+
+P.dev.run = function () {
+    if (!P.path) { GUI.toast('Set the POGOS path first', 'bad'); return; }
+    var form = P.dev.form();
+    var go = function (res) {
+        if (!res) { return; }
+        if (!res.nrun) { GUI.toast('No runnable demos match', 'bad');
+                         return; }
+        var nbad = res.tasks.length - res.nrun;
+        GUI.confirmTyped({
+            title: 'Run all demos', word: 'alldemos', label: 'Run all demos',
+            html: '<p>This sets up and runs <b>' + res.nrun +
+                ' demo tasks</b> in <code>' + GUI.esc(res.path) + '</code> (' +
+                form.cores + ' in parallel).</p>' + (nbad ? '<p>' + nbad +
+                ' demo(s) without input files are not run (see List).</p>' :
+                '') + '<p>It can take many hours, ' +
+                'downloads every demo input that is not cached yet and ' +
+                'overwrites the yaml files of these demos in that path.</p>' +
+                '<p class="muted">Progress: Processes tab (kind alldemo) and ' +
+                'the console below.</p>'
+        }).then(function (ok) {
+            if (!ok) { return; }
+            GUI.startJob('api/pogos/alldemos', {form: form,
+                                                confirm: 'alldemos'},
+                         GUI.consoles.developer);
+        });
+    };
+    P.dev.list().then(go);
 };
 
 /* ==========================================================================
@@ -4518,6 +4626,8 @@ document.addEventListener('DOMContentLoaded', function () {
     new GUI.Console('actions', 'console-actions',
                     {title: 'Console (pogos_config / pogos_reset)',
                      onDone: P.act.done});
+    new GUI.Console('developer', 'console-developer',
+                    {title: 'Console (pogos_run_demos)'});
     new GUI.Processes('processes', {tab: 'processes'});
     P.setup.init();
     P.edit.init();

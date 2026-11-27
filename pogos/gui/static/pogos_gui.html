@@ -581,6 +581,69 @@ removed.</td>
 </div>
 
 <div id="console-actions"></div>
+
+<h3>Developer</h3>
+<div class="muted small" style="margin-bottom:6px">Developer tests of
+the whole pipeline. These can take many hours and download a lot of
+data.</div>
+<div class="section-card table-wrap">
+<table id="dev-action-table" class="action-table">
+<colgroup><col class="c-act"><col class="c-opt"><col class="c-cli">
+<col class="c-run"></colgroup>
+<thead><tr><th>Action</th><th>Options</th><th>What it does</th>
+<th></th></tr></thead>
+<tbody>
+<tr class="act-critical">
+<td><div class="act-name">Run all demos</div>
+<div class="act-desc">Run <code>pogos_run_demos</code>: set up and run
+every demo with every combination of its reduction steps (e.g. SOSSISSE
+and SOSSISSE + SORBET are separate tasks). A failing demo never stops the
+others. Type <b>alldemos</b> to confirm.</div></td>
+<td><label class="field-label" for="dev-path">POGOS path for the
+demos</label>
+<input id="dev-path" type="text" spellcheck="false"
+    placeholder="(the gui POGOS path)" oninput="P.dev.changed()">
+<label class="field-label" for="dev-cores">Parallel runs
+(--cores)</label>
+<input id="dev-cores" type="number" min="1" value="1" style="width:6em"
+    oninput="P.dev.changed()">
+<label class="field-label" for="dev-only">Only (comma separated,
+optional)</label>
+<input id="dev-only" type="text" spellcheck="false"
+    placeholder="e.g. SOSS, SORBET" oninput="P.dev.changed()">
+<label class="field-label" for="dev-exclude">Exclude (comma separated,
+optional)</label>
+<input id="dev-exclude" type="text" spellcheck="false"
+    placeholder="e.g. TSOVORE" oninput="P.dev.changed()">
+<label class="inline"><input id="dev-setup-only" type="checkbox"
+    onchange="P.dev.changed()"> setup (and download) only</label>
+<label class="inline"><input id="dev-reset" type="checkbox"
+    onchange="P.dev.changed()"> reset outputs of demos already set
+    up</label>
+<label class="inline"><input id="dev-all" type="checkbox"
+    onchange="P.dev.changed()"> also try demos without input
+    files</label></td>
+<td class="small">Each demo is set up (one at a time; its data is
+downloaded into the shared download cache) and then run, with up to
+<i>cores</i> runs in parallel. Every task appears in the <b>Processes</b>
+tab as kind <i>alldemo</i> (<i>pending</i> until it starts; stop one
+there to skip it) and every run in the Run tab status. A summary with the
+timing and errors of each demo is written to
+<code>{path}/run_demos/{date}/summary.txt</code>. Demos where a step
+has no input files (e.g. SORBET on its own when the demo gives no light
+curve - SOSSISSE + SORBET is fine) are flagged by <b>List</b> and not run
+unless ticked.
+<div><code id="cli-alldemos" class="cli-chip"></code></div>
+<div id="dev-list" class="muted small"></div></td>
+<td class="action-cell-run"><button onclick="P.dev.list()">
+    List</button> <button class="danger"
+    onclick="P.dev.run()">Run...</button></td>
+</tr>
+</tbody>
+</table>
+</div>
+<div id="console-developer"></div>
+
 <h3>Activity</h3>
 <div class="activity-log" data-activity="actions"></div>
 </div>
