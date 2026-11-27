@@ -319,6 +319,13 @@ or as a Slurm batch job.</div>
 <label class="inline" style="margin-top:8px"><input id="run-accept-old"
        type="checkbox" onchange="P.run.updateCli()"> Accept a yaml from an
     older POGOS version (POGOS_ACCEPT_OLD_YAML)</label>
+<label class="inline" style="margin-top:8px" title="Ticked: every flavour
+shows its plots (pogos_run --showplots=on) and they stream to the Plots and
+Status tabs (interactive). Unticked: no plots are shown
+(--showplots=off) - the plot files are still saved."><input
+       id="run-stream-plots" type="checkbox" checked
+       onchange="P.run.updateCli()"> Stream plots to the gui
+    (<code>--showplots=on</code>; untick for <code>off</code>)</label>
 </div>
 
 <div class="controltabbar">
@@ -433,7 +440,9 @@ and compare any two files side by side.</div>
 </div>
 
 <div class="section-card table-wrap">
-<table id="action-table">
+<table id="action-table" class="action-table">
+<colgroup><col class="c-act"><col class="c-opt"><col class="c-cli">
+<col class="c-run"></colgroup>
 <thead><tr><th>Action</th><th>Options</th><th>CLI equivalent</th>
 <th></th></tr></thead>
 <tbody>
@@ -498,6 +507,65 @@ Preview first, then type <b>RESET</b> to confirm.</div></td>
 </div>
 <div id="reset-preview" class="section-card" style="display:none"></div>
 
+<h3>All runs</h3>
+<div class="muted small" style="margin-bottom:6px">Actions on every
+<code>pogos_run</code> the gui knows about (Status and Processes tabs), not
+just the yaml above. Tick <b>Dry run</b> to see what would happen.</div>
+<div class="section-card table-wrap">
+<table id="runs-action-table" class="action-table">
+<colgroup><col class="c-act"><col class="c-opt"><col class="c-cli">
+<col class="c-run"></colgroup>
+<thead><tr><th>Action</th><th>Options</th><th>What it does</th>
+<th></th></tr></thead>
+<tbody>
+<tr>
+<td><div class="act-name">Retry all failed</div>
+<div class="act-desc">Run again every yaml whose last run failed, was
+stopped or was lost (and is not running now).</div></td>
+<td><label class="inline"><input id="runs-retry-dry" type="checkbox">
+    Dry run</label></td>
+<td class="small">Slurm runs are submitted again (same batch template);
+runs on this machine run one after another in the Run console.
+<div id="runs-retry-list" class="muted small"></div></td>
+<td class="action-cell-run"><button class="primary"
+    onclick="P.act.runsAction('retry')">Run</button></td>
+</tr>
+<tr>
+<td><div class="act-name">Stop all running</div>
+<div class="act-desc">Stop every run (and command) started from this
+gui.</div></td>
+<td><label class="inline"><input id="runs-stop-dry" type="checkbox">
+    Dry run</label></td>
+<td class="small">Local processes are stopped and Slurm jobs cancelled;
+their runs are recorded as <i>stopped</i> and queued retries are dropped.
+Runs started from a terminal are not touched.</td>
+<td class="action-cell-run"><button class="danger"
+    onclick="P.act.runsAction('stop')">Run</button></td>
+</tr>
+<tr>
+<td><div class="act-name">Reset run records</div>
+<div class="act-desc">Remove finished runs from the Status and Processes
+tabs.</div></td>
+<td><select id="runs-reset-state">
+<option value="all">all finished</option>
+<option value="complete">complete</option>
+<option value="failed">failed</option>
+<option value="stopped">stopped</option>
+<option value="lost">lost</option>
+</select>
+<label class="inline"><input id="runs-reset-dry" type="checkbox"> Dry
+    run</label></td>
+<td class="small">Deletes the records (and the gui's own log files of
+those processes). Outputs in the projects are not touched - use
+<b>Reset project outputs</b> above for that. Running runs are never
+removed.</td>
+<td class="action-cell-run"><button class="danger"
+    onclick="P.act.runsAction('reset')">Run</button></td>
+</tr>
+</tbody>
+</table>
+</div>
+
 <div id="console-actions"></div>
 <h3>Activity</h3>
 <div class="activity-log" data-activity="actions"></div>
@@ -531,6 +599,10 @@ and <b>Doc</b> what it does.</div>
 <button onclick="P.status.removeSelected()">Remove selected records</button>
 <label class="inline"><input type="checkbox" id="status-active-only"
     onchange="P.status.renderRuns()"> Active only</label>
+<input type="search" id="status-filter" placeholder="Filter runs..."
+    oninput="P.status.renderRuns()">
+<select id="status-flavour" onchange="P.status.renderRuns()">
+<option value="">All flavours</option></select>
 <span class="muted small" id="status-note"></span>
 </div>
 <div class="section-card table-wrap">

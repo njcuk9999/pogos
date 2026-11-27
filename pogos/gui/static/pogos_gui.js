@@ -1601,7 +1601,8 @@ P.run.openInEdit = function () {
 };
 
 P.run.form = function () {
-    return {yaml: P.run.yaml(), accept_old: P.$('run-accept-old').checked};
+    return {yaml: P.run.yaml(), accept_old: P.$('run-accept-old').checked,
+            stream_plots: P.$('run-stream-plots').checked};
 };
 
 P.run.updateCli = function () {
@@ -1828,6 +1829,47 @@ P.act.diffFiles = function () {
                   title: 'Compare files'});
 };
 
+P.act.runsAction = function (kind) {
+    // the actions on every run: retry all failed / stop all running /
+    //   reset run records (dry run: report only)
+    var spec = {
+        retry: {url: 'api/pogos/retry_failed', dry: 'runs-retry-dry',
+                title: 'Retry all failed', label: 'Retry',
+                html: 'Run every failed / stopped / lost run again?'},
+        stop: {url: 'api/pogos/stop_all', dry: 'runs-stop-dry',
+               title: 'Stop all running', label: 'Stop all',
+               html: 'Stop every run and command started from this gui?'},
+        reset: {url: 'api/pogos/runs_reset', dry: 'runs-reset-dry',
+                title: 'Reset run records', label: 'Remove records',
+                html: null}
+    }[kind];
+    var dry = P.$(spec.dry).checked;
+    var form = {dry_run: dry};
+    if (kind === 'reset') {
+        form.state = P.$('runs-reset-state').value;
+        spec.html = 'Remove the <b>' + GUI.esc(form.state === 'all' ?
+            'finished' : form.state) + '</b> run records from the Status ' +
+            'and Processes tabs?';
+    }
+    var go = function () {
+        return GUI.post(spec.url, form).then(function (res) {
+            GUI.toast(res.message, res.success === false ? 'bad' : 'ok',
+                      8000);
+            if (kind === 'retry') {
+                P.$('runs-retry-list').textContent = (res.runs || []).length ?
+                    (dry ? 'Would retry: ' : 'Retried: ') +
+                    res.runs.join(', ') : '';
+                if (!dry && res.local) { GUI.consoles.run.focus(); }
+            }
+            if (!dry) { P.status.refresh(); GUI.refreshState(); }
+        }).catch(GUI.fail);
+    };
+    if (dry) { go(); return; }
+    GUI.confirm(spec.title, spec.html, spec.label).then(function (ok) {
+        if (ok) { go(); }
+    });
+};
+
 P.act.renderPreview = function (data) {
     var box = P.$('reset-preview');
     box.style.display = '';
@@ -1907,7 +1949,7 @@ P.act.reset = function () {
    Status (pogos_run progress)
    ========================================================================== */
 P.status = {runs: [], run: null, current: null, checked: {}, loading: false,
-            open: {}};
+            open: {}, figs: {stream: null, list: []}};
 
 // the log viewer also follows run logs ("run:{run id}")
 P.baseLogUrl = GUI.logUrl;
@@ -1940,9 +1982,12 @@ P.status.refresh = function () {
     var done = function () { P.status.loading = false; };
     if (P.status.current) {
         GUI.get('api/pogos/run', {id: P.status.current}).then(function (run) {
-            done();
             P.status.run = run;
-            P.status.renderRun();
+            // the streamed figures (for the Plots buttons of every step)
+            return P.status.loadFigs(run).then(function () {
+                done();
+                P.status.renderRun();
+            });
         }).catch(function (err) { done(); P.status.back(); GUI.fail(err); });
         return;
     }
@@ -1979,22 +2024,63 @@ P.status.bar = function (done, total, detail) {
 };
 
 P.status.visible = function () {
+    // the runs that pass the active-only, flavour and text filters
     var active = P.$('status-active-only').checked;
+    var flavour = P.$('status-flavour').value;
+    var words = P.$('status-filter').value.toLowerCase().split(/\s+/)
+        .filter(function (w) { return w; });
     return P.status.runs.filter(function (run) {
-        return !active || run.status === 'running' ||
-            run.status === 'unknown';
+        if (active && run.status !== 'running' && run.status !== 'unknown') {
+            return false;
+        }
+        if (flavour && (run.flavours || []).indexOf(flavour) < 0) {
+            return false;
+        }
+        if (words.length === 0) { return true; }
+        var text = [run.status, run.yaml_name, run.project, run.instmode,
+                    run.current, run.error, run.host, run.slurm_job,
+                    (run.flavours || []).join(' '), GUI.fmtTime(run.started)]
+            .join(' ').toLowerCase();
+        return words.every(function (w) { return text.indexOf(w) >= 0; });
     });
+};
+
+P.status.fillFlavours = function () {
+    // the flavour dropdown: every flavour seen in the runs (keeps the pick)
+    var sel = P.$('status-flavour');
+    var seen = {};
+    P.status.runs.forEach(function (run) {
+        (run.flavours || []).forEach(function (f) { seen[f] = true; });
+    });
+    var cur = sel.value;
+    if (cur) { seen[cur] = true; }
+    var names = Object.keys(seen).sort();
+    var key = names.join('|');
+    if (sel.getAttribute('data-key') === key) { return; }
+    sel.setAttribute('data-key', key);
+    sel.innerHTML = '<option value="">All flavours</option>' +
+        names.map(function (f) {
+            return '<option value="' + GUI.esc(f) + '">' + GUI.esc(f) +
+                '</option>'; }).join('');
+    sel.value = cur;
 };
 
 P.status.renderRuns = function () {
     P.$('status-runs-view').style.display = '';
     P.$('status-run-view').style.display = 'none';
     var body = P.$('status-runs');
+    P.status.fillFlavours();
     var runs = P.status.visible();
     var nrun = P.status.runs.filter(function (r) {
         return r.status === 'running'; }).length;
     P.$('status-note').textContent = P.status.runs.length + ' run(s), ' +
-        nrun + ' running';
+        nrun + ' running' + (runs.length < P.status.runs.length ? ', ' +
+        runs.length + ' shown' : '');
+    if (runs.length === 0 && P.status.runs.length > 0) {
+        body.innerHTML = '<tr><td colspan="10" class="muted">No runs ' +
+            'match the filters.</td></tr>';
+        return;
+    }
     if (runs.length === 0) {
         body.innerHTML = '<tr><td colspan="10" class="muted">No runs ' +
             'recorded yet - start one on the Run tab (runs from a ' +
@@ -2032,6 +2118,7 @@ P.status.show = function (id) {
     P.status.current = id;
     P.status.open = {};
     P.status.run = null;
+    P.status.figs = {stream: null, list: []};
     P.$('status-runs-view').style.display = 'none';
     P.$('status-run-view').style.display = '';
     P.$('status-steps').innerHTML = '<tr><td colspan="7" class="muted">' +
@@ -2206,6 +2293,8 @@ P.status.renderRun = function () {
                 P.status.showCode(row.stage, row.node);
             } else if (act === 'doc') {
                 P.status.showDoc(row.stage, row.node);
+            } else if (act === 'plots') {
+                P.status.showPlots(row.stage, row.node);
             }
         };
     });
@@ -2228,8 +2317,96 @@ P.status.actionsCell = function (index, started, node) {
         (node && (node.src_file || node.func) ?
          btn('code', 'Code', 'The code of this step') : none('Code')) +
         (node && (node.desc || node.func) ?
-         btn('doc', 'Doc', 'What this step does') : none('Doc'));
+         btn('doc', 'Doc', 'What this step does') : none('Doc')) +
+        P.status.plotsButton(index);
     return '<td class="st-actions nowrap">' + html + '</td>';
+};
+
+/* ---- the figures of a step (Plots buttons) ---- */
+P.status.loadFigs = function (run) {
+    // fetch the figures this run streamed (only the new ones)
+    var figs = P.status.figs;
+    var name = run.plot_stream ? GUI.basename(run.plot_stream) : null;
+    if (name !== figs.stream) {
+        P.status.figs = figs = {stream: name, list: []};
+    }
+    if (!name) { return Promise.resolve(); }
+    return GUI.get('api/pogos/stream', {name: name, since: figs.list.length})
+        .then(function (res) {
+            if (res.name === P.status.figs.stream) {
+                P.status.figs.list = P.status.figs.list.concat(res.figures);
+            }
+        }).catch(function () { return null; });
+};
+
+P.status.figsOf = function (stage, node) {
+    // the figures shown inside a stage (node null) or a step and the
+    //   steps below it (the figure's step path starts with the node path)
+    var path = node ? node.path : [];
+    return P.status.figs.list.filter(function (fig) {
+        var step = fig.step;
+        if (!fig.path || !step || step.level !== stage.level ||
+            step.flavour !== stage.flavour) { return false; }
+        var fpath = step.path || [];
+        if (fpath.length < path.length) { return false; }
+        for (var i = 0; i < path.length; i++) {
+            if (String(fpath[i]) !== String(path[i])) { return false; }
+        }
+        return true;
+    });
+};
+
+P.status.plotsButton = function (index) {
+    // Plots: active with figures; light grey while they may still come
+    //   (pending / running); dark grey once the step ended without any
+    var row = P.status.rowNodes[index];
+    var run = P.status.run;
+    if (!row || !run) { return ''; }
+    var count = P.status.figsOf(row.stage, row.node).length;
+    if (count > 0) {
+        return '<button class="small st-plots" data-row-act="plots" ' +
+            'data-row="' + index + '" title="The ' + count + ' figure(s) ' +
+            'shown in this ' + (row.node ? 'step' : 'stage') + '">Plots (' +
+            count + ')</button>';
+    }
+    var item = row.node || row.stage;
+    var open = run.status === 'running' &&
+        ['pending', 'running'].indexOf(item.status) >= 0;
+    var title = !run.plot_stream ? 'Figures were not streamed (the run ' +
+        'was not started from the gui)' : open ? 'No figures yet - ' +
+        'they appear here as this step shows them' : 'No figures were ' +
+        'shown in this ' + (row.node ? 'step' : 'stage');
+    return '<button class="small st-plots ' + (open && run.plot_stream ?
+        'st-plots-wait' : 'st-plots-none') + '" disabled title="' +
+        GUI.esc(title) + '">Plots</button>';
+};
+
+P.status.showPlots = function (stage, node) {
+    // an overlay with the figures of a stage / step (click: full size,
+    //   zoom / pan for interactive figures)
+    var figures = P.status.figsOf(stage, node);
+    var label = [stage.level, stage.flavour].concat(node ? node.path : [])
+        .join(' / ');
+    var items = figures.map(P.stream.lbItem);
+    var body = '<div class="plots-gallery small st-plots-gallery">' +
+        figures.map(function (fig, index) {
+            var where = (fig.step && fig.step.path || []).slice(
+                node ? node.path.length : 0).join(' / ');
+            return '<div class="plot-card" data-index="' + index + '"><img ' +
+                'loading="lazy" src="' + GUI.rawUrl(fig.path) + '" alt="">' +
+                '<div class="pc-title">' + GUI.esc(fig.title || fig.file) +
+                '</div>' + (where ? '<div class="pc-name">' +
+                GUI.esc(where) + '</div>' : '') + '<div class="pc-meta">#' +
+                (fig.number || '') + ' &middot; ' + GUI.fmtTime(fig.time) +
+                (fig.figure ? ' &middot; zoom / pan' : '') + '</div></div>';
+        }).join('') + '</div>';
+    var dlg = GUI.dialog({id: 'status-plots-dlg', wide: true,
+                          title: 'Plots: ' + label, body: body});
+    dlg.querySelectorAll('.plot-card').forEach(function (card) {
+        card.onclick = function () {
+            GUI.lightbox(items, Number(card.getAttribute('data-index')));
+        };
+    });
 };
 
 P.status.codeHtml = function (data, mark) {
@@ -2478,21 +2655,35 @@ P.stream.renderGallery = function () {
             GUI.esc(fig.name) + '</div>' : '') + '<div class="pc-meta">#' + (fig.number || '') + ' &middot; ' +
             GUI.fmtTime(fig.time) + '</div></div>';
     }).join('');
-    var items = figures.map(function (fig) {
-        var details = [['Figure', '#' + (fig.number || '') + ' - ' +
-                        GUI.fmtTime(fig.time)]];
-        if (fig.name) { details.push(['Plot name', fig.name]); }
-        if (fig.func) { details.push(['Function', fig.func]); }
-        return {path: fig.path, name: fig.title || fig.file,
-                title: fig.title || fig.file,
-                description: fig.description, details: details,
-                info: (fig.title || '') + ' - ' + GUI.fmtTime(fig.time)};
-    });
+    var items = figures.map(P.stream.lbItem);
     gallery.querySelectorAll('.plot-card').forEach(function (card) {
         card.onclick = function () {
             GUI.lightbox(items, Number(card.getAttribute('data-index')));
         };
     });
+};
+
+P.stream.lbItem = function (fig) {
+    // a streamed figure as a lightbox item (interactive when pickled)
+    var details = [['Figure', '#' + (fig.number || '') + ' - ' +
+                    GUI.fmtTime(fig.time)]];
+    if (fig.step && (fig.step.level || (fig.step.path || []).length)) {
+        details.push(['Step', [fig.step.level, fig.step.flavour]
+            .concat(fig.step.path || []).filter(function (part) {
+                return part; }).join(' / ')]);
+    }
+    if (fig.name) { details.push(['Plot name', fig.name]); }
+    if (fig.func) { details.push(['Function', fig.func]); }
+    if (!fig.figure && fig.static_reason) {
+        details.push(['Not interactive', fig.static_reason]);
+    }
+    return {path: fig.path, name: fig.title || fig.file,
+            title: fig.title || fig.file, figure: fig.figure_path || null,
+            description: fig.description, details: details,
+            info: (fig.title || '') + ' - ' + GUI.fmtTime(fig.time) +
+                (fig.figure_path ? '   |   interactive: matplotlib ' +
+                 'toolbar (zoom / pan / home), keys inside the figure ' +
+                 'are matplotlib\'s' : '')};
 };
 
 P.stream.removeCurrent = function () {

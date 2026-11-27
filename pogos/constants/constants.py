@@ -110,6 +110,18 @@ CDict.add('DEMO_SYMLINK_DATA', value=False, dtype=bool, source=__NAME__,
           description='if downloading demo data, symlink the data from the '
                       'local download location rather than copying it.')
 
+# Override whether every flavour shows its plots (pogos_run --showplots):
+#   on = show them (from the gui they stream to its Plots / Status tabs),
+#   off = never show them, unset = use each flavour's PLOTS.SHOW setting
+CDict.add('SHOW_PLOTS', value=None, dtype=str, source=__NAME__,
+          user=False, active=False, cmd_arg='showplots', group=cgroup,
+          cmd_kwargs=dict(nargs='?', type=str, default=None,
+                          choices=['on', 'off'], action='store'),
+          description='Override whether the flavours show their plots: '
+                      '"on" shows them (runs from pogos_gui stream them to '
+                      'the gui), "off" never shows them. Without it each '
+                      'flavour uses its own PLOTS.SHOW setting.')
+
 # Pre-answer the instrument selection prompt (1-based index into the
 #   instrument list) - skips the interactive prompt in core_setup
 CDict.add('INSTRUMENT_SELECT', value=None, dtype=int, source=__NAME__,

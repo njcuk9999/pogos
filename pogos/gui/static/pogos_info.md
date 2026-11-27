@@ -39,12 +39,19 @@ edit rows) to see its full description, type, default and options.
   terminal): a list of runs, and for each run its stages (pre-extraction /
   extraction / post-extraction), flavours (e.g. SOSSISSE) and sub steps
   with their status and progress. Click a step to open the log at that
-  step.
+  step. A step's **Plots** button opens the figures shown during it (and
+  the steps inside it): light grey while figures may still come, dark
+  grey once the step ended without any.
 - **Plots**: **Stream** shows the figures a run displays (runs started
   from the gui stream their figures here instead of opening plot windows);
   **On disk** shows the plot files of every project, organised by project,
   module and directory. Click a plot for a full size view and use the
-  arrow keys to move between plots.
+  arrow keys to move between plots. Streamed figures are interactive
+  with matplotlib's own toolbar (zoom, pan, home / back / forward, shared
+  axes, the coordinates under the mouse and matplotlib's key shortcuts
+  once you click the figure - e.g. g grid, l / k log scales). Figures
+  bigger than `APEROCORE_PLOT_STREAM_MAX_MB` (default 50 MB, 0 = off)
+  stay static images.
 - **Project manager**: choose a project to browse its modules, inputs,
   outputs and plots (view FITS headers / images / tables, text files and
   images, compare two files, delete files or the whole project), or open

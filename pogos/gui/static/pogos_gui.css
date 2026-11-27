@@ -308,6 +308,10 @@ input[data-param], select[data-param], textarea[data-param] { cursor: auto; }
 .status-steps tr.st-flavour-row td:first-child { padding-left: 14px; }
 .status-steps tr.status-row.running td { background: rgba(42,125,225,0.08); }
 .status-steps tr.st-step td { padding-top: 3px; padding-bottom: 3px; }
+/* the whole row lights up under the mouse (to hit the right row button) */
+.status-steps tr.status-row:hover td { background: var(--row-hover);
+    box-shadow: inset 0 1px 0 var(--accent), inset 0 -1px 0 var(--accent); }
+#status-filter { width: 200px; }
 .status-steps tr.st-step.pending td,
 .status-steps tr.st-step.not.run td { color: var(--muted); }
 .status-steps .badge.pending { background: var(--warn); color: #000; }
@@ -315,6 +319,14 @@ input[data-param], select[data-param], textarea[data-param] { cursor: auto; }
 .st-actions { text-align: right; }
 .st-actions button { margin-left: 3px; padding: 1px 8px; }
 .st-actions button.st-slot { visibility: hidden; }
+/* Plots button: light grey = figures may still come, dark grey = the
+   step ended without figures */
+.st-actions button.st-plots:not([disabled]) { font-weight: 600;
+    border-color: var(--accent); color: var(--accent); }
+.st-actions button.st-plots-wait { opacity: 0.45; }
+.st-actions button.st-plots-none { opacity: 1; background: #6e7681;
+    border-color: #6e7681; color: #c9d1d9; }
+.st-plots-gallery { max-height: 70vh; overflow: auto; }
 .code-path { margin: 2px 0 4px 0; color: var(--muted); }
 .code-view { background: var(--code-bg); border: 1px solid var(--border);
     border-radius: 7px; padding: 8px 0; max-height: 46vh; overflow: auto;
@@ -448,3 +460,13 @@ input[data-param], select[data-param], textarea[data-param] { cursor: auto; }
 .algo-code { margin: 6px 0 4px 0; }
 .algo-code > summary { cursor: pointer; color: var(--accent);
                        font-size: 12.5px; }
+
+/* ---- actions tables: narrow wrapping descriptions, wide CLI column ---- */
+.action-table { table-layout: fixed; width: 100%; }
+.action-table col.c-act { width: 24%; }
+.action-table col.c-opt { width: 17%; }
+.action-table col.c-cli { width: auto; }
+.action-table col.c-run { width: 200px; }
+.action-table td { vertical-align: top; overflow-wrap: anywhere; }
+.action-table .cli-chip { white-space: pre-wrap; word-break: break-all; }
+.action-table td .diff-pick input { min-width: 0; }

@@ -131,3 +131,41 @@ def is_ci_mode(kwargs) -> bool:
         return True
     ci_value = os.environ.get('CI', '').strip().lower()
     return ci_value in ['1', 'true', 'yes', 'y']
+
+
+# the plot "show" switches of the flavours that show their plots (pogos_run
+#   --showplots) - Eureka is left alone: showing its plots animates them
+#   with plt.pause in per-integration loops (thousands of figures)
+SHOW_PLOT_KEYS = ['TSOVORE.PLOTS.SHOW', 'MIRIAM.PLOTS.SHOW',
+                  'SORBET.PLOTS.SHOW', 'SOSSISSE.PLOTS.SHOW']
+# per user show lists that turn showing back on (SOSSISSE)
+USER_SHOW_KEYS = ['SOSSISSE.PLOTS.USER_SHOW']
+
+
+def apply_show_plots(params, logger) -> None:
+    """
+    Apply pogos_run --showplots (GLOBAL.SHOW_PLOTS): force every flavour
+    to show its plots (on) or never show them (off) - nothing changes
+    when it is not given
+
+    :param params: ParamDict, the parameters (after loading the yaml)
+    :param logger: the logger (WLOG)
+
+    :return: None (params updated in place)
+    """
+    choice = params.get('GLOBAL.SHOW_PLOTS', None)
+    if choice not in ['on', 'off']:
+        return
+    source = __name__ + '.apply_show_plots'
+    show = choice == 'on'
+    # only the flavours present in this yaml
+    for key in SHOW_PLOT_KEYS:
+        if key in params:
+            params.set(key, value=show, source=source)
+    # an empty user list so nothing turns showing back on
+    if not show:
+        for key in USER_SHOW_KEYS:
+            if key in params:
+                params.set(key, value=[], source=source)
+    logger(params, '', 'Plots: {0} (--showplots={1})'.format(
+        'shown for every flavour' if show else 'not shown', choice))

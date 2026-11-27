@@ -168,6 +168,52 @@ def test_run_reset_config_commands(pogos_path: Path) -> None:
         commands.reset_command(str(pogos_path / 'missing.yaml'))
 
 
+def test_show_plots_arguments(pogos_path: Path) -> None:
+    """The Run tab tick box becomes pogos_run --showplots=on / off."""
+    yaml_path = str(pogos_path / 'yamls' / 'a.yaml')
+    assert '--showplots' not in commands.run_command(yaml_path)['display']
+    run_on = commands.run_command(yaml_path, show_plots=True)
+    assert run_on['cmd'][-1] == '--showplots=on'
+    run_off = commands.run_command(yaml_path, show_plots=False)
+    assert run_off['display'].endswith('--showplots=off')
+    batch = commands.batch_lines(yaml_path, show_plots=False)
+    assert batch['lines'][-1].endswith('--showplots=off')
+    # the gui streams unless the box is unticked
+    assert gui_app.stream_plots(dict()) and gui_app.stream_plots(None)
+    assert not gui_app.stream_plots(dict(stream_plots=False))
+    assert not gui_app.stream_plots(dict(stream_plots='false'))
+    app = gui_app.PogosGuiApp(str(pogos_path))
+    built = app._build('run', dict(yaml=yaml_path))
+    assert built['cmd'][-1] == '--showplots=on'
+    built = app._build('batch', dict(yaml=yaml_path, stream_plots=False))
+    assert built['lines'][-1].endswith('--showplots=off')
+
+
+def test_apply_show_plots() -> None:
+    """--showplots forces every flavour's PLOTS.SHOW (off clears users)."""
+    from pogos.core import recipe_helpers
+    logged = []
+
+    class _Params(dict):
+        def set(self, key, value=None, source=None):
+            self[key] = value
+    params = _Params({'GLOBAL.SHOW_PLOTS': 'on', 'SORBET.PLOTS.SHOW': False,
+                      'SOSSISSE.PLOTS.SHOW': False,
+                      'SOSSISSE.PLOTS.USER_SHOW': ['me']})
+    recipe_helpers.apply_show_plots(params, lambda *a: logged.append(a))
+    assert params['SORBET.PLOTS.SHOW'] and params['SOSSISSE.PLOTS.SHOW']
+    # flavours not in the yaml are not added
+    assert 'MIRIAM.PLOTS.SHOW' not in params
+    params['GLOBAL.SHOW_PLOTS'] = 'off'
+    recipe_helpers.apply_show_plots(params, lambda *a: logged.append(a))
+    assert not params['SORBET.PLOTS.SHOW']
+    assert params['SOSSISSE.PLOTS.USER_SHOW'] == []
+    # without the argument the yaml decides
+    params = _Params({'GLOBAL.SHOW_PLOTS': None, 'SORBET.PLOTS.SHOW': True})
+    recipe_helpers.apply_show_plots(params, lambda *a: logged.append(a))
+    assert params['SORBET.PLOTS.SHOW'] and len(logged) == 2
+
+
 def test_layout_summary_projects_plots(pogos_path: Path) -> None:
     """Yaml summaries, project lists and the plot tree."""
     summary = layout.yaml_summary(str(pogos_path / 'yamls' / 'a.yaml'))
@@ -283,6 +329,37 @@ def test_progress_status_roundtrip(tmp_path: Path, monkeypatch) -> None:
     assert sossisse['children'][0]['done'] == 4
     assert sorbet['status'] == 'pending'
     assert not progress.active()
+
+
+def test_progress_stage_tags_figures(tmp_path: Path, monkeypatch) -> None:
+    """Figures shown inside a stage know its level / flavour / step."""
+    from aperocore import progress as gprogress
+    from pogos.core import progress
+    monkeypatch.delenv(progress.ENV_FILE, raising=False)
+    with progress.run(str(tmp_path), 'a.yaml', 'p', 'M',
+                      [['Extraction', 'SOSSISSE']]):
+        with progress.stage('Extraction', 'SOSSISSE'):
+            with progress.substep('Fit'):
+                context = gprogress.context()
+        after = gprogress.context()
+    assert context == dict(level='Extraction', flavour='SOSSISSE',
+                           path=['Fit'])
+    # outside a stage figures are not tagged
+    assert after == dict(path=[])
+
+
+def test_app_stream_figure_paths(pogos_path: Path) -> None:
+    """The stream route gives the pickled figure; only streams load."""
+    app = gui_app.PogosGuiApp(str(pogos_path))
+    folder = Path(app._stream_root()) / 'run1'
+    folder.mkdir(parents=True)
+    entry = dict(file='0001.png', figure='0001.mplfig', title='t',
+                 step=dict(level='L', flavour='F', path=['A']))
+    (folder / 'index.jsonl').write_text(json.dumps(entry) + '\n')
+    response = app.handle(_request('GET', '/api/pogos/stream?name=run1'))
+    figure = json.loads(response.body)['figures'][0]
+    assert figure['figure_path'] == str(folder / '0001.mplfig')
+    assert app.figure_roots() == [app._stream_root()]
 
 
 def test_progress_failed_run(tmp_path: Path, monkeypatch) -> None:
@@ -415,6 +492,68 @@ def test_nameless_track_methods() -> None:
         gprogress.set_writer(None)
     assert events[0] == ('step_start', nlplan.NL_BADPIX)
     assert 'badpixcorr' not in vars(reduc)
+
+
+def test_app_run_actions(pogos_path: Path, monkeypatch) -> None:
+    """Reset run records (dry run / real), retry candidates (newest run
+    per yaml, failed only, yaml must exist) and stop all."""
+    from pogos.core import progress
+    monkeypatch.delenv(progress.ENV_FILE, raising=False)
+    yaml_a = str(pogos_path / 'yamls' / 'a.yaml')
+    steps = [['Extraction', 'SOSSISSE']]
+    # an old failed run of a.yaml, then a complete one: nothing to retry
+    for fail in [True, False]:
+        try:
+            with progress.run(str(pogos_path), yaml_a, 'p', 'M', steps):
+                if fail:
+                    raise ValueError('boom')
+        except ValueError:
+            pass
+    # a failed run of a yaml that no longer exists: not retried
+    try:
+        with progress.run(str(pogos_path), str(pogos_path / 'gone.yaml'),
+                          'p', 'M', steps):
+            raise ValueError('boom')
+    except ValueError:
+        pass
+    app = gui_app.PogosGuiApp(str(pogos_path))
+    assert app.retry_candidates() == []
+    # the newest run of a.yaml fails: it is retried (on this machine)
+    try:
+        with progress.run(str(pogos_path), yaml_a, 'p', 'M', steps):
+            raise ValueError('boom')
+    except ValueError:
+        pass
+    candidates = app.retry_candidates()
+    assert [os.path.basename(c['yaml']) for c in candidates] == ['a.yaml']
+    assert candidates[0]['batch'] is None
+    dry = json.loads(app.handle(_request('POST', '/api/pogos/retry_failed',
+                                         dict(dry_run=True))).body)
+    assert dry['local'] == 1 and dry['batch'] == 0
+    # reset: dry run counts, then the failed records go
+    dry = json.loads(app.handle(_request('POST', '/api/pogos/runs_reset',
+                                         dict(state='failed',
+                                              dry_run=True))).body)
+    assert dry['runs'] == 3
+    assert len(status_mod_list(pogos_path)) == 4
+    done = json.loads(app.handle(_request('POST', '/api/pogos/runs_reset',
+                                          dict(state='failed'))).body)
+    assert done['runs'] == 3
+    assert [r['status'] for r in status_mod_list(pogos_path)] == [
+        'complete']
+    bad = app.handle(_request('POST', '/api/pogos/runs_reset',
+                              dict(state='running')))
+    assert bad.code == 400
+    # stop all: nothing started from the gui
+    stop = json.loads(app.handle(_request('POST', '/api/pogos/stop_all',
+                                          dict(dry_run=True))).body)
+    assert stop['stopped'] == 0
+
+
+def status_mod_list(pogos_path: Path) -> list:
+    """The recorded runs of a POGOS path (helper)."""
+    from pogos.gui import status
+    return status.list_runs(str(pogos_path))
 
 
 def test_app_project_delete_ignores_case(pogos_path: Path) -> None:

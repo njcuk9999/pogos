@@ -48,7 +48,7 @@ __description__ = ('Run the POGOS recipe using a configuration (yaml) file.'
                    ' All input data needs to be placed according to the yaml '
                    'file given and all data and plots will be saved in the '
                    'outpaths given in the input yaml file.')
-__inputs__ = ['GLOBAL.YAML_FILE', 'GLOBAL.LIST_YAMLS']
+__inputs__ = ['GLOBAL.YAML_FILE', 'GLOBAL.LIST_YAMLS', 'GLOBAL.SHOW_PLOTS']
 # version error text
 verr = ('The POGOS version of the {0} is not compatible with '
         'the current version of the code ({1}). '
@@ -99,6 +99,8 @@ def main(**kwargs):
     # print yaml file used
     msg = f'Using yaml file: {yaml_file}'
     WLOG(params, 'info', msg)
+    # force the flavours to show (or not show) their plots (--showplots)
+    recipe_helpers.apply_show_plots(params, WLOG)
     # -------------------------------------------------------------------------
     # Check CRDS setup
     startup.check_crds(params)

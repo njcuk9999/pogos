@@ -361,20 +361,37 @@ def edit_command(yaml_path: Any) -> Dict[str, Any]:
     return dict(cmd=cmd, display=display, env=dict())
 
 
-def run_command(yaml_path: Any, accept_old: bool = False
-                ) -> Dict[str, Any]:
+def show_plots_args(show_plots: Optional[bool]) -> List[str]:
+    """
+    Get the pogos_run --showplots argument
+
+    :param show_plots: bool or None, force every flavour to show its plots
+                       (True), never show them (False) or use the yaml
+                       (None)
+
+    :return: list of str, the arguments ([] for None)
+    """
+    if show_plots is None:
+        return []
+    return ['--showplots={0}'.format('on' if show_plots else 'off')]
+
+
+def run_command(yaml_path: Any, accept_old: bool = False,
+                show_plots: Optional[bool] = None) -> Dict[str, Any]:
     """
     Build the pogos_run command
 
     :param yaml_path: Any, the yaml to run
     :param accept_old: bool, accept a yaml from an older POGOS version
+    :param show_plots: bool or None, see show_plots_args
 
     :raises CommandError: if the yaml does not exist
 
     :return: dict(cmd, display, env)
     """
     real = _check_yaml(yaml_path)
-    cmd, display = _recipe_cmd('pogos_run', ['--yamlfile={0}'.format(real)])
+    rargs = ['--yamlfile={0}'.format(real)] + show_plots_args(show_plots)
+    cmd, display = _recipe_cmd('pogos_run', rargs)
     env = {ACCEPT_OLD_ENV: '1'} if accept_old else dict()
     return dict(cmd=cmd, display=_env_display(env, display), env=env)
 
@@ -422,13 +439,15 @@ def reset_command(yaml_path: Any, accept_old: bool = False
 
 
 def batch_lines(yaml_path: Any, accept_old: bool = False,
-                workdir: Optional[str] = None) -> Dict[str, Any]:
+                workdir: Optional[str] = None,
+                show_plots: Optional[bool] = None) -> Dict[str, Any]:
     """
     Build the shell lines of a pogos_run batch script
 
     :param yaml_path: Any, the yaml to run
     :param accept_old: bool, accept a yaml from an older POGOS version
     :param workdir: str or None, directory the job runs in
+    :param show_plots: bool or None, see show_plots_args
 
     :raises CommandError: if the yaml does not exist
 
@@ -440,7 +459,8 @@ def batch_lines(yaml_path: Any, accept_old: bool = False,
         lines.append('cd {0}'.format(shlex.quote(workdir)))
     if accept_old:
         lines.append('export {0}=1'.format(ACCEPT_OLD_ENV))
-    run = shlex.join(['pogos_run', '--yamlfile={0}'.format(real)])
+    run = shlex.join(['pogos_run', '--yamlfile={0}'.format(real)]
+                     + show_plots_args(show_plots))
     lines.append(run)
     return dict(lines=lines, display=run)
 

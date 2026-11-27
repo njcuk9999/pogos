@@ -180,6 +180,12 @@ def start_run(data_path: Optional[str], yaml_file: str, project: Any,
             stamp, os.path.splitext(os.path.basename(yaml_file))[0],
             os.getpid())
         path = os.path.join(status_dir(data_path), name)
+        # never share a record with another run (same second / process)
+        count = 1
+        while os.path.exists(path):
+            count += 1
+            path = os.path.join(status_dir(data_path), '{0}-{1}.jsonl'
+                                .format(name[:-len('.jsonl')], count))
     try:
         run = RunProgress(path)
     except OSError:
@@ -290,6 +296,8 @@ def stage(level: str, flavour: str) -> Iterator[None]:
     current.stage = dict(level=level, flavour=flavour)
     # forget any step left open by a previous stage
     gprogress.set_writer(current.write_step)
+    # figures shown inside the stage are tagged with it (Status plots)
+    gprogress.set_tags(level=level, flavour=flavour)
     current.write('stage_start', level=level, flavour=flavour)
     _marker(level, flavour, 'start')
     try:
@@ -301,12 +309,14 @@ def stage(level: str, flavour: str) -> Iterator[None]:
                       status='failed',
                       error='{0}: {1}'.format(type(error).__name__, error))
         current.stage = None
+        gprogress.set_tags()
         raise
     gprogress.close_all('complete')
     current.write('stage_end', level=level, flavour=flavour,
                   status='complete')
     _marker(level, flavour, 'complete')
     current.stage = None
+    gprogress.set_tags()
 
 
 def start_substep(name: str, total: Optional[int] = None,

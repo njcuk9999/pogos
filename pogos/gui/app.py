@@ -73,6 +73,10 @@ POGOS_BATCH_DEFAULTS = dict(gui_slurm.BATCH_DEFAULTS, job_name='pogos_run',
                             time='24:00:00', cpus_per_task=8, mem='64G')
 # seconds a probe may run
 PROBE_TIMEOUT = 300
+# the run states "Reset run records" can remove (never running ones)
+RESET_STATES = ['complete', 'failed', 'stopped', 'lost']
+# the run states "Retry all failed" runs again
+RETRY_STATES = ['failed', 'stopped', 'lost']
 # the matplotlib backend that streams figures to the Plots tab (run jobs)
 STREAM_BACKEND = 'module://aperocore.gui.mpl_stream'
 STREAM_ENV = 'APEROCORE_PLOT_STREAM_DIR'
@@ -114,6 +118,9 @@ class PogosGuiApp(webapp.GuiApp):
         # cache of the constant descriptions (tool tips) - loaded once
         self.param_info: Optional[Dict[str, Any]] = None
         self.param_lock = threading.Lock()
+        # runs waiting to be retried on this machine (one at a time)
+        self.retry_queue: List[Dict[str, Any]] = []
+        self.retry_lock = threading.Lock()
         # the algorithm steps of every reduction step (docs page, cached)
         self.algorithm_info: Optional[Dict[str, Any]] = None
         self.algorithm_lock = threading.Lock()
@@ -153,6 +160,18 @@ class PogosGuiApp(webapp.GuiApp):
                 if real not in roots:
                     roots.append(real)
         return roots
+
+    def figure_roots(self) -> List[str]:
+        """
+        Get the folders interactive figures may be loaded from: only the
+        plot streams this gui creates (pickles run code when loaded)
+
+        :return: list of str, [{path}/pogos_gui/plot_stream] (empty
+                 without a POGOS path)
+        """
+        if self.path is None:
+            return []
+        return [self._stream_root()]
 
     def artifact_roots(self) -> List[str]:
         """
@@ -232,6 +251,10 @@ class PogosGuiApp(webapp.GuiApp):
         get('/api/pogos/run', self.api_run_detail)
         get('/api/pogos/run_log', self.api_run_log)
         post('/api/pogos/run_remove', self.api_run_remove)
+        # run actions (Actions tab): reset records / stop all / retry
+        post('/api/pogos/runs_reset', self.api_runs_reset)
+        post('/api/pogos/stop_all', self.api_stop_all)
+        post('/api/pogos/retry_failed', self.api_retry_failed)
         get('/api/pogos/streams', self.api_streams)
         get('/api/pogos/stream', self.api_stream)
         post('/api/pogos/stream_remove', self.api_stream_remove)
@@ -419,6 +442,217 @@ class PogosGuiApp(webapp.GuiApp):
                  growing]
         return webapp.Response.json(webapp.read_log(*rargs))
 
+    def api_runs_reset(self, request: webapp.Request) -> webapp.Response:
+        """
+        POST /api/pogos/runs_reset {state, dry_run}: remove the finished
+        run records (Status tab) and gui process records (Processes tab)
+        of a state - running runs are never removed
+
+        :param request: Request, the request
+
+        :return: Response, json dict(success, message, runs, processes)
+        """
+        missing = self._need_path()
+        if missing is not None:
+            return missing
+        state = str(request.arg('state', 'all') or 'all')
+        dry_run = bool(request.arg('dry_run', False))
+        states = RESET_STATES if state == 'all' else [state]
+        if state != 'all' and state not in RESET_STATES:
+            return webapp.Response.error('unknown state: ' + state)
+        # the Status records
+        run_ids = [run['id'] for run in run_status.list_runs(self.path)
+                   if run['status'] in states]
+        # the Processes records ("finished" = a Slurm job that ended)
+        proc_dir = self.proc_dir()
+        proc_ids = []
+        if proc_dir is not None:
+            data = webapp.get_process_data(proc_dir)
+            proc_ids = [row['id'] for row in data['processes']
+                        if row['status'] in states
+                        or (state == 'all' and row['status'] == 'finished')]
+        if dry_run:
+            message = ('Reset dry run ({0}): would remove {1} run record(s) '
+                       'and {2} process record(s)')
+            message = message.format(state, len(run_ids), len(proc_ids))
+            return webapp.Response.json(dict(success=True, message=message,
+                                             runs=len(run_ids),
+                                             processes=len(proc_ids)))
+        nruns = run_status.remove_runs(self.path, run_ids)
+        nprocs = 0
+        if proc_dir is not None and proc_ids:
+            nprocs = gui_procs.remove(proc_dir, proc_ids,
+                                      artifact_roots=self.artifact_roots())
+        message = ('Reset ({0}): removed {1} run record(s) and {2} process '
+                   'record(s)').format(state, nruns, nprocs)
+        self.state.add_message(message, 'actions')
+        self.state.bump()
+        return webapp.Response.json(dict(success=True, message=message,
+                                         runs=nruns, processes=nprocs))
+
+    def api_stop_all(self, request: webapp.Request) -> webapp.Response:
+        """
+        POST /api/pogos/stop_all {dry_run}: stop every running process the
+        gui started (local runs and Slurm jobs) - their runs are recorded
+        as stopped; queued retries are dropped
+
+        :param request: Request, the request
+
+        :return: Response, json dict(success, message, stopped)
+        """
+        missing = self._need_path()
+        if missing is not None:
+            return missing
+        proc_dir = self.proc_dir()
+        if proc_dir is None:
+            return webapp.Response.error('no working directory set')
+        data = webapp.get_process_data(proc_dir)
+        ids = [row['id'] for row in data['processes']
+               if row['status'] in ['running', 'pending']]
+        if request.arg('dry_run', False):
+            message = 'Stop all dry run: would stop {0} process(es)'.format(
+                len(ids))
+            return webapp.Response.json(dict(success=True, message=message,
+                                             stopped=len(ids)))
+        # nothing queued may start after a stop
+        with self.retry_lock:
+            dropped = len(self.retry_queue)
+            del self.retry_queue[:]
+        result = webapp.action_process(proc_dir, 'stop', ids,
+                                       artifact_roots=self.artifact_roots())
+        message = result['message'] + (' ({0} queued retry(s) dropped)'
+                                       .format(dropped) if dropped else '')
+        self.state.add_message(message, 'actions')
+        self.state.bump()
+        return webapp.Response.json(dict(result, message=message,
+                                         stopped=len(ids)))
+
+    def retry_candidates(self) -> List[Dict[str, Any]]:
+        """
+        Get the runs "Retry all failed" would run again: per yaml file the
+        newest run, if it failed / was stopped / was lost and no run of that
+        yaml is running now
+
+        :return: list of dict(yaml, accept_old, slurm_job, status, batch)
+                 where batch is the process record of a Slurm run (None for
+                 a run on this machine)
+        """
+        runs = run_status.list_runs(self.path)
+        newest: Dict[str, Dict[str, Any]] = dict()
+        active = set()
+        for run in runs:
+            yaml_path = run.get('yaml')
+            if not yaml_path:
+                continue
+            if run['status'] in ['running', 'unknown']:
+                active.add(yaml_path)
+            # runs are newest first
+            newest.setdefault(yaml_path, run)
+        # the Slurm job of each batch run (its template / options)
+        batch_records: Dict[str, Dict[str, Any]] = dict()
+        proc_dir = self.proc_dir()
+        if proc_dir is not None:
+            for record in gui_procs.load_all(proc_dir):
+                for job in record.get('slurm_jobs') or []:
+                    batch_records[str(job)] = record
+        out = []
+        for yaml_path, run in newest.items():
+            if run['status'] not in RETRY_STATES or yaml_path in active:
+                continue
+            if not os.path.isfile(yaml_path):
+                continue
+            record = batch_records.get(str(run.get('slurm_job')))
+            out.append(dict(yaml=yaml_path, status=run['status'],
+                            slurm_job=run.get('slurm_job'),
+                            accept_old=bool(run.get('accept_old')),
+                            batch=record if run.get('slurm_job') else None))
+        return out
+
+    def api_retry_failed(self, request: webapp.Request) -> webapp.Response:
+        """
+        POST /api/pogos/retry_failed {dry_run}: run every failed / stopped /
+        lost run again the way it ran - Slurm runs are submitted again
+        (same batch template), runs on this machine run one after another
+        in the Run console
+
+        :param request: Request, the request
+
+        :return: Response, json dict(success, message, batch, local, runs)
+        """
+        missing = self._need_path()
+        if missing is not None:
+            return missing
+        candidates = self.retry_candidates()
+        batch = [item for item in candidates if item['batch'] is not None
+                 or item['slurm_job']]
+        local = [item for item in candidates if item not in batch]
+        names = [os.path.basename(item['yaml']) for item in candidates]
+        if request.arg('dry_run', False):
+            message = ('Retry dry run: would submit {0} Slurm job(s) and run '
+                       '{1} run(s) on this machine').format(len(batch),
+                                                           len(local))
+            return webapp.Response.json(dict(success=True, message=message,
+                                             batch=len(batch),
+                                             local=len(local), runs=names))
+        if not candidates:
+            return webapp.Response.json(dict(success=True, runs=[],
+                                             message='No failed runs to '
+                                                     'retry'))
+        messages = []
+        # Slurm runs: a new script with the same template / options
+        for item in batch:
+            record = item['batch'] or dict()
+            out = self.batch_job(dict(
+                yaml=item['yaml'], submit=True,
+                template=record.get('template') or 'default',
+                accept_old=record.get('accept_old', item['accept_old'])))
+            messages.append(out.get('message', ''))
+        # runs on this machine: one after another in the Run console
+        if local:
+            if self.jobs.running('run'):
+                messages.append('{0} run(s) on this machine not retried: a '
+                                'run is already in the Run console'
+                                ''.format(len(local)))
+            else:
+                with self.retry_lock:
+                    self.retry_queue.extend(local)
+                self._retry_next()
+                messages.append('{0} run(s) on this machine retried one '
+                                'after another in the Run console'
+                                ''.format(len(local)))
+        message = 'Retry all failed: ' + '; '.join(m for m in messages if m)
+        self.state.add_message(message, 'actions')
+        self.state.bump()
+        return webapp.Response.json(dict(success=True, message=message,
+                                         batch=len(batch), local=len(local),
+                                         runs=names))
+
+    def _retry_next(self, returncode: Optional[int] = None) -> None:
+        """
+        Start the next queued local retry (called again when it finishes)
+
+        :param returncode: int or None, the return code of the previous
+                           retry (unused - every queued run is retried)
+
+        :return: None
+        """
+        _ = returncode
+        with self.retry_lock:
+            if not self.retry_queue:
+                return
+            item = self.retry_queue.pop(0)
+        form = dict(yaml=item['yaml'], accept_old=item['accept_old'])
+        try:
+            built = self._build('run', form)
+        except commands.CommandError as error:
+            self.state.add_message('Retry of {0} not started: {1}'.format(
+                os.path.basename(item['yaml']), error), 'actions')
+            self._retry_next()
+            return
+        built['env'] = dict(built['env'], **self.stream_env(item['yaml'],
+                                                             'local'))
+        self._start('run', 'run', built, on_done=self._retry_next)
+
     def api_run_remove(self, request: webapp.Request) -> webapp.Response:
         """
         POST /api/pogos/run_remove {ids}: remove finished run records
@@ -504,6 +738,10 @@ class PogosGuiApp(webapp.GuiApp):
                         continue
                     if entry.get('file'):
                         entry['path'] = os.path.join(folder, entry['file'])
+                    # the pickled figure (interactive zoom / pan)
+                    if entry.get('figure'):
+                        entry['figure_path'] = os.path.join(
+                            folder, entry['figure'])
                     figures.append(entry)
         since = max(0, request.int_arg('since', 0))
         return webapp.Response.json(dict(name=name, total=len(figures),
@@ -760,19 +998,22 @@ class PogosGuiApp(webapp.GuiApp):
         """
         yaml_path = form.get('yaml')
         accept_old = bool(form.get('accept_old'))
+        # runs from the gui show (stream) their plots unless unticked
+        stream = stream_plots(form)
         if action == 'setup':
             return commands.setup_command(self.path, form)
         if action == 'edit':
             return commands.edit_command(yaml_path)
         if action == 'run':
-            return commands.run_command(yaml_path, accept_old)
+            return commands.run_command(yaml_path, accept_old, stream)
         if action in ['config_check', 'config_fix']:
             return commands.config_command(yaml_path,
                                            action == 'config_check')
         if action == 'reset':
             return commands.reset_command(yaml_path, accept_old)
         if action == 'batch':
-            built = commands.batch_lines(yaml_path, accept_old, self.path)
+            built = commands.batch_lines(yaml_path, accept_old, self.path,
+                                         stream)
             built['display'] = 'sbatch <script running: {0}>'.format(
                 built['display'])
             return built
@@ -857,9 +1098,10 @@ class PogosGuiApp(webapp.GuiApp):
             built = self._build('run', request.body)
         except commands.CommandError as error:
             return webapp.Response.error(str(error))
-        # stream the figures of this run to the Plots tab
-        built['env'] = dict(built['env'], **self.stream_env(
-            str(request.arg('yaml')), 'local'))
+        # stream the figures of this run to the Plots / Status tabs
+        if stream_plots(request.body):
+            built['env'] = dict(built['env'], **self.stream_env(
+                str(request.arg('yaml')), 'local'))
         return self._start('run', 'run', built)
 
     def api_batch(self, request: webapp.Request) -> webapp.Response:
@@ -912,7 +1154,10 @@ class PogosGuiApp(webapp.GuiApp):
                                     yaml_name)[:120]
         # the job records its log and streams its figures (Status / Plots)
         lines = list(built['lines'])
-        if not form.get('preview', False):
+        if not stream_plots(form):
+            # never open plot windows on a compute node
+            env = dict(MPLBACKEND='Agg')
+        elif not form.get('preview', False):
             env = self.stream_env(str(form.get('yaml')), 'batch')
         else:
             env = {STREAM_ENV: '<stream folder>', 'MPLBACKEND':
@@ -1119,6 +1364,23 @@ class PogosGuiApp(webapp.GuiApp):
 # =============================================================================
 # Define functions
 # =============================================================================
+def stream_plots(form: Any) -> bool:
+    """
+    Whether a run from the gui shows its plots (streamed to the Plots /
+    Status tabs) - the Run tab tick box "stream_plots", on unless unticked
+
+    :param form: dict or None, the form values
+
+    :return: bool, True to stream the plots
+    """
+    if not isinstance(form, dict):
+        return True
+    value = form.get('stream_plots', True)
+    if isinstance(value, str):
+        return value.strip().lower() not in ['0', 'false', 'no', 'off']
+    return bool(value)
+
+
 def main(path: Optional[str] = None, host: str = webapp.DEFAULT_HOST,
          port: int = DEFAULT_PORT, headless: bool = False) -> None:
     """
