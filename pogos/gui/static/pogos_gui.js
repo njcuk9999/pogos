@@ -2538,6 +2538,10 @@ P.status.stepProgress = function (node) {
     if (node.leaves_total) {
         return P.status.bar(node.leaves_done, node.leaves_total, null);
     }
+    // only a detail text (e.g. which file is being downloaded)
+    if (node.detail && node.status === 'running') {
+        return P.status.bar(null, null, node.detail);
+    }
     return '';
 };
 
@@ -2630,7 +2634,10 @@ P.status.renderRun = function () {
             GUI.esc(stage.flavour) + '</b>' + (stage.error ? '<div ' +
             'class="small st-error">' + GUI.esc(stage.error) + '</div>' :
             '') + (stage.children.length ? '' : ' <span class="muted ' +
-            'small">(no steps declared for this flavour)</span>') +
+            'small">' + (stage.status === 'pending' &&
+            run.status === 'running' ? '(its steps are listed once the ' +
+            'preamble has planned them)' : '(no steps declared for this ' +
+            'flavour)') + '</span>') +
             '</td><td class="nowrap small">' + GUI.fmtTime(stage.started) +
             '</td><td class="nowrap small">' + (stage.started ?
             P.status.duration(stage.started, stage.ended) : '') + '</td>' +

@@ -1,8 +1,8 @@
 ## POGOS GUI
 
-The POGOS gui (`pogos_gui`) runs the normal POGOS recipes for you -
-`pogos_setup`, `pogos_edit`, `pogos_run`, `pogos_config` and `pogos_reset`
-- and shows their output in a console on each page. Questions a recipe
+The POGOS gui (`pogos_gui`) runs the normal POGOS recipes for you
+(`pogos_setup`, `pogos_edit`, `pogos_run`, `pogos_config` and
+`pogos_reset`) and shows their output in a console on each page. Questions a recipe
 still asks (e.g. an object name) are answered in that console. Every page
 shows the **CLI equivalent** of what it runs, so anything done here can be
 repeated from a terminal.

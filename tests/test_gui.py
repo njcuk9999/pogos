@@ -587,3 +587,108 @@ def test_app_stream_routes(pogos_path: Path) -> None:
     assert data['figures'][0]['path'] == str(folder / 'f1.png')
     bad = app.handle(_request('GET', '/api/pogos/stream?name=../x'))
     assert bad.code == 400
+
+
+# the Preamble stage / late plans of a run (pogos_run)
+PROGRESS_STAGES = [['Extraction', 'SOSSISSE'], ['Post-extraction', 'SORBET']]
+PROGRESS_PLAN = [dict(name='Load data', children=[]),
+                 dict(name='Fit', children=[])]
+
+
+def _names(children):
+    """The step names of a stage tree level."""
+    return [child['name'] for child in children]
+
+
+def _stage_of(parsed, level):
+    """The parsed stage of a level."""
+    return [stage for stage in parsed['steps'] if stage['level'] == level][0]
+
+
+def test_stages_pending_before_plans_and_filled_later(tmp_path,
+                                                      monkeypatch):
+    """The Preamble runs first; flavour stages are pending (steps filled
+    in by the later plans event)."""
+    from pogos.core import progress
+    from pogos.gui import status
+    record = tmp_path / 'run.jsonl'
+    monkeypatch.setenv(progress.ENV_FILE, str(record))
+    monkeypatch.delenv(progress.ENV_LOG, raising=False)
+    monkeypatch.delenv(progress.ENV_GUI_LOG, raising=False)
+    steps = [progress.PREAMBLE_STAGE] + PROGRESS_STAGES
+    progress.start_run(None, 'my.yaml', 'PROJ', 'MODE', steps,
+                       [progress.preamble_plan()])
+    try:
+        with progress.stage(*progress.PREAMBLE_STAGE):
+            for name in progress.PREAMBLE_STEPS[:3]:
+                progress.start_substep(name)
+            # while downloading: every stage shows, flavours pending
+            parsed = status.parse_run(str(record))
+            assert [stage['level'] for stage in parsed['steps']] == [
+                'Preamble', 'Extraction', 'Post-extraction']
+            preamble = _stage_of(parsed, 'Preamble')
+            assert preamble['status'] == 'running'
+            assert _names(preamble['children']) == progress.PREAMBLE_STEPS
+            assert [c['status'] for c in preamble['children']] == [
+                'complete', 'complete', 'running', 'pending']
+            extraction = _stage_of(parsed, 'Extraction')
+            assert extraction['status'] == 'pending'
+            assert extraction['children'] == []
+            # the preamble planned the flavour steps
+            progress.start_substep(progress.PREAMBLE_STEPS[3])
+            progress.set_plans([dict(level='Extraction', flavour='SOSSISSE',
+                                     plan=PROGRESS_PLAN)])
+        with progress.stage('Extraction', 'SOSSISSE'):
+            parsed = status.parse_run(str(record))
+            extraction = _stage_of(parsed, 'Extraction')
+            assert extraction['status'] == 'running'
+            assert _names(extraction['children']) == ['Load data', 'Fit']
+            assert _stage_of(parsed, 'Preamble')['status'] == 'complete'
+    finally:
+        progress.end_run('complete')
+    parsed = status.parse_run(str(record))
+    assert parsed['status'] == 'complete'
+    # the Preamble is not a flavour (Status tab filter)
+    assert parsed['flavours'] == ['SORBET', 'SOSSISSE']
+
+
+def test_plans_do_not_replace_a_started_stage(tmp_path, monkeypatch):
+    """Late plans never replace the steps of a stage that started."""
+    from pogos.core import progress
+    from pogos.gui import status
+    record = tmp_path / 'run.jsonl'
+    monkeypatch.setenv(progress.ENV_FILE, str(record))
+    progress.start_run(None, 'my.yaml', 'PROJ', 'MODE', PROGRESS_STAGES, [])
+    try:
+        with progress.stage('Extraction', 'SOSSISSE'):
+            progress.start_substep('Something else')
+            progress.set_plans([dict(level='Extraction', flavour='SOSSISSE',
+                                     plan=PROGRESS_PLAN)])
+            parsed = status.parse_run(str(record))
+            assert _names(_stage_of(parsed, 'Extraction')['children']) == [
+                'Something else']
+    finally:
+        progress.end_run('complete')
+
+
+def test_failed_preamble_marks_flavours_not_run(tmp_path, monkeypatch):
+    """A failing preamble (e.g. a download) fails the run visibly."""
+    from pogos.core import progress
+    from pogos.gui import status
+    record = tmp_path / 'run.jsonl'
+    monkeypatch.setenv(progress.ENV_FILE, str(record))
+    steps = [progress.PREAMBLE_STAGE] + PROGRESS_STAGES
+    try:
+        with progress.run(None, 'my.yaml', 'PROJ', 'MODE', steps,
+                          [progress.preamble_plan()]):
+            with progress.stage(*progress.PREAMBLE_STAGE):
+                progress.start_substep(progress.PREAMBLE_STEPS[2])
+                raise ValueError('download failed')
+    except ValueError:
+        pass
+    parsed = status.parse_run(str(record))
+    assert parsed['status'] == 'failed'
+    preamble = _stage_of(parsed, 'Preamble')
+    assert preamble['status'] == 'failed'
+    assert 'download failed' in preamble['error']
+    assert _stage_of(parsed, 'Extraction')['status'] == 'not run'

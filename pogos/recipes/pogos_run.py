@@ -102,9 +102,6 @@ def main(**kwargs):
     # force the flavours to show (or not show) their plots (--showplots)
     recipe_helpers.apply_show_plots(params, WLOG)
     # -------------------------------------------------------------------------
-    # Check CRDS setup
-    startup.check_crds(params)
-    # -------------------------------------------------------------------------
     # Make sure runs are not None - this means something is very wrong with
     # the yaml file
     for step in definitions.RED_STEPS:
@@ -117,33 +114,65 @@ def main(**kwargs):
             # print a warning
             WLOG(params, 'warning', wmsg.format(*wargs))
             params[run_key] = False
-    # -------------------------------------------------------------------------
-    # Check that user is not trying to run multiple reduction steps from
-    # the same level (unless this is allowed)
-    startup.check_red_steps(params)
-    # Check global/module instrument modes and reduction-step support.
-    startup.check_instrument_modes(params)
-    # -------------------------------------------------------------------------
-    # Download online input files (source: mast / pogos) that are not yet
-    #   on disk and record them in the yaml file
-    dkwargs = dict(yaml_file=yaml_file,
-                   demolocal=params.get('GLOBAL.LOCAL_DOWNLOAD_DATA', None),
-                   demosymlink=params.get('GLOBAL.DEMO_SYMLINK_DATA', False))
-    file_download.download_files(params, **dkwargs)
     # =========================================================================
-    # Reduction steps (progress recorded for the pogos_gui Status tab)
+    # Record the run (pogos_gui Status tab) - opened before the preamble so
+    #   the run and every flavour stage show (pending) straight away; the
+    #   steps of each flavour are filled in once the preamble planned them
     # =========================================================================
     stages = recipe_helpers.planned_stages(params)
-    # the steps of every stage (shown as pending until they run)
-    plans = progress_plans.run_plans(params, stages)
     pargs = [params.get('GLOBAL.DATA_PATH', None), yaml_file,
              params.get('GLOBAL.PROJECT_NAME', None),
-             params.get('GLOBAL.INSTRUMENTMODE', None), stages, plans]
+             params.get('GLOBAL.INSTRUMENTMODE', None),
+             [progress.PREAMBLE_STAGE] + stages,
+             [progress.preamble_plan()]]
     with progress.run(*pargs):
+        # checks, downloads and planning (the Preamble stage)
+        run_preamble(params, yaml_file, stages)
+        # the reduction steps (one stage per flavour)
         run_reduction_steps(params)
     # -------------------------------------------------------------------------
     # print splash
     general.end_splash()
+
+
+def run_preamble(params, yaml_file, stages):
+    """
+    Everything pogos_run does before the reduction steps, recorded as the
+    Preamble stage of the run progress: checks, downloading the online
+    input files and planning the steps of every flavour
+
+    :param params: ParamDict, the loaded parameters of the yaml file
+    :param yaml_file: str, the yaml file (updated with downloaded files)
+    :param stages: list of [level, flavour], the planned stages
+
+    :return: None
+    """
+    with progress.stage(*progress.PREAMBLE_STAGE):
+        # ---------------------------------------------------------------------
+        # Check CRDS setup
+        progress.start_substep(progress.PREAMBLE_STEPS[0])
+        startup.check_crds(params)
+        # ---------------------------------------------------------------------
+        # Check that user is not trying to run multiple reduction steps from
+        # the same level (unless this is allowed) and the global/module
+        # instrument modes and reduction-step support
+        progress.start_substep(progress.PREAMBLE_STEPS[1])
+        startup.check_red_steps(params)
+        startup.check_instrument_modes(params)
+        # ---------------------------------------------------------------------
+        # Download online input files (source: mast / pogos) that are not
+        #   yet on disk and record them in the yaml file
+        progress.start_substep(progress.PREAMBLE_STEPS[2])
+        dkwargs = dict(yaml_file=yaml_file,
+                       demolocal=params.get('GLOBAL.LOCAL_DOWNLOAD_DATA',
+                                            None),
+                       demosymlink=params.get('GLOBAL.DEMO_SYMLINK_DATA',
+                                              False))
+        file_download.download_files(params, **dkwargs)
+        # ---------------------------------------------------------------------
+        # The steps of every stage (shown as pending until they run)
+        progress.start_substep(progress.PREAMBLE_STEPS[3])
+        progress.set_plans(progress_plans.run_plans(params, stages))
 
 
 def run_reduction_steps(params):

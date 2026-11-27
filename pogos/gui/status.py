@@ -43,6 +43,9 @@ from pogos.core import progress
 __NAME__ = 'pogos.gui.status.py'
 # valid run ids (file names without .jsonl) - refuses paths
 RUN_ID_RE = re.compile(r'^[\w.+-]+$')
+# the level of the Preamble stage (pogos.core.progress.PREAMBLE_STAGE -
+#   not imported: the gui does not load the POGOS runtime)
+PREAMBLE_LEVEL = 'Preamble'
 # parsed runs: path -> ((size, mtime), events)
 _CACHE: Dict[str, Any] = dict()
 
@@ -369,6 +372,17 @@ def parse_run(file_path: str) -> Optional[Dict[str, Any]]:
             if 'stopped (signal' in str(out['error'] or ''):
                 out['status'] = 'stopped'
             continue
+        # plans recorded once known (after the preamble planned them):
+        #   fill in the steps of stages that have not started yet
+        if kind == 'plans':
+            for entry in event.get('plans') or []:
+                if not isinstance(entry, dict):
+                    continue
+                stage = _stage(entry.get('level'), entry.get('flavour'))
+                if stage['status'] == 'pending':
+                    stage['children'] = _plan_nodes(entry.get('plan') or [],
+                                                    [])
+            continue
         stage = _stage(event.get('level'), event.get('flavour'))
         if kind == 'stage_start':
             stage.update(status='running', started=when)
@@ -436,8 +450,10 @@ def parse_run(file_path: str) -> Optional[Dict[str, Any]]:
     out['steps'] = stages
     out['nstages'] = len(stages)
     # the flavours this run covers (for the Status tab filter)
+    #   (not the Preamble every run has)
     out['flavours'] = sorted(set(str(stage['flavour']) for stage in stages
-                                 if stage['flavour'] is not None))
+                                 if stage['flavour'] is not None
+                                 and stage['level'] != PREAMBLE_LEVEL))
     out['ndone'] = len([stage for stage in stages
                         if stage['status'] == 'complete'])
     return out

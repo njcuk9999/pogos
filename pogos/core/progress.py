@@ -59,6 +59,21 @@ ENV_ACCEPT_OLD = 'POGOS_ACCEPT_OLD_YAML'
 ENV_PLOT_STREAM = 'APEROCORE_PLOT_STREAM_DIR'
 # the marker printed in the log for every step event
 MARKER = 'POGOS PROGRESS'
+# the first stage of every run: what pogos_run does before the reduction
+#   steps (checks, downloading the online inputs, planning the steps)
+PREAMBLE_STAGE = ['Preamble', 'POGOS']
+PREAMBLE_STEPS = ['Check CRDS', 'Check reduction steps',
+                  'Download input files', 'Plan reduction steps']
+PREAMBLE_DESCS = ['Check the CRDS environment (CRDS_PATH / '
+                  'CRDS_SERVER_URL) used by the JWST pipeline.',
+                  'Check the chosen reduction steps work together and '
+                  'support the instrument mode.',
+                  'Obtain the online input files (MAST / POGOS server) '
+                  'that are missing: reused from {DATA_PATH}/downloads if '
+                  'already downloaded, else downloaded there, then '
+                  'symlinked into the project.',
+                  'Work out the steps every flavour will go through (shown '
+                  'as pending below).']
 # the current run (None = progress recording is off)
 _RUN: Optional['RunProgress'] = None
 _LOCK = threading.Lock()
@@ -204,6 +219,33 @@ def start_run(data_path: Optional[str], yaml_file: str, project: Any,
     gprogress.set_writer(run.write_step)
     _marker('run', 'start', os.path.basename(yaml_file))
     return path
+
+
+def preamble_plan() -> Dict[str, Any]:
+    """
+    The plan of the Preamble stage (see PREAMBLE_STEPS)
+
+    :return: dict(level, flavour, plan) for start_run
+    """
+    plan = [gprogress.node(name, desc=desc)
+            for name, desc in zip(PREAMBLE_STEPS, PREAMBLE_DESCS)]
+    return dict(level=PREAMBLE_STAGE[0], flavour=PREAMBLE_STAGE[1],
+                plan=plan)
+
+
+def set_plans(plans: List[Dict[str, Any]]) -> None:
+    """
+    Record the plans of stages once they are known (stages listed at the
+    start of the run show as pending, with these steps once recorded)
+
+    :param plans: list of dict(level, flavour, plan) - see start_run
+
+    :return: None
+    """
+    current = _RUN
+    if current is None:
+        return
+    current.write('plans', plans=plans)
 
 
 def end_run(status: str, error: Optional[str] = None) -> None:
