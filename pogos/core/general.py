@@ -58,6 +58,20 @@ def start_splash(name: str):
     WLOG(None, 'info', drs_log.MPARAMS['LOG.HEADER'], colour='magenta')
 
 
+def print_command(command: str) -> None:
+    """
+    Print a command (or path) on its own line for copy/paste
+
+    Deliberately not sent through WLOG: no log prefix and no line
+    wrapping, so the whole line can be copied straight into a terminal.
+
+    :param command: str, the command or path to print
+
+    :return: None, prints to screen
+    """
+    print(f'\n    {command}\n', flush=True)
+
+
 def end_splash():
     """
     Print the end splash
@@ -96,6 +110,47 @@ def unix_char_code() -> Tuple[float, str, str]:
     return unixtime, humantime, rval
 
 
+def resolve_directory(params: ParamDict, pkind: str, file_path: str,
+                      pmode: str) -> str:
+    """
+    Get the absolute directory for a POGOS path parameter (no side effects)
+
+    Absolute values are used as is, relative values (or None -> pkind) are
+    relative to {GLOBAL.DATA_PATH}/projects/{GLOBAL.PROJECT_NAME}/{pmode}/
+
+    :param params: ParamDict, the parameter dictionary of constants
+    :param pkind: str, the default directory name (e.g. 'input')
+    :param file_path: str, the path parameter key (e.g. TSOVORE.PATHS.INPUT_PATH)
+    :param pmode: str, the module directory name (e.g. 'tsovore')
+
+    :return: str, the absolute directory
+    """
+    # get the output path from the params
+    path_constant = params[file_path]
+    # absolute paths are used as is
+    if path_constant is not None and os.path.isabs(path_constant):
+        return os.path.abspath(path_constant)
+    data_path = params.rget('GLOBAL.DATA_PATH', required=True)
+    project_name = params.rget('GLOBAL.PROJECT_NAME', required=True)
+    if (not isinstance(project_name, str) or not project_name
+            or project_name in {'.', '..'}
+            or any(char.isspace() or not char.isprintable()
+                   for char in project_name)
+            or any(char in string.punctuation and char not in '-+._'
+                   for char in project_name)):
+        raise base.PogosException(
+            'GLOBAL.PROJECT_NAME must be a nonempty directory name, not "." '
+            'or "..", without whitespace or separators; allowed punctuation '
+            'is -+._.')
+    if path_constant is None:
+        my_path = pkind
+    else:
+        my_path = str(path_constant)
+    # if not, make it relative to the global database
+    return os.path.abspath(os.path.join(data_path, 'projects',
+                                        project_name, pmode, my_path))
+
+
 def prepare_directory(params: ParamDict, pkind: str, file_path: str, pmode: str,
                       verbose: bool = True):
     """
@@ -108,31 +163,8 @@ def prepare_directory(params: ParamDict, pkind: str, file_path: str, pmode: str,
     :return:
     """
     func_name = f'{__NAME__}.prepare_directory()'
-    # get the output path from the params
-    path_constant = params[file_path]
-    # get this to inputs by default
-    if path_constant is not None and os.path.isabs(path_constant):
-        my_path = os.path.abspath(path_constant)
-    else:
-        data_path = params.rget('GLOBAL.DATA_PATH', required=True)
-        project_name = params.rget('GLOBAL.PROJECT_NAME', required=True)
-        if (not isinstance(project_name, str) or not project_name
-                or project_name in {'.', '..'}
-                or any(char.isspace() or not char.isprintable()
-                       for char in project_name)
-                or any(char in string.punctuation and char not in '-+._'
-                       for char in project_name)):
-            raise base.PogosException(
-                'GLOBAL.PROJECT_NAME must be a nonempty directory name, not "." '
-                'or "..", without whitespace or separators; allowed punctuation '
-                'is -+._.')
-        if path_constant is None:
-            my_path = pkind
-        else:
-            my_path = str(path_constant)
-        # if not, make it relative to the global database
-        my_path = os.path.abspath(os.path.join(data_path, 'projects',
-                               project_name, pmode, my_path))
+    # get the absolute directory
+    my_path = resolve_directory(params, pkind, file_path, pmode)
     # make sure the path is in the params
     if not os.path.exists(my_path):
         os.makedirs(my_path)

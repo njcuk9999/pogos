@@ -63,12 +63,39 @@ constant_functions.ConstantsDict = ConstantsDict
 aperocore_constants.constant_functions = constant_functions
 
 
+def _load_real_custom_const_classes() -> types.ModuleType:
+    """Load the real aperocore custom constants (they only need Const)."""
+    import importlib.util
+    import pathlib
+    # locate apero-core relative to this repository checkout
+    path = (pathlib.Path(__file__).resolve().parents[2] / 'apero-drs'
+            / 'apero-core' / 'aperocore' / 'constants'
+            / 'custom_const_classes.py')
+    name = 'aperocore.constants.custom_const_classes'
+    spec = importlib.util.spec_from_file_location(name, path)
+    module = importlib.util.module_from_spec(spec)
+    sys.modules[name] = module
+    spec.loader.exec_module(module)
+    return module
+
+
+if 'aperocore.constants.custom_const_classes' not in sys.modules:
+    aperocore_constants.custom_const_classes = (
+        _load_real_custom_const_classes())
+
+# Online file downloads (MAST / POGOS server): the lightweight ParamDict has
+# no constant instances, so there are never any file objects to download.
+file_sources = _ensure_module("aperocore.constants.file_sources")
+file_sources.find_file_keys = lambda params: []
+file_sources.module_prefix = lambda key, instance: ''
+file_sources.needs_download = lambda fileobj, directory: False
+file_sources.resolve_files = lambda params, **kwargs: {}
+file_sources.ask_download_now = lambda params, summary: (False, None, False)
+aperocore_constants.file_sources = file_sources
+
+
 def get_all_params(**kwargs):
     return {}
-
-
-def download_data(params, demolocal=None, demosymlink=False):
-    return None
 
 
 def get_param_file(params, key, name):
@@ -80,7 +107,6 @@ def load_from_yaml(**kwargs):
 
 
 load_functions.get_all_params = get_all_params
-load_functions.download_data = download_data
 load_functions.get_param_file = get_param_file
 load_functions.load_from_yaml = load_from_yaml
 load_functions._check_yaml_version = lambda *args, **kwargs: True

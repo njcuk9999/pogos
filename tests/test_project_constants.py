@@ -20,7 +20,7 @@ MODULE_SCHEMAS = [
 DEMO_PROJECTS = {
     'soss_demo.py': 'DEMO_T1b.20220718.JWST.NIRISS.SOSS',
     'miri_demo.py': 'DEMO_LHS1140.20240707.JWST.MIRI.IM',
-    'bots_g395_demo.py': 'DEMO_WASP39b.20220710.JWST.NIRSPEC.BOTS.G395',
+    'bots_g395_demo.py': 'DEMO_WASP39b.20220730.JWST.NIRSPEC.BOTS.G395H',
     'bots_prism_demo.py': 'DEMO_WASP39b.20220710.JWST.NIRSPEC.BOTS.PRISM',
 }
 ARCHIVED_DEMOS = sorted((RESOURCES / 'old_format_demos').glob('*.py'))
@@ -55,7 +55,7 @@ def test_modules_have_no_project_or_subdirectory_constants(relative_path):
 
 @pytest.mark.parametrize('filename, expected', DEMO_PROJECTS.items())
 def test_active_demo_startup_sets_one_global_project(filename, expected):
-    source = (RESOURCES / 'demos' / filename).read_text()
+    source = (PACKAGE / 'demos' / filename).read_text()
     tree = ast.parse(source)
     startup = next(node for node in ast.walk(tree)
                    if isinstance(node, ast.FunctionDef)
@@ -72,8 +72,28 @@ startup(demo)
 assert demo.cdict['GLOBAL.PROJECT_NAME'] == {expected!r}
 """
     subprocess.run([sys.executable, '-c', code], cwd='/tmp', check=True)
-    assert source.count("set('PROJECT_NAME'") == 1
+    # one PROJECT_NAME per demo class (each startup sets exactly one)
+    startups = [node for node in ast.walk(tree)
+                if isinstance(node, ast.FunctionDef)
+                and node.name == 'startup']
+    assert source.count("set('PROJECT_NAME'") == len(startups)
     assert 'SUBDIRECTORY' not in source
+
+
+def test_all_demos_set_unique_global_projects():
+    # every registered demo sets its own PROJECT_NAME, used in its id
+    code = """
+from pogos import demos
+projects = []
+for inst_demos in demos.DEMOS.values():
+    for demo_class in inst_demos.values():
+        demo = demo_class()
+        project = demo.cdict['GLOBAL.PROJECT_NAME']
+        assert demo.get_prop('id').startswith(project + '.')
+        projects.append(project)
+assert len(set(projects)) == len(projects)
+"""
+    subprocess.run([sys.executable, '-c', code], cwd='/tmp', check=True)
 
 
 @pytest.mark.parametrize('path', ARCHIVED_DEMOS, ids=lambda path: path.name)

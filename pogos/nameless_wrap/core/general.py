@@ -37,6 +37,9 @@ from aperocore.core import drs_misc
 from pogos.core import base
 from pogos.core import general as pogos_general
 from pogos.core import input_validation
+from pogos.core import progress
+from pogos.jwst_wrap.core import progress_plan as jwplan
+from pogos.nameless_wrap.core import progress_plan as nlplan
 
 # =============================================================================
 # Define variables
@@ -94,6 +97,8 @@ def run_nameless_pre_extract(params: ParamDict):
     :return: the NAMELESS reduction object (or None if it was not run). This is
              passed to the extraction step via pre_inst.
     """
+    # Status tab: steps named in pogos.nameless_wrap.core.progress_plan
+    progress.start_substep(nlplan.NL_IMPORT)
     # Try importing NAMELESS
     params, nameless_mod = import_nameless(params)
     # deal with user (or pogos) not running the NAMELESS pre-extract steps
@@ -104,6 +109,7 @@ def run_nameless_pre_extract(params: ParamDict):
         return None
     # -------------------------------------------------------------------------
     # Make the directories
+    progress.start_substep(nlplan.NL_DIRS)
     make_nameless_dirs(params)
     # -------------------------------------------------------------------------
     # deal with test mode (return here)
@@ -114,16 +120,30 @@ def run_nameless_pre_extract(params: ParamDict):
         return None
     # -------------------------------------------------------------------------
     # build the NAMELESS reduction object (red_dir == POGOS topdir)
+    progress.start_substep(nlplan.NL_BUILD)
     reduc = build_reduc(params, nameless_mod)
     if reduc is None:
         return None
     # build the settings dictionaries from the POGOS constants
+    progress.start_substep(nlplan.NL_SETTINGS)
     settings = build_settings(params)
     # -------------------------------------------------------------------------
-    # run Stage 1, Stage 2, prep and custom steps (but not extraction)
+    # run Stage 1, Stage 2, prep and custom steps (but not extraction) - one
+    #   run_reduction call per stage (it only dispatches them in this order)
+    #   so the Status tab shows each stage
     WLOG(params, 'info', 'Running NAMELESS pre-extraction (s1, s2, prep, cst)')
-    reduc.run_reduction(run_s1=True, run_s2=True, run_prep=True, run_cst=True,
-                        run_ext=False, **settings)
+    stages = [('NL_S1', 'run_s1'), ('NL_S2', 'run_s2'),
+              ('NL_PREP', 'run_prep'), ('NL_CST', 'run_cst')]
+    for key, flag in stages:
+        progress.start_substep(getattr(nlplan, key))
+        flags = dict(run_s1=False, run_s2=False, run_prep=False,
+                     run_cst=False, run_ext=False)
+        flags[flag] = True
+        # the jwst pipeline steps (stages 1 + 2) and the custom correction
+        #   methods are recorded while they run
+        with jwplan.StpipeSteps():
+            with nlplan.track_methods(reduc, nlplan.CST_METHODS):
+                reduc.run_reduction(**flags, **settings)
     # return the reduction object (handed to the extraction step)
     return reduc
 
@@ -138,6 +158,8 @@ def run_nameless_extract(params: ParamDict,
                      reduction object under the 'pre_nameless' key)
     :return: the NAMELESS reduction object (or None if it was not run)
     """
+    # Status tab: steps named in pogos.nameless_wrap.core.progress_plan
+    progress.start_substep(nlplan.NL_IMPORT)
     # Try importing NAMELESS
     params, nameless_mod = import_nameless(params)
     # deal with user (or pogos) not running the NAMELESS extract step
@@ -148,6 +170,7 @@ def run_nameless_extract(params: ParamDict,
         return None
     # -------------------------------------------------------------------------
     # Make the directories
+    progress.start_substep(nlplan.NL_DIRS)
     make_nameless_dirs(params)
     # -------------------------------------------------------------------------
     # deal with test mode (return here)
@@ -157,6 +180,7 @@ def run_nameless_extract(params: ParamDict,
     if nameless_mod is None:
         return None
     # build the settings dictionaries from the POGOS constants
+    progress.start_substep(nlplan.NL_SETTINGS)
     settings = build_settings(params)
     # -------------------------------------------------------------------------
     # primary path: use the reduction object from the pre-extraction step
@@ -167,6 +191,7 @@ def run_nameless_extract(params: ParamDict,
     # -------------------------------------------------------------------------
     if reduc is not None:
         WLOG(params, 'info', 'Running NAMELESS extraction (ext)')
+        progress.start_substep(nlplan.NL_EXTRACT)
         reduc.run_reduction(run_s1=False, run_s2=False, run_prep=False,
                             run_cst=False, run_ext=True, **settings)
         return reduc
@@ -178,6 +203,7 @@ def run_nameless_extract(params: ParamDict,
             'disk (requires RUN.PRE_NAMELESS to have been run into the same '
             'GLOBAL.PROJECT_NAME).')
     WLOG(params, 'warning', wmsg)
+    progress.start_substep(nlplan.NL_REBUILD)
     reduc = build_reduc(params, nameless_mod)
     if reduc is None:
         return None
@@ -196,6 +222,7 @@ def run_nameless_extract(params: ParamDict,
         return None
     # now run the extraction
     WLOG(params, 'info', 'Running NAMELESS extraction (ext)')
+    progress.start_substep(nlplan.NL_EXTRACT)
     reduc.run_reduction(run_s1=False, run_s2=False, run_prep=False,
                         run_cst=False, run_ext=True, **settings)
     return reduc

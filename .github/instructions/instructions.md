@@ -31,7 +31,7 @@ When adding a new flavor/wrapper module, update **all** of the following:
      - Post-extract setup call(s)
    - Keep `_LAZY_MODULES` and `_load_setup_modules()` updated.
 
-4. `pogos/recipes/pogos_copy.py`
+4. `pogos/recipes/pogos_edit.py`
    - Mirror `pogos_setup.py` module setup wiring so copied YAMLs build all
      required module directories/params.
    - Keep `_LAZY_MODULES` and `_load_copy_modules()` updated.
@@ -65,7 +65,7 @@ When adding a new flavor/wrapper module, update **all** of the following:
 Run at least:
 
 ```bash
-python -m py_compile pogos/recipes/pogos_setup.py pogos/recipes/pogos_copy.py pogos/recipes/pogos_run.py pogos/core/startup.py pogos/core/base.py
+python -m py_compile pogos/recipes/pogos_setup.py pogos/recipes/pogos_edit.py pogos/recipes/pogos_run.py pogos/core/startup.py pogos/core/base.py
 ```
 
 And, when touching startup/import behavior:
@@ -76,7 +76,7 @@ python -X importtime -c "import pogos.recipes.pogos_setup" 2> /tmp/pogos_setup_i
 
 ## Current Behavior Reference (2026-07)
 
-- `pogos_setup` and `pogos_copy` both wire setup calls for:
+- `pogos_setup` and `pogos_edit` both wire setup calls for:
   - `tsovore`
   - `eureka_wrap` (pre/extract/post)
   - `jwst_wrap` (pre/extract/post)

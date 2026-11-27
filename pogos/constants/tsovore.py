@@ -12,6 +12,7 @@ Created on 2024-10-29 at 09:30
 from stpipe.entry_points import STEPS_GROUP
 
 from aperocore.constants import constant_functions
+from aperocore.constants import custom_const_classes
 
 from pogos.core import base
 from pogos.core import definitions
@@ -146,14 +147,14 @@ TSOVORE_CDict.add('INSTRUMENTMODE', value=None, dtype=str, not_none=True,
                               ''.format('\n\t'.join(instrument_names)))
 # -----------------------------------------------------------------------------
 # Raw files
-fdesc = ('List of files to be processed in form: '
-         '\nFILES:\n - file1\n - file2\n - file3'
-         '\n\nBy default these should be placed in '
-         '{GLOBAL.DATA_PATH}/projects/{GLOBAL.PROJECT_NAME}/tsovore/inputs/'
-         '\n or whatever is set in {TSOVORE.PATHS.INPUT_PATH} (if absolute)')
-TSOVORE_CDict.add('FILES', value=None, dtype=list, dtypei=str, not_none=False,
-                 source=__NAME__, user=True, active=True, group=cgroup,
-                 description=fdesc)
+fdesc = ('The raw files (normally uncal) to process. PATHS.INPUT_PATH '
+         'defaults to {GLOBAL.DATA_PATH}/projects/{GLOBAL.PROJECT_NAME}/'
+         'tsovore/inputs/ (relative paths are relative to .../tsovore/).')
+TSOVORE_CDict.addc('FILES', value=None, dtype=list, dtypei=str,
+                   not_none=False, source=__NAME__, user=True, active=True,
+                   group=cgroup, description=fdesc,
+                   const_class=custom_const_classes.FileObjectConst,
+                   path_key='PATHS.INPUT_PATH', product='uncal')
 # -----------------------------------------------------------------------------
 # Whether to remove intermediate files
 TSOVORE_CDict.add('REMOVE_INTERMEDIATES', value=True, dtype=bool,

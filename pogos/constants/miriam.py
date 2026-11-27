@@ -11,6 +11,7 @@ Created on 2024-10-29 at 09:30
 """
 
 from aperocore.constants import constant_functions
+from aperocore.constants import custom_const_classes
 
 from pogos.core import base
 
@@ -121,14 +122,16 @@ MIRIAM_CDict.add_group(cgroup, source=__NAME__, user=True, active=True,
                        description='Definition of inputs related to the data')
 # -----------------------------------------------------------------------------
 # Raw files
-fdesc = ('List of files to be processed in form: '
-         '\nFILES:\n - file1\n - file2\n - file3'
-         '\n\nBy default these should be placed in '
-         '{GLOBAL.DATA_PATH}/projects/{GLOBAL.PROJECT_NAME}/miriam/inputs/'
-         '\n or whatever is set in {MIRIAM.PATHS.INPUT_PATH} (if absolute)')
-MIRIAM_CDict.add('FILES', value=None, dtype=list, dtypei=str, not_none=False,
-                 source=__NAME__, user=True, active=True, group=cgroup,
-                 description=fdesc)
+fdesc = ('The files (normally rateints) to process. PATHS.INPUT_PATH '
+         'defaults to {GLOBAL.DATA_PATH}/projects/{GLOBAL.PROJECT_NAME}/'
+         'miriam/inputs/ (relative paths are relative to .../miriam/). When '
+         'a pre-extraction step (e.g. TSOVORE) runs first, these are '
+         'replaced by its outputs and are not downloaded.')
+MIRIAM_CDict.addc('FILES', value=None, dtype=list, dtypei=str,
+                  not_none=False, source=__NAME__, user=True, active=True,
+                  group=cgroup, description=fdesc,
+                  const_class=custom_const_classes.FileObjectConst,
+                  path_key='PATHS.INPUT_PATH', product='rateints')
 # -----------------------------------------------------------------------------
 # The common prefix based on the raw files
 MIRIAM_CDict.add('PREFIX', value=None, dtype=str, not_none=False,

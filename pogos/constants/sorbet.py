@@ -13,6 +13,7 @@ import os
 import site
 
 from aperocore.constants import constant_functions
+from aperocore.constants import custom_const_classes
 
 from pogos.core import base
 
@@ -96,9 +97,15 @@ SORBET_CDict.add('INPUT_PATH', value=f'wlca{os.sep}inputs',
                              ' it will be relative to '
                              '{GLOBAL.DATA_PATH}/projects/{GLOBAL.PROJECT_NAME}/sorbet/.')
 # Input data file
-SORBET_CDict.add('INPUT_FILE', value='white_light_curve.fits', dtype=str,
-                 source=__NAME__, user=True, active=True, group=cgroup,
-                 description='Input data file or path to the data file')
+SORBET_CDict.addc('INPUT_FILE', value='white_light_curve.fits', dtype=str,
+                  source=__NAME__, user=True, active=True, group=cgroup,
+                  description='The white light curve file to fit. When '
+                              'an extraction step (e.g. SOSSISSE) runs '
+                              'first, it is produced by that step and is '
+                              'not downloaded.',
+                  const_class=custom_const_classes.FileObjectConst,
+                  path_key='WLCA.INPUT_PATH',
+                  example='white_light_curve.fits')
 # Keep identifiers uncoerced so runtime validation can reject bools/floats.
 SORBET_CDict.add('TRACES', value=None, dtype=list,
                 source=__NAME__, user=True, active=True, group=cgroup,
@@ -327,10 +334,17 @@ SORBET_CDict.add('INPUT_PATH', value=f'slca{os.sep}inputs',
                              ' it will be relative to '
                              '{GLOBAL.DATA_PATH}/projects/{GLOBAL.PROJECT_NAME}/sorbet/.')
 # Input data file
-SORBET_CDict.add('INPUT_FILE', value=['spectroscopy_light_curves.fits'],
-                 dtype=list, source=__NAME__,
-                 user=True, active=True, group=cgroup,
-                 description='Input data file or path to the data file')
+SORBET_CDict.addc('INPUT_FILE', value=['spectroscopy_light_curves.fits'],
+                  dtype=list, source=__NAME__,
+                  user=True, active=True, group=cgroup,
+                  description='The spectroscopic light curve file(s) to '
+                              'fit (one per trace, see TRACES). When an '
+                              'extraction step (e.g. SOSSISSE) runs first, '
+                              'they are produced by that step and are not '
+                              'downloaded.',
+                  const_class=custom_const_classes.FileObjectConst,
+                  path_key='SLCA.INPUT_PATH',
+                  example='[spectroscopy_light_curves.fits]')
 # Pair explicit traces with files; None keeps one unnumbered input product.
 SORBET_CDict.add('TRACES', value=None, dtype=list,
                 source=__NAME__, user=True, active=True, group=cgroup,

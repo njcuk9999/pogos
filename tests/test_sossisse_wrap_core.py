@@ -3,6 +3,7 @@ from types import SimpleNamespace
 
 import pytest
 
+from aperocore.constants.custom_const_classes import get_file_product
 from aperocore.constants.param_functions import ParamDict
 
 from pogos.sossisse_wrap.core import core
@@ -33,7 +34,6 @@ def test_tsovore_input_copies_outputs_and_calib_files(tmp_path, monkeypatch):
                 'INPUTS.SOSSIOPATH': '/ignored/module/root',
                 "GENERAL.FILES": [],
                 "GENERAL.WAVE_FILE": None,
-                "GENERAL.WAVE_FILE_TYPE": None,
                 "PATHS.RAWPATH": str(raw_dir),
                 "PATHS.CALIBPATH": str(calib_dir),
             }
@@ -63,7 +63,8 @@ def test_tsovore_input_copies_outputs_and_calib_files(tmp_path, monkeypatch):
     assert copied_calib.exists()
     assert updated["GENERAL.FILES"] == [str(out_file)]
     assert updated["GENERAL.WAVE_FILE"] == calib_file.name
-    assert updated['GENERAL.WAVE_FILE_TYPE'] == 'ext1d'
+    assert get_file_product(updated,
+                            'GENERAL.WAVE_FILE') == 'x1dints'
     assert updated['INPUTS.PROJECT_NAME'] == 'shared-project'
     assert updated['INPUTS.SOSSIOPATH'] == str(tmp_path)
 
@@ -168,7 +169,6 @@ def test_tsovore_nirspec_calibrations(tmp_path, monkeypatch, detectors,
     sossisse_params = FakeSubParams()
     sossisse_params['GENERAL.FILES'] = []
     sossisse_params['GENERAL.WAVE_FILE'] = None
-    sossisse_params['GENERAL.WAVE_FILE_TYPE'] = None
     sossisse_params['PATHS.RAWPATH'] = str(raw_dir)
     sossisse_params['PATHS.CALIBPATH'] = str(calib_dir)
     params = ParamDict()
@@ -196,7 +196,8 @@ def test_tsovore_nirspec_calibrations(tmp_path, monkeypatch, detectors,
         else:
             expected_files = ['nrs1_1_x1d.fits', 'nrs2_0_x1d.fits']
         assert updated['GENERAL.WAVE_FILE'] == expected_files
-        assert updated['GENERAL.WAVE_FILE_TYPE'] == 'ext1d'
+        assert get_file_product(updated,
+                            'GENERAL.WAVE_FILE') == 'x1dints'
         # Confirm both advertised paths exist and contain the right detector.
         assert all((calib_dir / filename).exists()
                    for filename in updated['GENERAL.WAVE_FILE'])

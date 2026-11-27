@@ -10,6 +10,7 @@ from aperocore.constants import load_functions
 from aperocore.core import drs_text
 
 from pogos.core import definitions
+from pogos.core import progress
 
 # Module setup order: (steps enabling it, backend name, setup function name)
 SETUP_STEPS = (
@@ -45,6 +46,47 @@ def load_module(params, name: str, logger):
 def any_enabled(params, steps) -> bool:
     """Return whether any of the given reduction steps is enabled."""
     return any(step.is_enabled(params) for step in steps)
+
+
+def step_flavour(step) -> str:
+    """
+    Get the flavour shown for a reduction step (sub flavours such as
+    SORBET.WLCA / SORBET.SLCA run as one SORBET stage)
+
+    :param step: RedStep, the reduction step definition
+
+    :return: str, the flavour name
+    """
+    return step.name.split('.')[0]
+
+
+def planned_stages(params):
+    """
+    Get the stages pogos_run will run (in order) for the progress record
+
+    :param params: ParamDict, the loaded parameters of the yaml file
+
+    :return: list of [level name, flavour] (each flavour once)
+    """
+    planned = []
+    for step in definitions.RED_STEPS:
+        if not step.is_enabled(params):
+            continue
+        entry = [step.level.name, step_flavour(step)]
+        if entry not in planned:
+            planned.append(entry)
+    return planned
+
+
+def stage(step):
+    """
+    Record one reduction step as a stage of the run progress
+
+    :param step: RedStep, the reduction step definition
+
+    :return: context manager (see pogos.core.progress.stage)
+    """
+    return progress.stage(step.level.name, step_flavour(step))
 
 
 def setup_enabled_modules(params, cdict, logger):

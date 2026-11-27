@@ -10,7 +10,8 @@ Created on 2024-10-29 at 09:21
 
 @author: cook
 """
-__all__ = ['pogos_run', 'pogos_setup', 'pogos_copy', 'pogos_config',
+__all__ = ['pogos_run', 'pogos_setup', 'pogos_edit', 'pogos_config',
+           'pogos_gui',
            'pogos_help']
 
 # =============================================================================

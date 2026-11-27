@@ -55,6 +55,7 @@ from pogos.core import input_validation
 from pogos.core import io as pogos_io
 from pogos.tsovore.core import base as ts_base
 from pogos.core import flow as pogos_flow
+from pogos.tsovore.core import progress_plan as tsplan
 
 # =============================================================================
 # Define variables
@@ -672,6 +673,7 @@ class Instrument:
         absfile = os.path.join(output_dir, output_filename)
         return absfile
 
+    @tsplan.step('TS_SAVE', label_arg=0)
     def save_outputs(self, suffix: str, infiles: list):
         """
         Rename/copy the current files to have a given suffix.
@@ -1047,6 +1049,7 @@ class JWST(Instrument):
     def __init__(self, params: ParamDict, instrument: str = 'JWST.NONE'):
         super().__init__(params, instrument)
 
+    @tsplan.step('TS_INPUT')
     def handle_input_data(self) -> list:
         """
         Handle input data - this should work for all JWST instruments/modes
@@ -1121,6 +1124,7 @@ class JWST(Instrument):
     # =========================================================================
     # Level 1 detector processing steps (individual step callers)
     # =========================================================================
+    @tsplan.step('TS_INIT')
     def initialize_detector_data(self, infiles: list) -> list:
         """
         Initialize detector data models.
@@ -1231,6 +1235,7 @@ class JWST(Instrument):
                 'instead, which bundles group_scale + dq_init + emicorr + saturation.')
         raise ts_base.TSOvoreException(emsg)
 
+    @tsplan.step('TS_IPC')
     def apply_interpixel_capacitance(self, infiles: list) -> list:
         """
         Corrects for interpixel capacitance effects.
@@ -1266,6 +1271,7 @@ class JWST(Instrument):
 
         return outfiles
 
+    @tsplan.step('TS_FIRSTFRAME')
     def remove_first_frame_signal(self, infiles: list) -> list:
         """
         Removes bias introduced in first frame of each integration.
@@ -1306,6 +1312,7 @@ class JWST(Instrument):
 
         return outfiles
 
+    @tsplan.step('TS_LASTFRAME')
     def remove_last_frame_signal(self, infiles: list) -> list:
         """
         Removes last-frame pedestal effect.
@@ -1341,6 +1348,7 @@ class JWST(Instrument):
 
         return outfiles
 
+    @tsplan.step('TS_RESET')
     def correct_reset_anomaly(self, infiles: list) -> list:
         """
         Fixes reset anomaly across integrations.
@@ -1376,6 +1384,7 @@ class JWST(Instrument):
 
         return outfiles
 
+    @tsplan.step('TS_LINEARITY')
     def apply_linearity_correction(self, infiles: list) -> list:
         """
         Corrects for detector nonlinearity.
@@ -1411,6 +1420,7 @@ class JWST(Instrument):
 
         return outfiles
 
+    @tsplan.step('TS_RSCD')
     def apply_rscd_correction(self, infiles: list) -> list:
         """
         Applies reset switch charge decay correction.
@@ -1446,6 +1456,7 @@ class JWST(Instrument):
 
         return outfiles
 
+    @tsplan.step('TS_DARK')
     def subtract_dark_current(self, infiles: list) -> list:
         """
         Removes dark current signal using reference darks.
@@ -1482,6 +1493,7 @@ class JWST(Instrument):
 
         return outfiles
 
+    @tsplan.step('TS_REFPIX')
     def apply_reference_pixel_correction(self, infiles: list) -> list:
         """
         Corrects readout noise using reference pixels.
@@ -1517,6 +1529,7 @@ class JWST(Instrument):
 
         return outfiles
 
+    @tsplan.step('TS_CHARGE')
     def correct_charge_migration(self, infiles: list) -> list:
         """
         Mitigates charge migration between pixels.
@@ -1553,6 +1566,7 @@ class JWST(Instrument):
 
         return outfiles
 
+    @tsplan.step('TS_JUMP')
     def detect_and_flag_jumps(self, infiles: list) -> list:
         """
         Identifies and flags cosmic ray hits (jumps) in the data.
@@ -1588,6 +1602,7 @@ class JWST(Instrument):
 
         return outfiles
 
+    @tsplan.step('TS_FLICKER')
     def remove_flicker_noise(self, infiles: list) -> list:
         """
         Removes flicker noise from the data.
@@ -1624,6 +1639,7 @@ class JWST(Instrument):
 
         return outfiles
 
+    @tsplan.step('TS_RAMP')
     def fit_signal_ramps(self, infiles: list) -> list:
         """
         Fits slopes to groups to derive count rates.
@@ -1660,6 +1676,7 @@ class JWST(Instrument):
 
         return outfiles
 
+    @tsplan.step('TS_GAIN')
     def apply_gain_scaling(self, infiles: list) -> list:
         """
         Scales results to correct gain differences.
@@ -1695,6 +1712,7 @@ class JWST(Instrument):
 
         return outfiles
 
+    @tsplan.step('TS_BACKGROUND')
     def subtract_background(self, infiles: list) -> list:
         """
         Removes background using reference or modeled backgrounds.
@@ -1730,6 +1748,7 @@ class JWST(Instrument):
 
         return outfiles
 
+    @tsplan.step('TS_WCS')
     def assign_wcs_solution(self, infiles: list) -> list:
         """
         Adds WCS (world coordinate system) information.
@@ -1765,6 +1784,7 @@ class JWST(Instrument):
 
         return outfiles
 
+    @tsplan.step('TS_FLAT')
     def apply_flat_field(self, infiles: list) -> list:
         """
         Corrects pixel-to-pixel sensitivity variations.
@@ -1800,6 +1820,7 @@ class JWST(Instrument):
 
         return outfiles
 
+    @tsplan.step('TS_PHOTOM')
     def apply_photometric_calibration(self, infiles: list) -> list:
         """
         Converts data units to physical flux units.
@@ -1835,6 +1856,7 @@ class JWST(Instrument):
 
         return outfiles
 
+    @tsplan.step('TS_SUPERBIAS')
     def subtract_superbias(self, infiles: list) -> list:
         """
         Subtract superbias reference for NIR instruments.
@@ -1870,6 +1892,7 @@ class JWST(Instrument):
 
         return outfiles
 
+    @tsplan.step('TS_PICTURE')
     def picture_frame_step(self, infiles: list) -> list:
         """
         Correct for picture frame effect.
@@ -1891,6 +1914,7 @@ class JWST(Instrument):
         WLOG(self.params, 'warning', msg)
         return infiles
 
+    @tsplan.step('TS_PERSISTENCE')
     def correct_persistence(self, infiles: list) -> list:
         """
         Correct for charge persistence between integrations.
@@ -1915,6 +1939,7 @@ class JWST(Instrument):
     # =========================================================================
     # Level 2 spectroscopic and imaging processing steps
     # =========================================================================
+    @tsplan.step('TS_EXTRACT2D')
     def extract_2d_spectrum(self, infiles: list) -> list:
         """
         Extract 2D spectrum from detector image.
@@ -1951,6 +1976,7 @@ class JWST(Instrument):
 
         return outfiles
 
+    @tsplan.step('TS_EXTRACT1D')
     def extract_1d_spectrum(self, infiles: list) -> list:
         """
         Extract 1D spectrum from 2D data.
@@ -1987,6 +2013,7 @@ class JWST(Instrument):
 
         return outfiles
 
+    @tsplan.step('TS_SRCTYPE')
     def srctype_determination(self, infiles: list) -> list:
         """
         Determine source type for photometric calibration.
@@ -2023,6 +2050,7 @@ class JWST(Instrument):
 
         return outfiles
 
+    @tsplan.step('TS_STRAYLIGHT')
     def correct_stray_light(self, infiles: list) -> list:
         """
         Remove stray light from the data.
@@ -2059,6 +2087,7 @@ class JWST(Instrument):
 
         return outfiles
 
+    @tsplan.step('TS_FRINGE')
     def correct_fringe(self, infiles: list) -> list:
         """
         Remove fringe patterns from the data.
@@ -2094,6 +2123,7 @@ class JWST(Instrument):
 
         return outfiles
 
+    @tsplan.step('TS_PATHLOSS')
     def correct_path_loss(self, infiles: list) -> list:
         """
         Correct for path loss through the optical system.
@@ -2129,6 +2159,7 @@ class JWST(Instrument):
 
         return outfiles
 
+    @tsplan.step('TS_BARSHADOW')
     def correct_bar_shadow(self, infiles: list) -> list:
         """
         Correct for bar shadow effect.
@@ -2165,6 +2196,7 @@ class JWST(Instrument):
 
         return outfiles
 
+    @tsplan.step('TS_WFSS')
     def correct_wfss_contamination(self, infiles: list) -> list:
         """
         Correct for WFSS contamination.
@@ -2201,6 +2233,7 @@ class JWST(Instrument):
 
         return outfiles
 
+    @tsplan.step('TS_WAVECORR')
     def correct_wavelength(self, infiles: list) -> list:
         """
         Correct wavelength calibration.
@@ -2237,6 +2270,7 @@ class JWST(Instrument):
 
         return outfiles
 
+    @tsplan.step('TS_MASTER_BKG')
     def subtract_master_background(self, infiles: list) -> list:
         """
         Subtract master background for NIRSpec MOS data.
@@ -2273,6 +2307,7 @@ class JWST(Instrument):
 
         return outfiles
 
+    @tsplan.step('TS_CENTROID')
     def measure_target_centroid(self, infiles: list) -> list:
         """
         Measure target centroid position.
@@ -2286,6 +2321,7 @@ class JWST(Instrument):
         nmsg = NOT_IMPLEMENTED_MSG.format(func_name, self.instrument)
         raise NotImplemented(nmsg)
 
+    @tsplan.step('TS_RESFRINGE')
     def correct_residual_fringe(self, infiles: list) -> list:
         """
         Correct for residual fringe patterns (MIRI-specific).

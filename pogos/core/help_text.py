@@ -14,15 +14,22 @@ COMMANDS = (
          purpose='Show this guided overview of the main commands.',
          use_when='You are not sure where to start or want a quick map.',
          examples=[]),
+    dict(name='pogos_gui',
+         purpose='Open the POGOS browser gui (setup, edit, run, config / '
+                 'reset, processes, plots and files in one place).',
+         use_when='You prefer forms, side by side diffs and a plot gallery '
+                  'over the command line.',
+         examples=['pogos_gui --path=<pogos data path>',
+                   'pogos_gui --headless --port=8097']),
     dict(name='pogos_setup',
          purpose='Create a new yaml configuration and matching directory layout.',
          use_when='You are starting a new reduction or setting up a new dataset.',
          examples=['pogos_setup']),
-    dict(name='pogos_copy',
+    dict(name='pogos_edit',
          purpose='Copy an existing demo yaml and adapt it for a similar dataset.',
          use_when='A demo already looks close to your use case and you want '
                   'a head start.',
-         examples=['pogos_copy --demo_file=<demo.yaml>']),
+         examples=['pogos_edit --demo_file=<demo.yaml>']),
     dict(name='pogos_config',
          purpose='Check a yaml file for compatibility and optionally fix '
                  'invalid values.',
@@ -84,7 +91,7 @@ def print_help():
     print_line()
     print_header('Recommended first steps')
     print_line('1. Run pogos_setup if you are making a brand new configuration.')
-    print_line('2. Run pogos_copy if one of the demo yamls is already close to your data.')
+    print_line('2. Run pogos_edit if one of the demo yamls is already close to your data.')
     print_line('3. Run pogos_config on an existing yaml before trusting an older file.')
     print_line('4. Run pogos_run only after the yaml paths and switches look correct.')
     print_line()

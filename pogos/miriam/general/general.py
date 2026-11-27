@@ -16,16 +16,19 @@ from typing import Any, Dict, Optional
 
 import numpy as np
 
+from aperocore import progress as gprogress
 from aperocore.constants.param_functions import ParamDict
 from aperocore.core import drs_log
 from pogos.core import base
 from pogos.core import general as pogos_general
 from pogos.core import io as pogos_io
+from pogos.core import progress
 from pogos.miriam.core import general as mc_general
 from pogos.miriam.general import plots as mc_plots
 from pogos.miriam.general import science as mc_science
 from pogos.miriam.general import io as mc_io
 from pogos.tsovore.instruments import default as ts_default
+from pogos.miriam.general import progress_plan as mplan
 from sossisse.core import misc
 
 # =============================================================================
@@ -62,11 +65,14 @@ def run_miriam(params: ParamDict, pre_inst: Dict[str, Any]) -> ParamDict:
     print(misc.art('MIRIAM', 'yellow', 'CYAN'))
     time.sleep(0.1)
     # prepare the directories
+    # Status tab: steps named in pogos.miriam.general.progress_plan
+    progress.start_substep(mplan.MI_PREPARE)
     prepare_directories(params)
 
     # ----------------------------------------------------------------------
     # Deal with input from TSOVORE if available
     # ----------------------------------------------------------------------
+    progress.start_substep(mplan.MI_INPUTS)
     if tsovore_inst is not None:
         params = tsovore_input(params, tsovore_inst)
     # ----------------------------------------------------------------------
@@ -78,18 +84,24 @@ def run_miriam(params: ParamDict, pre_inst: Dict[str, Any]) -> ParamDict:
     # -------------------------------------------------------------------------
     # Step 1: merge all input files into a single (cropped) data structure
     # -------------------------------------------------------------------------
+    # Status tab: next sub step
+    progress.start_substep(mplan.MI_MERGE)
     mi_out = mc_science.merge_inputs(params)
     cube, cube_err, mtbl, weights, xstart, ystart = mi_out
 
     # -------------------------------------------------------------------------
     # Step 2: perform systematics correction on the data
     # -------------------------------------------------------------------------
+    # Status tab: next sub step
+    progress.start_substep(mplan.MI_SYSTEMATICS)
     cube2, mtbl = mc_science.remove_background_cube(params, cube, mtbl)
     # -------------------------------------------------------------------------
     # Step 3: Calculate errors in the cube
     # -------------------------------------------------------------------------
     # TODO decide if we want to compute errors or keep errors from
     #     the original cube files
+    # Status tab: next sub step
+    progress.start_substep(mplan.MI_ERRORS)
     cube2, cube2_err = mc_science.calculate_cube_errors(params, cube2)
     if use_original_errors:
         cube2_err = np.array(cube_err)
@@ -97,13 +109,19 @@ def run_miriam(params: ParamDict, pre_inst: Dict[str, Any]) -> ParamDict:
     # -------------------------------------------------------------------------
     # Step 4: Change the cube to photometry
     # -------------------------------------------------------------------------
-    ptbl0 = mc_science.cube2phot(params, cube2, cube2_err, mtbl, weights,
-                                 xstart, ystart, d2flag=True)
-    ptbl1 = mc_science.cube2phot(params, cube2, cube2_err, mtbl, weights,
-                                 xstart, ystart, d2flag=False)
+    # Status tab: next sub step
+    progress.start_substep(mplan.MI_PHOT)
+    with gprogress.step(mplan.MI_PHOT_2D):
+        ptbl0 = mc_science.cube2phot(params, cube2, cube2_err, mtbl,
+                                     weights, xstart, ystart, d2flag=True)
+    with gprogress.step(mplan.MI_PHOT_1D):
+        ptbl1 = mc_science.cube2phot(params, cube2, cube2_err, mtbl,
+                                     weights, xstart, ystart, d2flag=False)
     # -------------------------------------------------------------------------
     # Step 5: plot results
     # -------------------------------------------------------------------------
+    # Status tab: next sub step
+    progress.start_substep(mplan.MI_PLOTS)
     mc_plots.plot_correlations(params, ptbl0, d2flag=True)
     mc_plots.plot_correlations(params, ptbl1, d2flag=False)
     mc_plots.plot_photometry(params, ptbl0, ptbl1)
@@ -111,10 +129,12 @@ def run_miriam(params: ParamDict, pre_inst: Dict[str, Any]) -> ParamDict:
     # -------------------------------------------------------------------------
     # Step 6: save results
     # -------------------------------------------------------------------------
+    progress.start_substep(mplan.MI_SAVE)
     oparams = mc_io.write_photometry_results(params, ptbl0, ptbl1)
     # -------------------------------------------------------------------------
     # produce summary html
     stitle = params.get('MIRIAM.GENERAL.DESCRIPTION', '')
+    progress.start_substep(mplan.MI_SUMMARY)
     pogos_io.summary_html(params, 'MIRIAM', 'MIRIAM.PATHS.PLOT_PATH',
                           'GLOBAL.PROJECT_NAME',
                           'MIRIAM.PATHS.OUTPUT_PATH',

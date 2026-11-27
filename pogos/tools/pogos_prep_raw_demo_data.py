@@ -20,7 +20,7 @@ from pogos.constants.constants import CDict
 from pogos.core import base
 from pogos.core import general
 from pogos.core import startup
-from pogos.resources import demos
+from pogos import demos
 
 # =============================================================================
 # Define variables
@@ -54,7 +54,7 @@ def get_demo_files(params: ParamDict):
 
     # deal with "DEMOS" not in demos
     if not hasattr(demos, 'DEMOS'):
-        raise ImportError('pogos.resources.demos.DEMOS does not exist')
+        raise ImportError('pogos.demos.DEMOS does not exist')
 
     # get the demo codes
     demo_codes = demos.DEMOS
@@ -68,15 +68,15 @@ def get_demo_files(params: ParamDict):
             demo_module = demo_codes[demo_inst][demo_name]
             # deal with URL not existing
             if not hasattr(demo_module, 'URL'):
-                raise ImportError('pogos.resources.demos.{} does not have '
+                raise ImportError('pogos.demos.{} does not have '
                                   'URL'.format(demo_name))
             # deal with DOWNLOAD not existing
             if not hasattr(demo_module, 'DOWNLOAD'):
-                raise ImportError('pogos.resources.demos.{} does not have '
+                raise ImportError('pogos.demos.{} does not have '
                                   'DOWNLOAD'.format(demo_name))
             # deal with Cdict not existing
             if not hasattr(demo_module, 'Cdict'):
-                raise ImportError('pogos.resources.demos.{} does not have '
+                raise ImportError('pogos.demos.{} does not have '
                                   'Cdict'.format(demo_name))
 
             # print progress

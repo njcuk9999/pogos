@@ -36,7 +36,7 @@ from pogos.core import startup
 # =============================================================================
 # Define variables
 # =============================================================================
-__NAME__ = 'pogos.recipes.pogos_copy'
+__NAME__ = 'pogos.recipes.pogos_edit'
 __PACKAGE__ = pogos_base.__PACKAGE__
 __version__ = pogos_base.__version__
 __authors__ = pogos_base.__authors__
@@ -58,7 +58,7 @@ WLOG = drs_log.wlog
 # =============================================================================
 def main(**kwargs):
     # print splash
-    general.start_splash('POGOS Copy')
+    general.start_splash('POGOS Edit')
     # listing functionality
     if startup.quick_args(sys.argv): return
     # get other configs (either internal like SORBET or external like SOSSISSE)
@@ -144,7 +144,7 @@ def main(**kwargs):
 
     # -------------------------------------------------------------------------
     # final remarks on reading the yaml file
-    msg = ('\n\nIt is important to note that pogos_copy only copies the '
+    msg = ('\n\nIt is important to note that pogos_edit only copies the '
            'demo yaml file and sets up the basic directory structure. '
            '\n\nPlease open the new yaml file and check all parameters '
            'before running on your own data.'

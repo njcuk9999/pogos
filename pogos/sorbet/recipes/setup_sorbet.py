@@ -14,6 +14,7 @@ from aperocore.constants import load_functions
 
 from pogos.constants.constants import CDict
 from pogos.core import base
+from pogos.core import file_download
 from pogos.core import startup
 from pogos.core import general
 from pogos import sorbet
@@ -51,12 +52,9 @@ def main(**kwargs):
     # setup individual modules
     params = sorbet.setup_sorbet_module(params)
     # -------------------------------------------------------------------------
-    # get the demo local value
-    demolocal = params.get('GLOBAL.LOCAL_DOWNLOAD_DATA', None)
-    demosymlink = params.get('GLOBAL.DEMO_SYMLINK_DATA', False)
-    # ask for data download
-    load_functions.download_data(params, demolocal=demolocal,
-                                 demosymlink=demosymlink)
+    # download online input files now or at the first run (asks the user,
+    #   uses GLOBAL.LOCAL_DOWNLOAD_DATA as a local mirror if set)
+    file_download.setup_downloads(params)
     # -------------------------------------------------------------------------
     # print splash
     general.end_splash()

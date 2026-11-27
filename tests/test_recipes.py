@@ -80,10 +80,12 @@ def test_pogos_setup_main_orchestrates_setup_steps(monkeypatch):
         lambda in_params: calls.append(("post_eureka", in_params is params)) or in_params,
     )
     monkeypatch.setattr(
-        pogos_setup.load_functions,
-        "download_data",
-        lambda in_params, demolocal, demosymlink: calls.append(
-            ("download", in_params is params, demolocal, demosymlink)
+        pogos_setup.file_download,
+        "setup_downloads",
+        lambda in_params: calls.append(
+            ("download", in_params is params,
+             in_params["GLOBAL.LOCAL_DOWNLOAD_DATA"],
+             in_params["GLOBAL.DEMO_SYMLINK_DATA"])
         ),
     )
     monkeypatch.setattr(
@@ -197,7 +199,7 @@ def test_pogos_help_main_prints_beginner_friendly_command_guide(monkeypatch):
     assert "POGOS command guide" in messages
     assert "Recommended first steps" in messages
     assert "pogos_setup" in messages
-    assert "pogos_copy" in messages
+    assert "pogos_edit" in messages
     assert "pogos_config" in messages
     assert "pogos_run" in messages
     assert "Available reduction stages" in messages

@@ -13,6 +13,7 @@ import os
 import shutil
 from typing import Any, Dict, Optional
 
+from aperocore.constants import custom_const_classes
 from aperocore.constants.param_functions import ParamDict
 from aperocore.core import drs_log
 from aperocore.core import drs_misc
@@ -105,7 +106,8 @@ def run_sossisse_module(params: ParamDict, pre_inst: Dict[str, Any]):
             # return an error
             raise SossisseFileException(msg.format(spath))
     # -------------------------------------------------------------------------
-    # run the sossisse recipe
+    # run the sossisse recipe (SOSSISSE marks its own steps for the Status
+    #   tab - see sossisse.general.progress_plan)
     inst = sossisse_run.main(__YAML_DICT__=sparams)
     # get the output SOSSISSE directory
     return inst
@@ -271,7 +273,11 @@ def tsovore_input(params: ParamDict,
             sossisse_params['GENERAL.WAVE_FILE'] = (
                 ordered_files if is_nirspec else ordered_files[-1])
             # Use the backend's extension-1D wavelength format identifier.
-            sossisse_params['GENERAL.WAVE_FILE_TYPE'] = 'ext1d'
+            # TSOVORE X1D calibrations are extracted 1D products
+            #   (product x1dints -> SOSSISSE ext1d reader)
+            custom_const_classes.set_file_product(sossisse_params,
+                                                  'GENERAL.WAVE_FILE',
+                                                  'x1dints')
     # ---------------------------------------------------------------------
     # push back into sossisse_params (for return) - as before this only in
     # sparams (due to being populated in run_time_params)

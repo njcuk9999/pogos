@@ -126,9 +126,6 @@ SOSSISSE:
     # Wavelength calibration file
     #         Default value=None
     WAVE_FILE:
-    # Wavelength calibration file type [ext1d, fits, hdf5]
-    #         Default value=None
-    WAVE_FILE_TYPE:
     # Allow for temporary files to speed the process if you run the code more than
     # once
     #         Default value=True

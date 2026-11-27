@@ -20,6 +20,7 @@ from aperocore.constants import param_functions
 from aperocore.core import drs_log
 from pogos.core import base as pogos_base
 from pogos.tsovore.instruments import default as ts_default
+from pogos.tsovore.core import progress_plan as tsplan
 
 # =============================================================================
 # Define variables
@@ -89,6 +90,7 @@ class Tso(ts_default.Instrument):
     # -------------------------------------------------------------------------
     # SOSS functions
     # -------------------------------------------------------------------------
+    @tsplan.step('TS_SPECTRACE')
     def get_spectrace(self, infiles: List[str]):
         # set function name
         func_name = f"{__NAME__}.Tso.get_spectrace"
@@ -163,6 +165,7 @@ class Tso(ts_default.Instrument):
         # ---------------------------------------------------------------------
         return infiles
 
+    @tsplan.step('TS_STACK')
     def stack_multisegments(self, segment_list: List[str], save_results=True,
                             stack_nblocks=None) -> List[str]:
         """
@@ -311,6 +314,7 @@ class Tso(ts_default.Instrument):
 
         return segment_list
 
+    @tsplan.step('TS_BADPIX')
     def soss_correct_badpix(self, postrampfitting_list: List[str],
                             save_results: bool = False,
                             nblocks: Optional[int] = None,

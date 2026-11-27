@@ -18,6 +18,8 @@ from aperocore.core import drs_misc
 from pogos.core import base
 from pogos.core import general as pogos_general
 from pogos.core import input_validation
+from pogos.core import progress
+from pogos.eureka_wrap.core import progress_plan as eplan
 from pogos.eureka_wrap.constants import eureka_ecf as ecf
 
 # =============================================================================
@@ -81,6 +83,8 @@ def setup_eureka_post_extract(params: ParamDict) -> ParamDict:
 
 
 def run_eureka_pre_extract(params: ParamDict) -> ParamDict:
+    # Status tab: steps named in pogos.eureka_wrap.core.progress_plan
+    progress.start_substep(eplan.EU_IMPORT)
     # Try importing Eureka
     params, eplots, s1, s2, s3, s4, s5, s6 = import_eureka(params)
     # deal with user (or pogos) not running pre-extract Eureka steps
@@ -89,10 +93,12 @@ def run_eureka_pre_extract(params: ParamDict) -> ParamDict:
         return None
     # -------------------------------------------------------------------------
     # Make the directories
+    progress.start_substep(eplan.EU_DIRS)
     make_eureka_dirs(params, stage=1)
     make_eureka_dirs(params, stage=2)
     # -------------------------------------------------------------------------
     # get the event label and ecf_path + generate ecf_file
+    progress.start_substep(eplan.EU_ECF)
     eventlabel = params['EUREKA.GENERAL.EVENTLABEL']
     ecf_path = ecf.ecf_from_params(params.get('EUREKA.STAGE1'), stage=1)
     _ = ecf.ecf_from_params(params.get('EUREKA.STAGE2'), stage=2)
@@ -101,17 +107,22 @@ def run_eureka_pre_extract(params: ParamDict) -> ParamDict:
     if params['EUREKA.GENERAL.TESTMODE']:
         return _eureka_result(params, stage=2)
     # Resolve and validate Stage 1 inputs before Eureka loads them.
+    progress.start_substep(eplan.EU_VALIDATE)
     _validate_eureka_stage_inputs(params, stage=1)
     # -------------------------------------------------------------------------
     # Run the Stage 1 + Stage 2 steps from Eureka
     # -------------------------------------------------------------------------
+    progress.start_substep(eplan.EU_S1)
     meta = s1.rampfitJWST(eventlabel, ecf_path=ecf_path)
+    progress.start_substep(eplan.EU_S2)
     meta = s2.calibrateJWST(eventlabel, ecf_path=ecf_path)
     # return the Stage 2 result (the input for the extraction step)
     return _eureka_result(params, stage=2)
 
 
 def run_eureka_extract(params: ParamDict, pre_inst=None) -> ParamDict:
+    # Status tab: steps named in pogos.eureka_wrap.core.progress_plan
+    progress.start_substep(eplan.EU_IMPORT)
     # Try importing Eureka
     params, eplots, s1, s2, s3, s4, s5, s6 = import_eureka(params)
     # deal with user (or pogos) not running pre-extract Eureka steps
@@ -120,14 +131,17 @@ def run_eureka_extract(params: ParamDict, pre_inst=None) -> ParamDict:
         return None
     # -------------------------------------------------------------------------
     # Make the directories
+    progress.start_substep(eplan.EU_DIRS)
     make_eureka_dirs(params, stage=3)
     # -------------------------------------------------------------------------
     # push the outputs from the pre-extraction step into the Stage 3 input
     #   directory (mirrors TSOVORE -> SOSSISSE/MIRIAM)
+    progress.start_substep(eplan.EU_ROUTE)
     pogos_general.route_step_inputs(params, pre_inst,
                                     params.get('EUREKA.PATHS.IN_S3_PATH'))
     # -------------------------------------------------------------------------
     # get the event label and ecf_path + generate ecf_file
+    progress.start_substep(eplan.EU_ECF)
     eventlabel = params['EUREKA.GENERAL.EVENTLABEL']
     ecf_path = ecf.ecf_from_params(params.get('EUREKA.STAGE3'), stage=3)
 
@@ -135,16 +149,20 @@ def run_eureka_extract(params: ParamDict, pre_inst=None) -> ParamDict:
     if params['EUREKA.GENERAL.TESTMODE']:
         return _eureka_result(params, stage=3)
     # Resolve and validate routed Stage 3 inputs before Eureka loads them.
+    progress.start_substep(eplan.EU_VALIDATE)
     _validate_eureka_stage_inputs(params, stage=3)
     # -------------------------------------------------------------------------
     # Run the Stage 3 steps from Eureka
     # -------------------------------------------------------------------------
+    progress.start_substep(eplan.EU_S3)
     spec, meta = s3.reduce(eventlabel, ecf_path=ecf_path)
     # return the Stage 3 result (the input for the post-extraction step)
     return _eureka_result(params, stage=3)
 
 
 def run_eureka_post_extract(params: ParamDict, ext_inst=None) -> ParamDict:
+    # Status tab: steps named in pogos.eureka_wrap.core.progress_plan
+    progress.start_substep(eplan.EU_IMPORT)
     # Try importing Eureka
     params, eplots, s1, s2, s3, s4, s5, s6 = import_eureka(params)
     # deal with user (or pogos) not running pre-extract Eureka steps
@@ -152,16 +170,19 @@ def run_eureka_post_extract(params: ParamDict, ext_inst=None) -> ParamDict:
         # nothing produced -> no instance to pass on
         return None
     # Make the directories
+    progress.start_substep(eplan.EU_DIRS)
     make_eureka_dirs(params, stage=4)
     make_eureka_dirs(params, stage=5)
     make_eureka_dirs(params, stage=6)
     # -------------------------------------------------------------------------
     # push the outputs from the extraction step into the Stage 4 input
     #   directory (mirrors EXTRACT -> POST_EXTRACT for SOSSISSE/MIRIAM -> SORBET)
+    progress.start_substep(eplan.EU_ROUTE)
     pogos_general.route_step_inputs(params, ext_inst,
                                     _eureka_stage_input_dir(params, stage=4))
     # -------------------------------------------------------------------------
     # get the event label and ecf_path + generate ecf_file
+    progress.start_substep(eplan.EU_ECF)
     eventlabel = params['EUREKA.GENERAL.EVENTLABEL']
     ecf_path = ecf.ecf_from_params(params.get('EUREKA.STAGE4'), stage=4)
     _ = ecf.ecf_from_params(params.get('EUREKA.STAGE5'), stage=5)
@@ -173,8 +194,11 @@ def run_eureka_post_extract(params: ParamDict, ext_inst=None) -> ParamDict:
     # -------------------------------------------------------------------------
     # Run the Stage 4+5+6 steps from Eureka
     # -------------------------------------------------------------------------
+    progress.start_substep(eplan.EU_S4)
     spec, lc, meta = s4.genlc(eventlabel, ecf_path=ecf_path)
+    progress.start_substep(eplan.EU_S5)
     meta = s5.fitlc(eventlabel, ecf_path=ecf_path)
+    progress.start_substep(eplan.EU_S6)
     meta, lc = s6.plot_spectra(eventlabel, ecf_path=ecf_path)
     # return the Stage 6 result
     return _eureka_result(params, stage=6,

@@ -28,7 +28,10 @@ from aperocore.constants import load_functions
 from pogos.constants.constants import CDict
 from pogos.core import base as pogos_base
 from pogos.core import definitions
+from pogos.core import file_download
 from pogos.core import general
+from pogos.core import progress
+from pogos.core import progress_plans
 from pogos.core import recipe_helpers
 from pogos.core import startup
 
@@ -118,6 +121,38 @@ def main(**kwargs):
     startup.check_red_steps(params)
     # Check global/module instrument modes and reduction-step support.
     startup.check_instrument_modes(params)
+    # -------------------------------------------------------------------------
+    # Download online input files (source: mast / pogos) that are not yet
+    #   on disk and record them in the yaml file
+    dkwargs = dict(yaml_file=yaml_file,
+                   demolocal=params.get('GLOBAL.LOCAL_DOWNLOAD_DATA', None),
+                   demosymlink=params.get('GLOBAL.DEMO_SYMLINK_DATA', False))
+    file_download.download_files(params, **dkwargs)
+    # =========================================================================
+    # Reduction steps (progress recorded for the pogos_gui Status tab)
+    # =========================================================================
+    stages = recipe_helpers.planned_stages(params)
+    # the steps of every stage (shown as pending until they run)
+    plans = progress_plans.run_plans(params, stages)
+    pargs = [params.get('GLOBAL.DATA_PATH', None), yaml_file,
+             params.get('GLOBAL.PROJECT_NAME', None),
+             params.get('GLOBAL.INSTRUMENTMODE', None), stages, plans]
+    with progress.run(*pargs):
+        run_reduction_steps(params)
+    # -------------------------------------------------------------------------
+    # print splash
+    general.end_splash()
+
+
+def run_reduction_steps(params):
+    """
+    Run the enabled pre-extraction, extraction and post-extraction steps
+    (each recorded as a stage of the run progress)
+
+    :param params: ParamDict, the loaded parameters of the yaml file
+
+    :return: None
+    """
     # =========================================================================
     # Pre-extraction steps
     # =========================================================================
@@ -127,30 +162,40 @@ def main(**kwargs):
     pre_inst = dict()
     # run tsovore
     if definitions.TSOVORE.is_enabled(params):
-        tsovore = recipe_helpers.load_module(params, 'tsovore', WLOG)
-        pre_inst['tsovore'] = tsovore.run_tsovore(params)
+        # record this stage (Status tab of pogos_gui)
+        with recipe_helpers.stage(definitions.TSOVORE):
+            tsovore = recipe_helpers.load_module(params, 'tsovore', WLOG)
+            pre_inst['tsovore'] = tsovore.run_tsovore(params)
     else:
         pre_inst['tsovore'] = None
     # -------------------------------------------------------------------------
     # run pre-eureka
     if definitions.PRE_EUREKA.is_enabled(params):
-        eureka_wrap = recipe_helpers.load_module(params, 'eureka_wrap', WLOG)
-        pre_inst['pre_eureka'] = eureka_wrap.run_eureka_pre_extract(params)
+        # record this stage (Status tab of pogos_gui)
+        with recipe_helpers.stage(definitions.PRE_EUREKA):
+            eureka_wrap = recipe_helpers.load_module(params, 'eureka_wrap',
+                                                     WLOG)
+            pre_inst['pre_eureka'] = eureka_wrap.run_eureka_pre_extract(params)
     else:
         pre_inst['pre_eureka'] = None
     # -------------------------------------------------------------------------
     # run pre jwst
     if definitions.PRE_JWST.is_enabled(params):
-        jwst_wrap = recipe_helpers.load_module(params, 'jwst_wrap', WLOG)
-        pre_inst['pre_jwst'] = jwst_wrap.run_jwst_pre_extract(params)
+        # record this stage (Status tab of pogos_gui)
+        with recipe_helpers.stage(definitions.PRE_JWST):
+            jwst_wrap = recipe_helpers.load_module(params, 'jwst_wrap', WLOG)
+            pre_inst['pre_jwst'] = jwst_wrap.run_jwst_pre_extract(params)
     else:
         pre_inst['pre_jwst'] = None
     # -------------------------------------------------------------------------
     # run NAMELESS
     if definitions.PRE_NAMELESS.is_enabled(params):
-        nameless_wrap = recipe_helpers.load_module(params, 'nameless_wrap',
-                                                   WLOG)
-        pre_inst['pre_nameless'] = nameless_wrap.run_nameless_pre_extract(params)
+        # record this stage (Status tab of pogos_gui)
+        with recipe_helpers.stage(definitions.PRE_NAMELESS):
+            nameless_wrap = recipe_helpers.load_module(params, 'nameless_wrap',
+                                                       WLOG)
+            pre_nameless = nameless_wrap.run_nameless_pre_extract(params)
+            pre_inst['pre_nameless'] = pre_nameless
     else:
         pre_inst['pre_nameless'] = None
 
@@ -163,47 +208,61 @@ def main(**kwargs):
     ext_inst = dict()
     # run simple box extract
     if definitions.EXT_BOX.is_enabled(params):
-        # ext_inst['EXT_BOX'] = tools.extract.run_box(params, **pre_inst)
-        ext_inst['ext_box'] = None
+        # record this stage (Status tab of pogos_gui)
+        with recipe_helpers.stage(definitions.EXT_BOX):
+            # ext_inst['EXT_BOX'] = tools.extract.run_box(params, **pre_inst)
+            ext_inst['ext_box'] = None
     else:
         ext_inst['ext_box'] = None
     # -------------------------------------------------------------------------
     # run eureka
     if definitions.EXT_EUREKA.is_enabled(params):
-        eureka_wrap = recipe_helpers.load_module(params, 'eureka_wrap', WLOG)
-        ext_inst['ext_eureka'] = eureka_wrap.run_eureka_extract(params,
-                                                                pre_inst)
+        # record this stage (Status tab of pogos_gui)
+        with recipe_helpers.stage(definitions.EXT_EUREKA):
+            eureka_wrap = recipe_helpers.load_module(params, 'eureka_wrap',
+                                                     WLOG)
+            ext_inst['ext_eureka'] = eureka_wrap.run_eureka_extract(params,
+                                                                    pre_inst)
     else:
         ext_inst['ext_eureka'] = None
     # -------------------------------------------------------------------------
     # run jwst
     if definitions.EXT_JWST.is_enabled(params):
-        jwst_wrap = recipe_helpers.load_module(params, 'jwst_wrap', WLOG)
-        ext_inst['ext_jwst'] = jwst_wrap.run_jwst_extract(params, pre_inst)
+        # record this stage (Status tab of pogos_gui)
+        with recipe_helpers.stage(definitions.EXT_JWST):
+            jwst_wrap = recipe_helpers.load_module(params, 'jwst_wrap', WLOG)
+            ext_inst['ext_jwst'] = jwst_wrap.run_jwst_extract(params, pre_inst)
     else:
         ext_inst['ext_jwst']  = None
     # -------------------------------------------------------------------------
     # run nameless
     if definitions.EXT_NAMELESS.is_enabled(params):
-        nameless_wrap = recipe_helpers.load_module(params, 'nameless_wrap',
-                                                   WLOG)
-        ext_inst['ext_nameless'] = nameless_wrap.run_nameless_extract(params,
-                                                                      pre_inst)
+        # record this stage (Status tab of pogos_gui)
+        with recipe_helpers.stage(definitions.EXT_NAMELESS):
+            nameless_wrap = recipe_helpers.load_module(params, 'nameless_wrap',
+                                                       WLOG)
+            ext_nameless = nameless_wrap.run_nameless_extract(params,
+                                                              pre_inst)
+            ext_inst['ext_nameless'] = ext_nameless
     else:
         ext_inst['ext_nameless']  = None
     # -------------------------------------------------------------------------
     # run sossisse_wrap
     if definitions.SOSSISSE.is_enabled(params):
-        sossisse_wrap = recipe_helpers.load_module(params, 'sossisse_wrap',
-                                                   WLOG)
-        ext_inst['sossisse'] = sossisse_wrap.run_sossisse(params, pre_inst)
+        # record this stage (Status tab of pogos_gui)
+        with recipe_helpers.stage(definitions.SOSSISSE):
+            sossisse_wrap = recipe_helpers.load_module(params, 'sossisse_wrap',
+                                                       WLOG)
+            ext_inst['sossisse'] = sossisse_wrap.run_sossisse(params, pre_inst)
     else:
         ext_inst['sossisse'] = None
     # -------------------------------------------------------------------------
     # run miriam
     if definitions.MIRIAM.is_enabled(params):
-        miriam = recipe_helpers.load_module(params, 'miriam', WLOG)
-        ext_inst['miriam'] = miriam.run_miriam(params, pre_inst)
+        # record this stage (Status tab of pogos_gui)
+        with recipe_helpers.stage(definitions.MIRIAM):
+            miriam = recipe_helpers.load_module(params, 'miriam', WLOG)
+            ext_inst['miriam'] = miriam.run_miriam(params, pre_inst)
     else:
         ext_inst['miriam'] = None
 
@@ -213,21 +272,25 @@ def main(**kwargs):
     # run sorbet
     sorbet_steps = (definitions.SORBET_WLCA, definitions.SORBET_SLCA)
     if recipe_helpers.any_enabled(params, sorbet_steps):
-        sorbet = recipe_helpers.load_module(params, 'sorbet', WLOG)
-        sorbet.run_sorbet(params, ext_inst)
+        # record this stage (Status tab of pogos_gui)
+        with recipe_helpers.stage(definitions.SORBET_WLCA):
+            sorbet = recipe_helpers.load_module(params, 'sorbet', WLOG)
+            sorbet.run_sorbet(params, ext_inst)
     # -------------------------------------------------------------------------
     # run eureka post-extraction steps
     if definitions.POST_EUREKA.is_enabled(params):
-        eureka_wrap = recipe_helpers.load_module(params, 'eureka_wrap', WLOG)
-        eureka_wrap.run_eureka_post_extract(params, ext_inst)
+        # record this stage (Status tab of pogos_gui)
+        with recipe_helpers.stage(definitions.POST_EUREKA):
+            eureka_wrap = recipe_helpers.load_module(params, 'eureka_wrap',
+                                                     WLOG)
+            eureka_wrap.run_eureka_post_extract(params, ext_inst)
     # -------------------------------------------------------------------------
     # run jwst post-extraction steps
     if definitions.POST_JWST.is_enabled(params):
-        jwst_wrap = recipe_helpers.load_module(params, 'jwst_wrap', WLOG)
-        jwst_wrap.run_jwst_post_extract(params, ext_inst)
-    # -------------------------------------------------------------------------
-    # print splash
-    general.end_splash()
+        # record this stage (Status tab of pogos_gui)
+        with recipe_helpers.stage(definitions.POST_JWST):
+            jwst_wrap = recipe_helpers.load_module(params, 'jwst_wrap', WLOG)
+            jwst_wrap.run_jwst_post_extract(params, ext_inst)
 
 # =============================================================================
 # Start of code

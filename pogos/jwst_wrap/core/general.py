@@ -19,12 +19,15 @@ Created on 2026-06-26
 import glob
 import os
 
+from aperocore import progress as gprogress
 from aperocore.constants.param_functions import ParamDict
 from aperocore.core import drs_log
 from aperocore.core import drs_misc
 from pogos.core import base
 from pogos.core import general as pogos_general
 from pogos.core import input_validation
+from pogos.core import progress
+from pogos.jwst_wrap.core import progress_plan as jwplan
 from pogos.jwst_wrap.constants import jwst_pipelines
 
 # =============================================================================
@@ -86,6 +89,8 @@ def setup_jwst_post_extract(params: ParamDict) -> ParamDict:
 # Define run functions
 # =============================================================================
 def run_jwst_pre_extract(params: ParamDict) -> ParamDict:
+    # Status tab: steps named in pogos.jwst_wrap.core.progress_plan
+    progress.start_substep(jwplan.JW_IMPORT)
     # Try importing the JWST pipeline classes
     params, pipelines = import_jwst(params)
     # deal with user (or pogos) not running the JWST pre-extract steps
@@ -94,6 +99,7 @@ def run_jwst_pre_extract(params: ParamDict) -> ParamDict:
         return None
     # -------------------------------------------------------------------------
     # Make the directories
+    progress.start_substep(jwplan.JW_DIRS)
     make_jwst_dirs(params, stage=1)
     make_jwst_dirs(params, stage=2)
     # -------------------------------------------------------------------------
@@ -110,6 +116,8 @@ def run_jwst_pre_extract(params: ParamDict) -> ParamDict:
 
 
 def run_jwst_extract(params: ParamDict, pre_inst=None) -> ParamDict:
+    # Status tab: steps named in pogos.jwst_wrap.core.progress_plan
+    progress.start_substep(jwplan.JW_IMPORT)
     # Try importing the JWST pipeline classes
     params, pipelines = import_jwst(params)
     # deal with user (or pogos) not running the JWST extract step
@@ -118,10 +126,12 @@ def run_jwst_extract(params: ParamDict, pre_inst=None) -> ParamDict:
         return None
     # -------------------------------------------------------------------------
     # Make the directories
+    progress.start_substep(jwplan.JW_DIRS)
     make_jwst_dirs(params, stage=3)
     # -------------------------------------------------------------------------
     # push the outputs from the pre-extraction step into the Stage 3 input
     #   directory (mirrors TSOVORE -> SOSSISSE/MIRIAM)
+    progress.start_substep(jwplan.JW_ROUTE)
     pogos_general.route_step_inputs(params, pre_inst,
                                     params.get('STD_JWST.PATHS.IN_S3_PATH'))
     # -------------------------------------------------------------------------
@@ -250,20 +260,47 @@ def run_jwst_stage(params: ParamDict, pipelines: dict, stage: int):
     msg = 'Running JWST Stage {0} [{1}] on {2} file(s)'
     margs = [stage, pipe_class.__name__, len(files)]
     WLOG(params, 'info', msg.format(*margs))
+    # Status tab: one sub step per stage (named in
+    #   pogos.jwst_wrap.core.progress_plan) and, for stages 1 and 2, one
+    #   step per exposure - the pipeline steps inside are recorded from
+    #   the stpipe log (jwplan.StpipeSteps)
+    basenames = [os.path.basename(filename) for filename in files]
+    stage_name = stage_step_name(stage)
     # -------------------------------------------------------------------------
     # Stages 1 and 2 run per-exposure
     if stage in [1, 2]:
-        for filename in files:
-            WLOG(params, '', '\tProcessing {0}'.format(
-                    os.path.basename(filename)))
-            pipe_class.call(filename, output_dir=outpath,
-                            save_results=save_results)
+        progress.start_substep(stage_name, total=len(files),
+                               items=basenames)
+        for f_it, filename in enumerate(files):
+            # one status step per exposure (closed with the stage if the
+            #   pipeline raises)
+            gprogress.start(basenames[f_it])
+            WLOG(params, '', '\tProcessing {0}'.format(basenames[f_it]))
+            with jwplan.StpipeSteps():
+                pipe_class.call(filename, output_dir=outpath,
+                                save_results=save_results)
+            gprogress.end()
     # Stage 3 runs once on a level-3 association built from the inputs
     else:
-        outpath = params.rget(f'STD_JWST.PATHS.OUT_S{stage}_PATH', required=True)
+        outpath = params.rget(f'STD_JWST.PATHS.OUT_S{stage}_PATH',
+                              required=True)
+        progress.start_substep(jwplan.JW_ASN)
         asn_file = build_stage3_association(params, files, outpath)
-        pipe_class.call(asn_file, output_dir=outpath,
-                        save_results=save_results)
+        progress.start_substep(stage_name)
+        with jwplan.StpipeSteps():
+            pipe_class.call(asn_file, output_dir=outpath,
+                            save_results=save_results)
+
+
+def stage_step_name(stage: int) -> str:
+    """
+    Get the Status tab name of a JWST stage
+
+    :param stage: int, the stage number (1, 2 or 3)
+
+    :return: str, the step name (pogos.jwst_wrap.core.progress_plan)
+    """
+    return getattr(jwplan, jwplan.STAGE_KEYS[stage])
 
 
 def get_pipeline_class(params: ParamDict, stage: int, pipelines: dict):

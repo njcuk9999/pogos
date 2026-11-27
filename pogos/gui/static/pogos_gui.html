@@ -1,0 +1,736 @@
+<!DOCTYPE html>
+<html data-theme="dark">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>POGOS GUI</title>
+<script>
+// apply the saved theme before first paint (dark is the default)
+(function () {
+    var theme = 'dark';
+    try { theme = JSON.parse(localStorage.getItem('pogos-gui-theme')) ||
+                  'dark'; }
+    catch (err) { theme = 'dark'; }
+    document.documentElement.setAttribute('data-theme', theme);
+})();
+</script>
+XX_CORE_HEAD_XX
+<link rel="stylesheet" href="static/app/pogos_gui.css?v=XX_STAMP_XX">
+</head>
+<body>
+<!-- ===================================================================
+     top bar: brand, POGOS path, tabs, global actions
+     =================================================================== -->
+<div class="navbar">
+<div id="topbar">
+<div class="nav-left">
+    <div class="brand">POGOS <span class="ver">v XX_VERSION_XX</span></div>
+    <div class="pathbar">
+        <label for="pogos-path">POGOS path</label>
+        <input id="pogos-path" type="text" spellcheck="false"
+               placeholder="/path/to/pogos-data (GLOBAL.DATA_PATH)">
+        <button onclick="P.browsePath()">Browse...</button>
+        <button class="primary" onclick="P.applyPath()">Open</button>
+        <span id="path-status" class="path-status"></span>
+    </div>
+    <div id="tabbar">
+        <button id="tab-btn-info" onclick="GUI.setTab('info')">Info</button>
+        <button id="tab-btn-setup" onclick="GUI.setTab('setup')">Setup</button>
+        <button id="tab-btn-edit" onclick="GUI.setTab('edit')">Edit</button>
+        <button id="tab-btn-run" onclick="GUI.setTab('run')">Run</button>
+        <button id="tab-btn-actions"
+                onclick="GUI.setTab('actions')">Actions</button>
+        <button id="tab-btn-processes"
+                onclick="GUI.setTab('processes')">Processes</button>
+        <button id="tab-btn-status" onclick="GUI.setTab('status')">Status</button>
+        <button id="tab-btn-plots" onclick="GUI.setTab('plots')">Plots</button>
+        <button id="tab-btn-files" onclick="GUI.setTab('files')">Project
+            manager</button>
+        <button id="tab-btn-docs" onclick="GUI.setTab('docs')">Docs</button>
+    </div>
+</div>
+<div id="global-actions">
+    <button id="theme-toggle" onclick="GUI.toggleTheme()">Theme</button>
+    <button onclick="P.refreshAll()">&#8635; Refresh</button>
+    <button id="lv-reopen" onclick="GUI.lvShow()">Logs (0)</button>
+    <button onclick="GUI.showRuntimeInfo()">Info</button>
+    <button onclick="GUI.restartServer()">Restart server</button>
+    <button class="danger" onclick="GUI.shutdownServer()">Shutdown GUI</button>
+    <span id="status-error"></span>
+</div>
+</div>
+</div>
+
+<div class="main-wrap locked" id="main-wrap">
+<div class="lock-notice">
+    <b>Enter the POGOS path above to start.</b> This is the directory that
+    holds (or will hold) all POGOS data: <code>yamls/</code> (configuration
+    files) and <code>projects/</code> (inputs, outputs and plots). It is
+    used as <code>GLOBAL.DATA_PATH</code> for new setups.
+</div>
+
+<!-- ===================================================================
+     Info
+     =================================================================== -->
+<div id="tab-info" class="tabpage">
+<div class="info-md">
+XX_INFO_XX
+</div>
+</div>
+
+<!-- ===================================================================
+     Setup (pogos_setup)
+     =================================================================== -->
+<div id="tab-setup" class="tabpage">
+<div class="tabdesc">Create a new yaml configuration and directory structure
+with <code>pogos_setup</code>. Work through the sections, then press
+<b>Run setup</b>; any remaining questions are asked in the console
+below.</div>
+
+<div class="section-card step-card" id="setup-sec-1">
+<div class="step-num">1</div>
+<h3>Location and names</h3>
+<div class="field-row">
+<div class="field grow">
+<label class="field-label" for="setup-data-path">Data path
+    (GLOBAL.DATA_PATH)</label>
+<div class="input-group">
+<input id="setup-data-path" type="text" spellcheck="false"
+       data-param="GLOBAL.DATA_PATH">
+<button onclick="P.setup.useGlobalPath()">Use POGOS path</button>
+</div>
+<div class="help">Defaults to the POGOS path at the top of the page.</div>
+</div>
+</div>
+<div class="field-row">
+<div class="field grow">
+<label class="field-label" for="setup-project">Project name
+    (GLOBAL.PROJECT_NAME)</label>
+<input id="setup-project" type="text" spellcheck="false"
+       data-param="GLOBAL.PROJECT_NAME"
+       placeholder="e.g. WASP39b_visit1">
+<div class="help" id="setup-project-help">Outputs go to
+    <code>{data path}/projects/{project}/&lt;module&gt;/</code>. No spaces
+    or separators (allowed punctuation: - + . _).</div>
+</div>
+<div class="field grow">
+<label class="field-label" for="setup-yaml">Yaml file name</label>
+<input id="setup-yaml" type="text" spellcheck="false"
+       data-param="GLOBAL.YAML_FILE"
+       placeholder="(blank = named after the demo)">
+<div class="help" id="setup-yaml-help">Saved in
+    <code>{data path}/yamls/</code>.</div>
+</div>
+</div>
+</div>
+
+<div class="section-card step-card" id="setup-sec-2">
+<div class="step-num">2</div>
+<h3>Instrument</h3>
+<div id="setup-instruments" class="choice-grid"
+     data-param="GLOBAL.INSTRUMENT_SELECT"></div>
+</div>
+
+<div class="section-card step-card disabled" id="setup-sec-3">
+<div class="step-num">3</div>
+<h3>Instrument mode <span class="muted small" id="setup-mode-note">(choose
+    an instrument first)</span></h3>
+<div id="setup-modes" class="choice-grid"
+     data-param="GLOBAL.INSTRUMENTMODE"></div>
+</div>
+
+<div class="section-card step-card disabled" id="setup-sec-4">
+<div class="step-num">4</div>
+<h3>Reduction steps</h3>
+<div class="muted small">Choose one flavour per stage or skip it
+(Post-extraction allows several). At least one stage must run.</div>
+<div id="setup-steps"></div>
+</div>
+
+<div class="section-card step-card disabled" id="setup-sec-5">
+<div class="step-num">5</div>
+<h3>Start from a demo <span class="muted small" id="setup-demo-note">
+</span></h3>
+<div class="muted small">A demo fills in every parameter (and the input
+files) for a known observation - a good starting point even for your own
+data. Choosing a demo also fills in its project name (section 1).</div>
+<div class="field-row demo-filter-row">
+<input id="setup-demo-filter" type="search"
+       placeholder="Filter demos (object, keyword, title)">
+<button onclick="P.setup.loadDemos(true)">&#8635; Reload demos</button>
+</div>
+<div id="setup-demos" class="demo-list"
+     data-param="GLOBAL.DEMO_SELECT"></div>
+</div>
+
+<div class="section-card step-card" id="setup-sec-6">
+<div class="step-num">6</div>
+<h3>Input data download</h3>
+<div class="muted small">Online input files (MAST / POGOS data server) can
+be fetched now, at the first run, or from a local mirror.</div>
+<div class="choice-grid" id="setup-download" style="margin-top:8px"
+     data-param="GLOBAL.DOWNLOAD_MODE">
+<label class="choice"><input type="radio" name="setup-dl" value="run"
+       checked><span><span class="choice-title">At the first run</span>
+<span class="choice-desc">pogos_run downloads what it needs
+(default).</span></span></label>
+<label class="choice"><input type="radio" name="setup-dl" value="now">
+<span><span class="choice-title">Download now</span>
+<span class="choice-desc">pogos_setup downloads the input files before
+it finishes.</span></span></label>
+<label class="choice"><input type="radio" name="setup-dl" value="local">
+<span><span class="choice-title">Local mirror</span>
+<span class="choice-desc">Copy / symlink POGOS server files from a
+directory on disk (the rest is downloaded).</span></span></label>
+</div>
+<div class="field-row" id="setup-local-row" style="display:none">
+<div class="field grow">
+<label class="field-label" for="setup-local">Local mirror directory</label>
+<div class="input-group">
+<input id="setup-local" type="text" spellcheck="false"
+       data-param="GLOBAL.LOCAL_DOWNLOAD_DATA">
+<button onclick="P.setup.browseLocal()">Browse...</button>
+</div>
+</div>
+<label class="inline" data-param="GLOBAL.DEMO_SYMLINK_DATA"><input
+    id="setup-symlink" type="checkbox"> Symlink
+    instead of copy</label>
+</div>
+</div>
+
+<div class="section-card step-card" id="setup-sec-7">
+<div class="step-num">7</div>
+<h3>Validate and save</h3>
+<div class="muted small">Checks every section, then runs
+<code>pogos_setup</code> to write the yaml file and the project
+directories. Any remaining questions (e.g. the object name) are asked in
+the console below.</div>
+<div class="cli-title">CLI equivalent <span class="muted" id="setup-cli-note">
+</span></div>
+<div class="cli-wrap">
+<textarea id="cli-setup" class="cli-box" readonly></textarea>
+<button class="copy-btn" onclick="GUI.copyCli('cli-setup', this)">Copy
+</button>
+</div>
+<div class="field-actions" style="margin-top:10px">
+<button id="btn-setup" class="primary" onclick="P.setup.run()">&#10004;
+    Validate and save</button>
+</div>
+<div id="setup-after" class="notice ok" style="display:none"></div>
+</div>
+
+<div id="console-setup"></div>
+<h3>Activity</h3>
+<div class="activity-log" data-activity="setup"></div>
+</div>
+
+<!-- ===================================================================
+     Edit (yaml editor + pogos_edit)
+     =================================================================== -->
+<div id="tab-edit" class="tabpage">
+<div class="tabdesc">Load a yaml file (from <code>{path}/yamls</code> or
+anywhere on disk), edit it as a form or as raw text, review the changes
+side by side and save (a backup is kept). Use <b>New project from this
+yaml</b> to copy it into a new project with <code>pogos_edit</code>.</div>
+
+<div class="section-card">
+<div class="field-row">
+<div class="field grow">
+<label class="field-label" for="edit-select">Yaml file</label>
+<div class="input-group">
+<select id="edit-select" onchange="P.edit.loadSelected()"></select>
+<button onclick="P.edit.browse()">Browse disk...</button>
+<button onclick="P.edit.reload()">&#8635; Reload</button>
+</div>
+</div>
+</div>
+<div id="edit-summary" class="yaml-summary"></div>
+</div>
+
+<div class="section-card" id="edit-card" style="display:none">
+<div class="editor-head">
+<span class="segmented">
+<button id="edit-view-form" class="active"
+        onclick="P.edit.setView('form')">Parameters</button>
+<button id="edit-view-raw" onclick="P.edit.setView('raw')">Raw YAML</button>
+</span>
+<input id="edit-filter" type="search"
+       placeholder="Filter parameters (key, value, comment)">
+<label class="inline small"><input id="edit-changed-only" type="checkbox"
+       onchange="P.edit.renderForm()"> Changed only</label>
+<span class="grow"></span>
+<span id="edit-dirty" class="pill"></span>
+<button onclick="P.edit.revert()">Revert</button>
+<button onclick="P.edit.review()">Review changes</button>
+<button class="primary" onclick="P.edit.save(false)">&#128190; Save</button>
+<button onclick="P.edit.save(true)">Save as...</button>
+</div>
+<div id="edit-error" class="notice bad" style="display:none"></div>
+<div id="edit-nav" class="edit-nav" title="Where you are - click a part to
+     go to the start of that section"></div>
+<div id="edit-form" class="yaml-form"></div>
+<div id="edit-raw-wrap" class="raw-editor" style="display:none">
+<pre id="edit-gutter" class="raw-gutter"></pre>
+<textarea id="edit-raw" spellcheck="false" wrap="off"></textarea>
+</div>
+</div>
+
+<div class="section-card">
+<h3>New project from this yaml (pogos_edit)</h3>
+<div class="muted small">Copies the loaded yaml into a new project: asks for
+a new description and project name, clears the input file lists and asks
+for the module specific required parameters (answer in the console).</div>
+<div class="cli-title">CLI equivalent</div>
+<div class="cli-wrap">
+<textarea id="cli-edit" class="cli-box" readonly></textarea>
+<button class="copy-btn" onclick="GUI.copyCli('cli-edit', this)">Copy
+</button>
+</div>
+<div class="field-actions" style="margin-top:10px">
+<button class="primary" onclick="P.edit.copyProject()">&#9654; New project
+    from this yaml</button>
+</div>
+</div>
+
+<div id="console-edit"></div>
+<h3>Activity</h3>
+<div class="activity-log" data-activity="edit"></div>
+</div>
+
+<!-- ===================================================================
+     Run (pogos_run / batch / templates)
+     =================================================================== -->
+<div id="tab-run" class="tabpage">
+<div class="tabdesc">Run a yaml with <code>pogos_run</code> on this machine
+or as a Slurm batch job.</div>
+
+<div class="section-card">
+<div class="field-row">
+<div class="field grow">
+<label class="field-label" for="run-select">Yaml file</label>
+<div class="input-group">
+<select id="run-select" onchange="P.run.selected()"></select>
+<button onclick="P.run.browse()">Browse disk...</button>
+<button onclick="P.run.openInEdit()">Open in Edit</button>
+</div>
+</div>
+</div>
+<div id="run-summary" class="yaml-summary"></div>
+<label class="inline" style="margin-top:8px"><input id="run-accept-old"
+       type="checkbox" onchange="P.run.updateCli()"> Accept a yaml from an
+    older POGOS version (POGOS_ACCEPT_OLD_YAML)</label>
+</div>
+
+<div class="controltabbar">
+<button id="runtab-btn-single" data-subtab-btn="runtab" class="active"
+        onclick="GUI.setSubTab('runtab', 'single')">Single Process</button>
+<button id="runtab-btn-batch" data-subtab-btn="runtab"
+        onclick="GUI.setSubTab('runtab', 'batch')">Batch Script</button>
+<button id="runtab-btn-template" data-subtab-btn="runtab"
+        onclick="GUI.setSubTab('runtab', 'template')">Create Batch
+    Template</button>
+</div>
+
+<div id="runtab-single" data-subtab="runtab" class="controlpage active">
+<div class="section-card">
+<h3>Run on this machine</h3>
+<div class="muted small">Runs <code>pogos_run</code> in the background on
+this machine - the console below follows it (and you can close the
+browser; the Processes tab finds it again).</div>
+<div class="cli-title">CLI equivalent</div>
+<div class="cli-wrap">
+<textarea id="cli-run" class="cli-box" readonly></textarea>
+<button class="copy-btn" onclick="GUI.copyCli('cli-run', this)">Copy
+</button>
+</div>
+<div class="field-actions" style="margin-top:10px">
+<button class="primary" onclick="P.run.runLocal()">&#9654; Run</button>
+</div>
+</div>
+</div>
+
+<div id="runtab-batch" data-subtab="runtab" class="controlpage">
+<div class="section-card">
+<h3>Batch script (sbatch)</h3>
+<div class="notice warn" id="batch-no-sbatch" style="display:none">
+<code>sbatch</code> was not found on this machine - scripts can be written
+but not submitted from here.</div>
+<div class="field-row">
+<div class="field">
+<label class="field-label" for="batch-template">Batch template</label>
+<select id="batch-template" onchange="P.run.previewBatch()"></select>
+</div>
+<label class="inline"><input id="batch-submit" type="checkbox" checked>
+    Submit via sbatch</label>
+</div>
+<div class="cli-title">Script preview</div>
+<pre id="batch-preview" class="text-view small"></pre>
+<div class="field-actions" style="margin-top:10px">
+<button class="primary" onclick="P.run.batch()">&#9654; Create batch
+    script</button>
+</div>
+<div id="batch-result" class="notice" style="display:none"></div>
+</div>
+</div>
+
+<div id="runtab-template" data-subtab="runtab" class="controlpage">
+<div class="section-card">
+<h3>Batch template</h3>
+<div class="field-row">
+<div class="field">
+<label class="field-label" for="tpl-load">Load template</label>
+<select id="tpl-load" onchange="P.tpl.load(this.value)"></select>
+</div>
+<div class="field">
+<label class="field-label" for="tpl-name">Save as name</label>
+<input id="tpl-name" type="text" value="default">
+</div>
+</div>
+<div id="tpl-fields" class="tpl-grid"></div>
+<label class="field-label" for="tpl-activation">Activation lines (one per
+    line, run before pogos_run)</label>
+<textarea id="tpl-activation" rows="6" style="width:100%"
+          spellcheck="false" class="mono"></textarea>
+<div class="help muted small">Examples:
+<pre class="text-view small"># conda
+source ~/miniconda3/etc/profile.d/conda.sh
+conda activate pogos-env
+
+# Alliance / module based clusters
+module load StdEnv/2023 python/3.12
+source ~/pogos-env/bin/activate</pre></div>
+<div class="field-actions" style="margin-top:10px">
+<button class="primary" onclick="P.tpl.save()">&#128190; Save
+    template</button>
+<span id="tpl-saved" class="muted small"></span>
+</div>
+</div>
+</div>
+
+<div id="console-run"></div>
+<h3>Activity</h3>
+<div class="activity-log" data-activity="run"></div>
+</div>
+
+<!-- ===================================================================
+     Actions (config / reset / diff)
+     =================================================================== -->
+<div id="tab-actions" class="tabpage">
+<div class="tabdesc">Check and fix yaml files, reset a project's outputs
+and compare any two files side by side.</div>
+
+<div class="section-card">
+<div class="field-row">
+<div class="field grow">
+<label class="field-label" for="act-select">Yaml file</label>
+<div class="input-group">
+<select id="act-select" onchange="P.act.selected()"></select>
+<button onclick="P.act.browse()">Browse disk...</button>
+</div>
+</div>
+</div>
+<div id="act-summary" class="yaml-summary"></div>
+</div>
+
+<div class="section-card table-wrap">
+<table id="action-table">
+<thead><tr><th>Action</th><th>Options</th><th>CLI equivalent</th>
+<th></th></tr></thead>
+<tbody>
+<tr>
+<td><div class="act-name">Check yaml</div>
+<div class="act-desc">Validate the yaml against the current POGOS
+constants (<code>pogos_config</code>, report only - nothing is
+changed).</div></td>
+<td class="muted">&ndash;</td>
+<td><code id="cli-config-check" class="cli-chip"></code></td>
+<td class="action-cell-run"><button class="primary"
+    onclick="P.act.config(false)">Run</button></td>
+</tr>
+<tr>
+<td><div class="act-name">Check and fix yaml</div>
+<div class="act-desc">Run <code>pogos_config</code> interactively (answer
+in the console). A snapshot is taken first and the changes are shown side
+by side when it finishes.</div></td>
+<td class="muted">&ndash;</td>
+<td><code id="cli-config-fix" class="cli-chip"></code></td>
+<td class="action-cell-run"><button class="primary"
+    onclick="P.act.config(true)">Run</button></td>
+</tr>
+<tr>
+<td><div class="act-name">Compare with a backup</div>
+<div class="act-desc">Compare the yaml with one of its gui backups (made
+when saving in Edit or before Check and fix).</div></td>
+<td><select id="act-backups"></select></td>
+<td class="muted">&ndash;</td>
+<td class="action-cell-run"><button
+    onclick="P.act.diffBackup()">Compare</button></td>
+</tr>
+<tr>
+<td><div class="act-name">Compare two files</div>
+<div class="act-desc">Side by side diff of any two text files (yamls,
+logs, scripts...).</div></td>
+<td><div class="diff-pick"><input id="diff-left" type="text"
+    placeholder="left file" spellcheck="false"><button class="small"
+    onclick="P.act.pickDiff('left')">...</button></div>
+<div class="diff-pick"><input id="diff-right" type="text"
+    placeholder="right file" spellcheck="false"><button class="small"
+    onclick="P.act.pickDiff('right')">...</button></div></td>
+<td class="muted">&ndash;</td>
+<td class="action-cell-run"><button
+    onclick="P.act.diffFiles()">Compare</button></td>
+</tr>
+<tr class="act-critical">
+<td><div class="act-name">Reset project outputs</div>
+<div class="act-desc">Run <code>pogos_reset</code>: deletes (and recreates
+empty) every output / plot / temporary / other directory of the enabled
+steps of this yaml. Raw inputs and calibration files are never touched.
+Preview first, then type <b>RESET</b> to confirm.</div></td>
+<td><label class="inline"><input id="reset-accept-old" type="checkbox"
+    onchange="P.act.updateCli()"> accept older yaml</label></td>
+<td><code id="cli-reset" class="cli-chip"></code></td>
+<td class="action-cell-run"><button onclick="P.act.resetPreview()">
+    Preview</button> <button class="danger"
+    onclick="P.act.reset()">Reset...</button></td>
+</tr>
+</tbody>
+</table>
+</div>
+<div id="reset-preview" class="section-card" style="display:none"></div>
+
+<div id="console-actions"></div>
+<h3>Activity</h3>
+<div class="activity-log" data-activity="actions"></div>
+</div>
+
+<!-- ===================================================================
+     Processes
+     =================================================================== -->
+<div id="tab-processes" class="tabpage">
+<div class="tabdesc">Processes started from this gui: setup, edit, run,
+config and reset commands (on this machine) and submitted Slurm batch
+jobs. Click a row to open its log(s).</div>
+<div id="processes"></div>
+</div>
+
+<!-- ===================================================================
+     Status (where every pogos_run is)
+     =================================================================== -->
+<div id="tab-status" class="tabpage">
+<div class="tabdesc">Every <code>pogos_run</code> (from this gui, a batch
+job or a terminal) records where it is: the stage (pre-extraction /
+extraction / post-extraction), the flavour (e.g. SOSSISSE) and the steps
+inside it, as deep as the code marks them (e.g. per detector, per jump
+chunk, per section). Steps the code declares up front show as
+<i>pending</i> until they run. Click a run to see its steps; on each step
+<b>Log</b> opens the log there, <b>Code</b> shows the code that runs it
+and <b>Doc</b> what it does.</div>
+<div id="status-runs-view">
+<div class="section-card proc-bar">
+<button onclick="P.status.refresh()">&#8635; Refresh</button>
+<button onclick="P.status.removeSelected()">Remove selected records</button>
+<label class="inline"><input type="checkbox" id="status-active-only"
+    onchange="P.status.renderRuns()"> Active only</label>
+<span class="muted small" id="status-note"></span>
+</div>
+<div class="section-card table-wrap">
+<table><thead><tr><th><input type="checkbox" id="status-all"></th>
+<th>Status</th><th>Started</th><th>Yaml file</th><th>Project</th>
+<th>Instrument mode</th><th>Progress</th><th>Now</th><th>Duration</th>
+<th>Where</th></tr></thead>
+<tbody id="status-runs"></tbody></table>
+</div>
+</div>
+<div id="status-run-view" style="display:none">
+<div class="section-card status-head" id="status-run-head"></div>
+<div class="section-card table-wrap">
+<table class="status-steps"><thead><tr><th>Step</th><th>Started</th>
+<th>Duration</th><th>Status</th><th>Progress</th><th></th></tr></thead>
+<tbody id="status-steps"></tbody></table>
+</div>
+</div>
+</div>
+
+<!-- ===================================================================
+     Plots
+     =================================================================== -->
+<div id="tab-plots" class="tabpage">
+<div class="tabdesc">The plots of your runs: <b>Stream</b> shows the
+figures runs display (live), <b>On disk</b> the plot files saved in every
+project - pick the project and the flavour (sossisse, miriam, ...). Click a
+plot to view it full size with its description (arrow keys move between
+plots).</div>
+<div class="controltabbar">
+<button id="plotstab-btn-stream" data-subtab-btn="plotstab" class="active"
+        onclick="GUI.setSubTab('plotstab', 'stream')">Stream (live)</button>
+<button id="plotstab-btn-disk" data-subtab-btn="plotstab"
+        onclick="GUI.setSubTab('plotstab', 'disk')">On disk</button>
+</div>
+<div id="plotstab-stream" data-subtab="plotstab" class="controlpage active">
+<div class="muted small" style="margin-bottom:8px">Figures a run shows
+(<code>plt.show()</code>) are streamed here instead of opening windows -
+for runs started from this gui (Run tab, single process or batch).</div>
+<div class="plots-layout">
+<div class="plots-tree section-card" id="stream-list"></div>
+<div class="plots-main">
+<div class="section-card plots-bar">
+<label class="inline"><input id="stream-follow" type="checkbox" checked>
+    Follow the newest run</label>
+<select id="stream-size">
+<option value="small">Small</option>
+<option value="medium" selected>Medium</option>
+<option value="large">Large</option>
+</select>
+<button onclick="P.stream.removeCurrent()">Delete this stream</button>
+<span id="stream-note" class="muted small"></span>
+</div>
+<div id="stream-gallery" class="plots-gallery"></div>
+</div>
+</div>
+</div>
+<div id="plotstab-disk" data-subtab="plotstab" class="controlpage">
+<div class="section-card plots-pick">
+<div class="field">
+<label class="field-label" for="plots-project">Project</label>
+<select id="plots-project"></select>
+</div>
+<div class="field">
+<label class="field-label" for="plots-module">Flavour</label>
+<select id="plots-module"></select>
+</div>
+<span id="plots-pick-note" class="muted small"></span>
+</div>
+<div class="section-card plots-bar">
+<input id="plots-filter" type="search"
+       placeholder="Filter plots (name, title, description)">
+<select id="plots-sort">
+<option value="name">Sort: name</option>
+<option value="new">Sort: newest first</option>
+<option value="old">Sort: oldest first</option>
+</select>
+<select id="plots-size">
+<option value="small">Small</option>
+<option value="medium" selected>Medium</option>
+<option value="large">Large</option>
+</select>
+<label class="inline"><input id="plots-auto" type="checkbox" checked>
+    Auto refresh</label>
+<button onclick="P.plots.refresh()">&#8635; Refresh</button>
+<button onclick="P.plots.markSeen()">Mark all seen</button>
+<span id="plots-note" class="muted small"></span>
+</div>
+<div id="plots-gallery" class="plots-gallery"></div>
+</div>
+</div>
+
+<!-- ===================================================================
+     Files (project organiser)
+     =================================================================== -->
+<div id="tab-files" class="tabpage">
+<div class="tabdesc">Project manager: choose a project to browse its files
+(inputs, outputs and plots of each flavour), view FITS headers / images /
+tables, delete files, or reset / delete the whole project. Use <b>Other
+data</b> to browse the yaml files or the gui state instead.</div>
+<div class="section-card pm-bar">
+<button id="pm-back" onclick="P.files.home()" style="display:none">&larr;
+    All projects</button>
+<span id="pm-title" class="pm-title">Projects</span>
+<input id="pm-filter" type="search" spellcheck="false"
+       placeholder="Filter projects by name">
+<span id="pm-count" class="muted small"></span>
+<span class="grow"></span>
+<label class="inline" for="pm-other">Other data</label>
+<select id="pm-other" onchange="P.files.openOther(this.value)">
+<option value="">-- choose --</option>
+<option value="yamls">yamls (configuration files)</option>
+<option value="state">gui state (logs, scripts, backups, streams)</option>
+<option value="downloaded" disabled>downloaded data (coming later)</option>
+</select>
+</div>
+<div id="pm-projects" class="section-card pm-list-card">
+<div class="pm-list-head"><span>Project</span><span>Flavours</span>
+<span>Used by yaml(s)</span><span class="num">Size</span>
+<span>Modified</span><span></span></div>
+<div id="pm-list" class="pm-list"></div>
+</div>
+<div id="pm-browser" class="section-card" style="display:none">
+<div id="files-project-head"></div>
+<div class="fb-path">
+<button id="files-up" onclick="P.files.up()">&#8593; Up</button>
+<div class="fb-crumbs" id="files-crumbs"></div>
+<span class="grow"></span>
+<input id="files-filter" type="search" placeholder="Filter names">
+</div>
+<div class="field-actions" style="margin-bottom:8px">
+<label class="inline small"><input type="checkbox" id="files-all"
+    onclick="P.files.selectAll(this.checked)"> Select all</label>
+<button class="small danger" onclick="P.files.deleteSelected()">Delete
+    selected</button>
+<button class="small" onclick="P.files.diffSelected()">Compare 2
+    selected</button>
+<span id="files-note" class="muted small"></span>
+</div>
+<div class="table-wrap files-table">
+<table><thead><tr><th></th><th></th>
+<th class="sortable" data-sort="name">Name</th>
+<th class="sortable num" data-sort="size">Size</th>
+<th class="sortable" data-sort="mtime">Modified</th><th></th></tr></thead>
+<tbody id="files-body"></tbody></table>
+</div>
+</div>
+</div>
+
+<!-- ===================================================================
+     Docs (full constant descriptions)
+     =================================================================== -->
+<div id="tab-docs" class="tabpage">
+<div class="tabdesc"><b>Algorithms</b>: the steps every flavour goes through
+(the same steps the Status tab shows for a run), with the code and the
+description of each. <b>Constants</b>: the full description of every POGOS
+constant. Choose a stage and a flavour, then click a step / section to read
+everything inside it, or a single entry to read just that one.</div>
+<div class="section-card docs-pick">
+<div class="docs-pick-row">
+<span class="segmented docs-menu">
+<button id="docs-menu-algorithms" onclick="P.docs.setMenu('algorithms')"
+    >Algorithms</button>
+<button id="docs-menu-constants" onclick="P.docs.setMenu('constants')"
+    >Constants</button>
+</span>
+</div>
+<div class="docs-pick-row"><span class="docs-pick-label">Stage</span>
+<div id="docs-stages" class="chip-row"></div></div>
+<div class="docs-pick-row"><span class="docs-pick-label">Flavour</span>
+<div id="docs-flavours" class="chip-row"></div></div>
+<div class="docs-pick-row" id="docs-mode-row" style="display:none">
+<span class="docs-pick-label">Instrument mode</span>
+<select id="docs-mode"></select>
+<span class="muted small">(the steps of this flavour depend on it)</span>
+</div>
+</div>
+<div class="files-layout">
+<div class="files-side section-card">
+<select id="docs-flavour" style="display:none"></select>
+<input id="docs-filter" type="search" style="width:100%"
+       placeholder="Search names and descriptions">
+<label class="inline small" style="margin:6px 0" id="docs-files-label"><input
+    id="docs-files-only" type="checkbox"> File constants only</label>
+<div class="muted small" id="docs-count"></div>
+<div id="docs-list" class="docs-list"></div>
+</div>
+<div class="files-main section-card" id="docs-detail">
+<p class="muted">Choose an entry on the left.</p>
+</div>
+</div>
+</div>
+
+</div>
+
+XX_CORE_BODY_XX
+<script>
+// the POGOS path given on the command line (--path)
+var POGOS_INITIAL_PATH = XX_PATH_XX;
+</script>
+<script src="static/app/pogos_gui.js?v=XX_STAMP_XX"></script>
+</body>
+</html>

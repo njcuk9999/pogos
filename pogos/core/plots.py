@@ -87,6 +87,9 @@ def save_show_plot(params: ParamDict, outname: str, figure_types: str,
         plt.savefig(abspath)
     # if we want to show the plot do it now
     if params[plot_show]:
+        # describe the figure for the gui plot stream (ignored elsewhere)
+        plt.gcf().gui_info = dict(title=title, description=description,
+                                  name=outname, func=func_name)
         # deal with description
         if len(description) > 0:
             msg = f'PLOT: {title} \n\n{description}'

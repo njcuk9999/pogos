@@ -113,7 +113,7 @@ pogos_setup
 This should ask you for several options, and create a file structure and a yaml file, based on a demo we supply.
 You can and should run this demo (it downloads the data) just to make sure your installation ran correctly.
 
-Once you have run a demo you can either manually edit the demo yaml and copy the file structure we provide, or run `pogos_copy` ([This section](#5-running-pogos-with-your-own-data))
+Once you have run a demo you can either manually edit the demo yaml and copy the file structure we provide, or run `pogos_edit` ([This section](#5-running-pogos-with-your-own-data))
 to walk you through creating a new yaml file and file structure based on your own data.
 
 ### Project configuration and data layout
@@ -172,6 +172,28 @@ should equal that root, not the old SOSSISSE module directory.
 
 ---
 
+### The POGOS GUI
+
+Everything below can also be done from a browser with `pogos_gui`:
+
+```bash
+pogos_gui --path={DATA_PATH}            # opens a browser tab
+pogos_gui --path={DATA_PATH} --headless --port=8097   # just print the url
+```
+
+The gui has tabs for **Setup** (`pogos_setup` from a form: data path,
+project, instrument / mode, reduction steps, demo and data download),
+**Edit** (edit any yaml as a form with every parameter's description, or as
+raw text, review the diff and save; `pogos_edit` for a new project),
+**Run** (`pogos_run` locally or as a Slurm batch script from a template),
+**Actions** (`pogos_config` check / fix with a side by side diff,
+`pogos_reset` with a preview and a typed `RESET` confirmation, compare any
+two files), **Processes** (logs / stop), **Plots** (gallery of every
+project's plots) and **Files** (project organiser with FITS header, image
+and table viewers). Questions the recipes still ask are answered in the
+console of each tab. The gui listens on `localhost` only; from another
+machine use an ssh tunnel (`ssh -N -L 8097:localhost:8097 user@host`).
+
 ## 4. Running POGOS
 
 Once you have run `pogos_setup` and read and understood the yaml file you can run the main POGOS code.
@@ -196,12 +218,12 @@ Note once you have run the demo you can run `pogos_run` on your own data ([This 
 
 There are two options to set up POGOS with your own data:
 1. Manually edit the demo yaml file and copy the demo file structure to your own data.
-2. Use the `pogos_copy` command to walk you through creating a new yaml file and file structure.
+2. Use the `pogos_edit` command to walk you through creating a new yaml file and file structure.
 
-To run `pogos_copy` run the following command from inside the `pogos-env` conda environment (or equivalent):
+To run `pogos_edit` run the following command from inside the `pogos-env` conda environment (or equivalent):
 
 ```bash
-pogos_copy --demo_file {demo_yaml_file}
+pogos_edit --demo_file {demo_yaml_file}
 ```
 
 You will then be asked a set of questions about your data and a new yaml file and file structure will be created for you.

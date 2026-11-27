@@ -17,16 +17,19 @@ from typing import Any, Dict, List, Optional, Tuple
 
 import numpy as np
 
+from aperocore import progress as gprogress
 from aperocore.constants.param_functions import ParamDict
 from aperocore.constants import load_functions
 from aperocore.core import drs_log
 from aperocore.core import drs_misc
 from pogos.core import base as pogos_base
+from pogos.core import progress
 from pogos.core import definitions
 from pogos.core import general as pogos_general
 from pogos.core import io as pogos_io
 from pogos.sorbet.core import base as sorbet_base
 from pogos.sorbet.core import core as sorbet_core
+from pogos.sorbet.general import progress_plan as splan
 from sossisse.core import misc
 from sossisse.instruments import default as sdefault
 
@@ -140,6 +143,8 @@ def run_sorbet_module(params: ParamDict, ext_inst: Dict[str, Any]):
     # ----------------------------------------------------------------------
     # Deal with input from SOSSISSE and MIRIAM if available
     # ----------------------------------------------------------------------
+    # Status tab: steps named in pogos.sorbet.general.progress_plan
+    progress.start_substep(splan.SB_INPUTS)
     if sossisse_inst is not None:
         params = sossisse_input(params, sossisse_inst)
     if miriam_params is not None:
@@ -150,14 +155,18 @@ def run_sorbet_module(params: ParamDict, ext_inst: Dict[str, Any]):
     # ----------------------------------------------------------------------
     run_wlca = params.rget('RUN.SORBET.WLCA', required=True, func=func_name)
     if run_wlca:
-        params = run_sorbet_wlcta(params)
+        # Status tab: one sub step per analysis
+        with progress.substep(splan.SB_WLCA):
+            params = run_sorbet_wlcta(params)
 
     # ----------------------------------------------------------------------
     # Spectral Light Curve Transit Analysis
     # ----------------------------------------------------------------------
     run_slca = params.rget('RUN.SORBET.SLCA', required=True, func=func_name)
     if run_slca:
-        params = run_sorbet_slcta(params)
+        # Status tab: one sub step per analysis
+        with progress.substep(splan.SB_SLCA):
+            params = run_sorbet_slcta(params)
 
     # ----------------------------------------------------------------------
     # TFIT
@@ -347,17 +356,23 @@ def run_sorbet_wlcta(params: ParamDict):
     _validate_traces(traces, 'SORBET.WLCA.TRACES')
     # Do not reuse fitted state from an earlier invocation.
     params['SORBET.WLCA.TRACE_FIT_PARAMS'] = None
+    # Status tab: one step per trace (closed by the enclosing step)
+    labels = splan.trace_labels(traces)
+    gprogress.start(splan.SB_TRACE, items=labels)
     if traces is None:
         # Preserve the legacy runner's in-place parameter updates.
         params['SORBET.WLCA.TRACE'] = None
+        gprogress.start(labels[0])
         return _run_sorbet_wlcta(params)
     # Resolve common paths before deriving isolated per-trace directories.
     prepare_directories(params, method='WLCA')
     trace_fit_params = dict()
     # Deep copies keep priors and fitted parameters independent per trace.
-    for trace in traces:
-        fit_params = _trace_fit_params(params, trace)
-        trace_fit_params[trace] = _run_sorbet_wlcta(fit_params)
+    for trace, label in zip(traces, labels):
+        with gprogress.step(label):
+            fit_params = _trace_fit_params(params, trace)
+            trace_fit_params[trace] = _run_sorbet_wlcta(fit_params)
+    gprogress.end()
     # SLCA will retrieve only the fit corresponding to its selected trace.
     params['SORBET.WLCA.TRACE_FIT_PARAMS'] = trace_fit_params
     return params
@@ -406,10 +421,14 @@ def _run_sorbet_wlcta(params: ParamDict):
     # prepare input directories
     prepare_directories(params, method='WLCA')
     # load the dataset
+    # Status tab: start of this section
+    gprogress.mark(splan.SB_W_LOAD)
     data_table = sorbet_science.load_wlc(params)
     # -----------------------------------------------------------------
     # print progress
     msg = f'Finding outliers for white light curve...'
+    # Status tab: start of this section
+    gprogress.mark(splan.SB_W_OUTLIERS)
     WLOG(params, '', msg)
     # find outliers
     medfilt_model, outlier_mask = sorbet_science.find_outliers(params,
@@ -420,19 +439,27 @@ def _run_sorbet_wlcta(params: ParamDict):
                               method='WLCA')
     # -------------------------------------------------------------------------
     # prepare the dataset for juliet
+    # Status tab: start of this section
+    gprogress.mark(splan.SB_W_DATASET)
     dataset = sorbet_science.prepare_dataset(params, data_table, method='WLCA',
                                              outlier_mask=outlier_mask)
     # -------------------------------------------------------------------------
     # print progress
     msg = f'Fitting white light curve...'
+    # Status tab: start of this section
+    gprogress.mark(splan.SB_W_FIT)
     WLOG(params, '', msg)
     # fit the dataset with juliet/batman
     results = sorbet_science.fit_transit(params, dataset, method='WLCA')
     # -------------------------------------------------------------------------
     # save the model components to disk
+    # Status tab: start of this section
+    gprogress.mark(splan.SB_W_SAVE)
     sorbet_science.save_transit_model(params, dataset, results, method='WLCA')
     # -------------------------------------------------------------------------
     # plot the results (corner plot)
+    # Status tab: start of this section
+    gprogress.mark(splan.SB_W_PLOTS)
     sorbet_plots.plot_corner(params, dataset, results, method='WLCA')
     # -------------------------------------------------------------------------
     # plot the best-fit model
@@ -440,6 +467,7 @@ def _run_sorbet_wlcta(params: ParamDict):
     # -------------------------------------------------------------------------
     # produce summary html
     stitle = params.get('SORBET.GENERAL.DESCRIPTION', '')
+    gprogress.mark(splan.SB_W_SUMMARY)
     pogos_io.summary_html(params, 'SORBET:WLCA', 'SORBET.WLCA.PLOT_PATH',
                           'GLOBAL.PROJECT_NAME',
                           'SORBET.WLCA.OUTPUT_PATH',
@@ -502,8 +530,12 @@ def run_sorbet_slcta(params: ParamDict):
     """
     # Resolve and validate selection before preparing paths or running fits.
     input_files, traces = _deal_with_slcta_input_file(params)
+    # Status tab: one step per trace (closed by the enclosing step)
+    labels = splan.trace_labels(traces)
+    gprogress.start(splan.SB_TRACE, items=labels)
     if traces == [None]:
         # Preserve the existing single-run behavior and parameter identity.
+        gprogress.start(labels[0])
         return _run_sorbet_slcta(params)
     # Resolve shared paths before deriving trace-specific fit configurations.
     prepare_directories(params, method='WLCA', verbose=False)
@@ -511,7 +543,8 @@ def run_sorbet_slcta(params: ParamDict):
     # A standalone SLCA run may not have a previous WLCA fit cache.
     trace_fit_params = params.get('SORBET.WLCA.TRACE_FIT_PARAMS') or dict()
     # Pair traces by identifier, never by another trace's fitted state.
-    for input_file, trace in zip(input_files, traces):
+    for input_file, trace, label in zip(input_files, traces, labels):
+        gprogress.start(label)
         if trace in trace_fit_params:
             # SLCA may mutate fit parameters without changing the stored fit.
             fit_params = deepcopy(trace_fit_params[trace])
@@ -523,6 +556,8 @@ def run_sorbet_slcta(params: ParamDict):
         fit_params['SORBET.SLCA.TRACES'] = [trace]
         # Keep scientific fitting within the existing runtime boundary.
         _run_sorbet_slcta(fit_params)
+        gprogress.end()
+    gprogress.end()
     return params
 
 
@@ -545,9 +580,13 @@ def _run_sorbet_slcta(params: ParamDict):
     # get input files and traces
     input_files, traces = _deal_with_slcta_input_file(params)
     # --------------------------------------------------------------------------
-    # loop around channels
+    # loop around channels (Status tab: one step each)
+    gprogress.start(splan.SB_CHANNEL, items=[
+        'channel {0}'.format(chl + 1) for chl in range(len(input_files))])
     for chl in range(len(input_files)):
+        gprogress.start('channel {0}'.format(chl + 1))
         # load the dataset
+        gprogress.mark(splan.SB_S_LOAD)
         spectral_outputs = sorbet_science.load_slc(params, input_files[chl],
                                traces[chl])
         bjd, wave_tuple, flux_bin, eflux_bin, channel = spectral_outputs
@@ -555,8 +594,11 @@ def _run_sorbet_slcta(params: ParamDict):
         # initiate transmission spectrum table
         tout = sorbet_science.initiate_transmission_spectrum(wave_tuple)
         spec_tbl, nbin = tout
-        # looping through spectral bins
+        # looping through spectral bins (Status tab: one step each)
+        gprogress.start(splan.SB_BIN, items=[splan.bin_label(wb)
+                                             for wb in range(nbin)])
         for wb in range(nbin):
+            gprogress.start(splan.bin_label(wb))
             # store bin parameters
             bin_params = dict()
             # print the wavelength bin
@@ -579,10 +621,12 @@ def _run_sorbet_slcta(params: ParamDict):
             if np.isnan(data_table['RelFlux']).all():
                 msg = f'Wavelength bin {wb + 1}/{nbin} is empty, skipping...'
                 misc.printc(msg, msg_type='warning')
+                gprogress.end('skipped')
                 continue
             # -----------------------------------------------------------------
             # print progress
             msg = f'Finding outliers for spectral bin {wb + 1}/{nbin}...'
+            gprogress.mark(splan.SB_B_OUTLIERS)
             WLOG(params, '', msg)
             # find outliers
             fout = sorbet_science.find_outliers(params, data_table,
@@ -594,6 +638,7 @@ def _run_sorbet_slcta(params: ParamDict):
                                       outlier_mask, method='SLCA',
                                       bin_params=bin_params)
             # prepare the dataset for juliet
+            gprogress.mark(splan.SB_B_DATASET)
             dataset = sorbet_science.prepare_dataset(params, data_table,
                                                      method='SLCA',
                                                      outlier_mask=outlier_mask,
@@ -601,15 +646,18 @@ def _run_sorbet_slcta(params: ParamDict):
             # -----------------------------------------------------------------
             # print progress
             msg = f'Fitting spectral bin {wb + 1}/{nbin}...'
+            gprogress.mark(splan.SB_B_FIT)
             WLOG(params, '', msg)
             # fit the dataset with juliet/batman
             results = sorbet_science.fit_transit(params, dataset, method='SLCA')
             # -----------------------------------------------------------------
             # save the model components to disk
+            gprogress.mark(splan.SB_B_SAVE)
             sorbet_science.save_transit_model(params, dataset, results,
                                               method='SLCA')
             # -----------------------------------------------------------------
             # plot the results (corner plot)
+            gprogress.mark(splan.SB_B_PLOTS)
             sorbet_plots.plot_corner(params, dataset, results, method='SLCA',
                                      bin_params=bin_params)
             # -----------------------------------------------------------------
@@ -618,16 +666,27 @@ def _run_sorbet_slcta(params: ParamDict):
                                      bin_params=bin_params)
             # -----------------------------------------------------------------
             # append to transmission spectrum table
+            gprogress.mark(splan.SB_B_APPEND)
             spec_tbl = sorbet_science.append_transmission_spec(params, results,
                                                                spec_tbl, wb)
+            # this bin is done
+            gprogress.end()
+        # every bin is done
+        gprogress.end()
         # ---------------------------------------------------------------------
         # save the transmission spectrum table
+        gprogress.mark(splan.SB_S_SPECTRUM)
         sorbet_science.save_transmission_spectrum(params, spec_tbl, channel)
         # plot the transmission spectrum
         sorbet_plots.plot_transmission_spectrum(params, method='SLCA')
+        # this channel is done
+        gprogress.end()
+    # every channel is done
+    gprogress.end()
     # -------------------------------------------------------------------------
     # produce summary html
     stitle = params.get('SORBET.GENERAL.DESCRIPTION', '')
+    gprogress.mark(splan.SB_S_SUMMARY)
     pogos_io.summary_html(params, 'SORBET:SLCA', 'SORBET.SLCA.PLOT_PATH',
                           'GLOBAL.PROJECT_NAME',
                           'SORBET.SLCA.OUTPUT_PATH',

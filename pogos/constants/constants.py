@@ -54,9 +54,9 @@ CDict.add('YAML_FILE', value=None, dtype=str, source=__NAME__,
                       '(if not using a previous yaml file). '
                       'This file will contain all parameters required to '
                       'run POGOS. '
-                      '\n\nE.g. /users/albert/pogo-data/yaml/pogos_test.yaml'
-                      '\nE.g. /home/cook/pogo-data/yaml/pogos_test.yaml'
-                      '\nE.g. C:\\users\\bob\\pogo-data\\yamls\\pogos_test.yaml')
+                      '\n\nE.g. /users/albert/pogos-data/yaml/pogos_test.yaml'
+                      '\nE.g. /home/cook/pogos-data/yaml/pogos_test.yaml'
+                      '\nE.g. C:\\users\\bob\\pogos-data\\yamls\\pogos_test.yaml')
 
 # Define data path
 CDict.add('DATA_PATH', value=None, dtype=str,
@@ -145,6 +145,26 @@ CDict.add('POSTEXTRACT_STEP', value=None, dtype=str, source=__NAME__,
           user=False, active=False, cmd_arg='postextract_step', group=cgroup,
           description='Pre-answer the Post-extraction step prompt with comma '
                       'separated option number(s) (0=Skip), e.g. "1,2".')
+
+# Pre-answer the demo selection prompt (a demo key e.g. "t1b.sossisse", its
+#   number in the list, or "none" to start without a demo) - skips the
+#   interactive demo filter and selection prompts in starting_point
+CDict.add('DEMO_SELECT', value=None, dtype=str, source=__NAME__,
+          user=False, active=False, cmd_arg='demo_select', group=cgroup,
+          description='Pre-answer the demo selection prompt with a demo key '
+                      '(e.g. "t1b.sossisse"), its number in the list, or '
+                      '"none" to start without a demo.')
+
+# Pre-answer the "download online input files now?" setup prompt
+#   ("now" = download during setup, "run" = download at the first run) -
+#   skips the interactive prompt in file_download.setup_downloads
+CDict.add('DOWNLOAD_MODE', value=None, dtype=str, source=__NAME__,
+          user=False, active=False, cmd_arg='download', group=cgroup,
+          options=['now', 'run'],
+          description='Pre-answer the setup download prompt: "now" downloads '
+                      'online input files during setup, "run" downloads '
+                      'them at the start of the first run. Ignored when '
+                      '--demolocal is given (always downloads now).')
 
 # =============================================================================
 # Switches to turn of major features

@@ -12,43 +12,45 @@ Created on 2025-03-25 at 09:57
 
 
 from pogos.core import definitions
-from pogos.resources.demos import demos
+from pogos.demos import demos
 from sossisse.core import constants as sconst
 from pogos.constants import constants as pconst
+from pogos.constants import tsovore as tconst
 
 # =============================================================================
 # Define variables
 # =============================================================================
-__NAME__ = 'bots_prism_demo.py'
+__NAME__ = 'bots_g395_demo.py'
 
 # =============================================================================
 # Define demo classes
 # =============================================================================
-class BotsPrismDemo_WASP39b(demos.PogoDemo):
-    classname = 'BotsPrismDemo_WASP39b'
+class BotsG395HDemo_WASP39b(demos.PogoDemo):
+    classname = 'BotsG395HDemo_WASP39b'
     object = 'WASP 39b'
     keywords = ['transit']
-    instrument = 'JWST.NIRSPEC.BOTS.PRISM'
-    description = 'WASP 39b transit observed on 2022-07-10'
-    date = '2025-03-25'
-    author = 'Neil Cook'
+    instrument = 'JWST.NIRSPEC.BOTS.G395H'
+    description = 'WASP 39b transit observed on 2022-07-30'
+    date = '2026-11-25'
+    author = 'Loic Albert'
 
     def __init__(self):
-        self.title = 'JWST.NIRSPEC.BOTS.PRISM WASP 39b transit [{tflavours}]'
+        self.title = 'JWST.NIRSPEC.BOTS.G395H WASP 39b transit [{tflavours}]'
         # in form DEMO_{OBJNAME}.{date}.{telescope}.{inst}.{mode}.{flavours}
-        self.id = 'DEMO_WASP39b.20220710.JWST.NIRSPEC.BOTS.PRISM.{tflavours}'
+        self.id = 'DEMO_WASP39b.20220730.JWST.NIRSPEC.BOTS.G395H.{tflavours}'
         # define the flavours selected by the user
         self.flavours = []
         # define the string flavours (shortened versions of flavours for
         #  title and id)
         self.tflavours = []
-        # url for data download
+        # POGOS data server directory (for files with source: pogos)
         self.url = 'http://206.12.93.77/ari/data/pogos/demos/nirspec/'
         self.download = dict()
         self.redsteps = dict()
 
         # define the reduction steps (and methods to be run) if these steps
         # are being run
+        self.redsteps['Pre-extraction:TSOVORE'] = [self.tsovore]
         self.redsteps['Extraction:SOSSISSE'] = [self.sossisse]
         # start cdict as a copy of the main POGOS constants dictionary
         self.cdict = pconst.CDict.copy(source=__NAME__)
@@ -63,7 +65,7 @@ class BotsPrismDemo_WASP39b(demos.PogoDemo):
         cgroup = 'GLOBAL'
 
         self.cdict.set('PROJECT_NAME', group=cgroup, source=__NAME__,
-                   value='DEMO_WASP39b.20220710.JWST.NIRSPEC.BOTS.PRISM')
+                       value='DEMO_WASP39b.20220730.JWST.NIRSPEC.BOTS.G395H')
 
         # Instrument mode i.e. JWST.NIRISS.SOSS or JWST.NIRSPEC.BOTS.PRISM
         self.cdict.set('INSTRUMENTMODE', group=cgroup, source=__NAME__,
@@ -75,19 +77,56 @@ class BotsPrismDemo_WASP39b(demos.PogoDemo):
             self.cdict.set(step.name, group='RUN', source=__NAME__,
                            value=False)
 
-    # TODO: Add tsovore
     def tsovore(self):
-        raise NotImplemented()
+        # Add the sub-constants-dictionary for TSOVORE
+        TSOvore_CDict = tconst.TSOVORE_CDict.copy(source=__NAME__)
+        self.cdict.add_sub_cdict('TSOVORE', TSOvore_CDict, source=__NAME__)
+
+        # =====================================================================
+        # Switches to turn of major features
+        # =====================================================================
+        cgroup = 'RUN'
+        # Run TSOVORE
+        self.cdict.set('TSOVORE', group=cgroup, source=__NAME__, value=True)
+        # =====================================================================
+        # General settings
+        # =====================================================================
+        cgroup = 'TSOVORE.GENERAL'
+
+        # Description of the TSOVORE run e.g. object name, date of observation,
+        # is it a transit or an eclipse etc.
+        self.cdict.set('DESCRIPTION', group=cgroup, source=__NAME__,
+                       value=self.description)
+
+        # =====================================================================
+        # Input settings
+        # =====================================================================
+        cgroup = 'TSOVORE.INPUTS'
+
+        # Instrument mode i.e. JWST.NIRISS.SOSS or JWST.NIRSPEC.BOTS.PRISM
+        self.cdict.set('INSTRUMENTMODE', group=cgroup, source=__NAME__,
+                       value=self.instrument)
+
+        # Files to be processed (see the yaml comments for the local / mast /
+        #   pogos forms). Listed files are downloaded from MAST if missing.
+        files = ['jw01366003001_04101_00001-seg001_nrs1_uncal.fits',
+                 'jw01366003001_04101_00001-seg002_nrs1_uncal.fits',
+                 'jw01366003001_04101_00001-seg003_nrs1_uncal.fits',
+                 'jw01366003001_04101_00001-seg001_nrs2_uncal.fits',
+                 'jw01366003001_04101_00001-seg002_nrs2_uncal.fits',
+                 'jw01366003001_04101_00001-seg003_nrs2_uncal.fits']
+        files = self.mast_files(files, pid=1366, obsnumber=3,
+                                product='uncal')
+        self.cdict.set('FILES', group=cgroup, source=__NAME__, value=files)
+
+        # Whether to remove intermediate files
+        self.cdict.set('REMOVE_INTERMEDIATES', group=cgroup, source=__NAME__,
+                       value=True)
 
     def sossisse(self):
         # Add the sub-constants-dictionary for SOSSISSE
         SOSSISSE_CDict = sconst.CDict.copy(source=__NAME__)
         self.cdict.add_sub_cdict('SOSSISSE', SOSSISSE_CDict, source=__NAME__)
-        # =====================================================================
-        # Add to the downloads
-        # =====================================================================
-        self.download['SOSSISSE.GENERAL.FILES'] = 'SOSSISSE.PATHS.RAWPATH'
-        self.download['SOSSISSE.GENERAL.WAVE_FILE'] = 'SOSSISSE.PATHS.CALIBPATH'
 
         # =====================================================================
         # Switches to turn of major features
@@ -131,23 +170,30 @@ class BotsPrismDemo_WASP39b(demos.PogoDemo):
         # =====================================================================
         cgroup = 'SOSSISSE.GENERAL'
 
-        # List of files to be processed in form:
-        # FILES:
-        #  - file1
-        #  - file2
-        #  - file3
-        files = ['jw01366004001_04101_00001-seg001_nrs1_rateints.fits',
-                 'jw01366004001_04101_00001-seg002_nrs1_rateints.fits',
-                 'jw01366004001_04101_00001-seg003_nrs1_rateints.fits',
-                 'jw01366004001_04101_00001-seg004_nrs1_rateints.fits']
+        # Files to be processed (see the yaml comments for the local / mast /
+        #   pogos forms). Listed files are downloaded from MAST if missing.
+        files = ['jw01366003001_04101_00001-seg001_nrs1_rateints.fits',
+                 'jw01366003001_04101_00001-seg002_nrs1_rateints.fits',
+                 'jw01366003001_04101_00001-seg003_nrs1_rateints.fits',
+                 'jw01366003001_04101_00001-seg001_nrs2_rateints.fits',
+                 'jw01366003001_04101_00001-seg002_nrs2_rateints.fits',
+                 'jw01366003001_04101_00001-seg003_nrs2_rateints.fits']
+        files = self.mast_files(files, pid=1366, obsnumber=3,
+                                product='rateints')
         self.cdict.set('FILES', group=cgroup, source=__NAME__, value=files)
+
+        # background file --> leave as None if the is no background available
+        #    for the mode - if empty DO_BACKGROUND is set to False regardless
+        #    of the value
+        self.cdict.set('BKGFILE', group=cgroup, source=__NAME__,
+                       value=None)
 
         # do background correction - must have BKGFILE defined to do this
         self.cdict.set('DO_BACKGROUND', value=False, group=cgroup,
                        source=__NAME__)
 
-        # flat field file --> leave as '' if there is no flat field available
-        #     for the mode
+        # flat field file --> leave as None if there is no flat field
+        #     available for the mode
         self.cdict.set('FLATFILE', group=cgroup, source=__NAME__,
                        value=None)
 
@@ -155,36 +201,37 @@ class BotsPrismDemo_WASP39b(demos.PogoDemo):
         self.cdict.set('POS_FILE', group=cgroup, source=__NAME__,
                        value=None)
 
-        # Wavelength calibration file
-        wavefile = 'jw01366004001_04101_00001-seg004_nrs1_x1dints.fits'
+        # Wavelength calibration files (x1dints product -> ext1d reader)
+        #     NIRSpec needs one file per detector
+        wavefile = ['jw01366003001_04101_00001-seg001_nrs1_x1dints.fits',
+                    'jw01366003001_04101_00001-seg001_nrs2_x1dints.fits']
+        wavefile = self.mast_files(wavefile, pid=1366, obsnumber=3,
+                                   product='x1dints')
         self.cdict.set('WAVE_FILE', group=cgroup, source=__NAME__,
                        value=wavefile)
 
-        # Wavelength calibration file type
-        self.cdict.set('WAVE_FILE_TYPE', group=cgroup, source=__NAME__,
-                       value='ext1d')
-
-        # Define which orders to use e.g.
-        # - 1
-        # - 2
+        # Define which traces to use (NIRSpec: detectors 1=NRS1, 2=NRS2,
+        #     None uses all supplied detectors)
         self.cdict.set('TRACES', group=cgroup, source=__NAME__,
                        value=None)
 
         # =====================================================================
-        # Definition of inputs related to the position within data cube timeseries
+        # Definition of inputs related to the position within data cube
+        #     timeseries
         # =====================================================================
         cgroup = 'SOSSISSE.WLC.INPUTS'
 
         # Integrations used to construct a model PSF.
         #     This should be a list of [start, end] lists
         #     These should be out-of-transit (if any) and without flares.
-        #     If you observed constantly a variable object (brown dwarf, phase curve),
-        #     you should enter the first to last as frame IDs, except significant
-        #     flares.
+        #     If you observed constantly a variable object (brown dwarf,
+        #     phase curve), you should enter the first to last as frame IDs,
+        #     except significant flares.
         #     Note that on a first pass of data reduction, you may not know the
-        #     optimal parameters. You can enter a guess and fine-tune in a second step.
-        #     As a starting point, BASELINE_INTS can be [0, NINTS-1] where NINTS can
-        #     be found in your fits header.
+        #     optimal parameters. You can enter a guess and fine-tune in a
+        #     second step.
+        #     As a starting point, BASELINE_INTS can be [0, NINTS-1] where
+        #     NINTS can be found in your fits header.
         #     Note the 1st frame is zero (pythonic numbering)
         #     Note that leaving this blank sets the baseline from 0 to NINTS-1
         #     E.g.
@@ -192,21 +239,28 @@ class BotsPrismDemo_WASP39b(demos.PogoDemo):
         #               - [0, 89]
         #               - [111, 153]
         self.cdict.set('BASELINE_INTS', group=cgroup, source=__NAME__,
-                       value=[[0, 8199], [15700, 21500]])
+                       value=[[0, 159], [341, 465]])
+
+        # Integrations flagged as a jump in the data. Used to separate the
+        # data into chunks that are analysed individually and separately.
+        #         Default value=None
+        self.cdict.set('JUMP_INTS', group=cgroup, source=__NAME__,
+                       value=[270])
 
         # =====================================================================
-        # Definition of inputs related to handling of the data within each frame
+        # Definition of inputs related to handling of the data within each
+        #     frame
         # =====================================================================
         cgroup = 'SOSSISSE.WLC.GENERAL'
 
         # Trace extraction width. Set to 0 to use the full image
         self.cdict.set('LINRECON_TRACE_WIDTH', group=cgroup, source=__NAME__,
-                       value=40)
+                       value=7)
 
         # define the width for masking the white light curve trace
         #         Default
         self.cdict.set('TRACE_WIDTH_MASKING', group=cgroup, source=__NAME__,
-                       value=40)
+                       value=15)
         # Set the range of dys to scan over number of -nbypix/trace_y_scale to
         #     +nbyix/trace_y_scale
         self.cdict.set('TRACE_Y_SCALE', group=cgroup, source=__NAME__,
@@ -215,18 +269,6 @@ class BotsPrismDemo_WASP39b(demos.PogoDemo):
         #     +nbxpix/trace_x_scale
         self.cdict.set('TRACE_X_SCALE', group=cgroup, source=__NAME__,
                        value=10)
-
-    # TODO: Add sorbet
-    def sorbet(self):
-        raise NotImplemented()
-
-    # TODO: Add sorbet wlca
-    def sorbet_wlca(self):
-        raise NotImplemented()
-
-    # TODO: Add sorbet wlca
-    def sorbet_slca(self):
-        raise NotImplemented()
 
 
 # =============================================================================
@@ -241,4 +283,3 @@ if __name__ == "__main__":
 # =============================================================================
 # End of code
 # =============================================================================
-

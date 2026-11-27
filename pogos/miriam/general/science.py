@@ -19,6 +19,7 @@ from scipy.optimize import curve_fit
 from scipy.special import erf
 from tqdm import tqdm
 
+from aperocore import progress as gprogress
 from aperocore import math as mp
 from aperocore.constants.param_functions import ParamDict
 from aperocore.constants import load_functions
@@ -28,6 +29,7 @@ from pogos.core import base
 from pogos.core import input_validation
 from pogos.miriam.core import base as mc_base
 from pogos.miriam.general import plots as mc_plots
+from pogos.miriam.general import progress_plan as mplan
 
 # =============================================================================
 # Define variables
@@ -187,6 +189,9 @@ def merge_inputs(params: ParamDict) -> MergedReturn:
     # -------------------------------------------------------------------------
     # if we have merged data use it
     if merged_data is not None:
+        # Status tab: the segments are not processed again
+        gprogress.start(mplan.MI_REUSE)
+        gprogress.end()
         cube, cube_err, mtbl, weights, xstart, ystart = merged_data
         return cube, cube_err, mtbl, weights, xstart, ystart
     # -------------------------------------------------------------------------
@@ -195,8 +200,11 @@ def merge_inputs(params: ParamDict) -> MergedReturn:
     all_cubes = None
     all_cube_errs = None
     xstart, ystart = -1.0, -1.0
-    # loop around all files
+    # loop around all files (Status tab: one step per segment, closed by
+    #   the enclosing step if anything fails)
+    gprogress.start(mplan.MI_SEGMENT, items=input_basenames)
     for ncube in tqdm(range(len(input_paths))):
+        gprogress.start(input_basenames[ncube])
         # load this iterations cube
         cube = fits.getdata(input_paths[ncube], extname='SCI')
         cube_err = fits.getdata(input_paths[ncube], extname='ERR')
@@ -238,6 +246,10 @@ def merge_inputs(params: ParamDict) -> MergedReturn:
             mtbls = Table(mtbl_n)
         else:
             mtbls = vstack([mtbls, mtbl_n])
+        # this segment is done
+        gprogress.end()
+    # every segment is done
+    gprogress.end()
     # -------------------------------------------------------------------------
     # sanity check that the length of mtls matches all_cubes/all_cube_errs
     n_integrations = len(mtbls)

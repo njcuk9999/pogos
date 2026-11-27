@@ -26,6 +26,7 @@ from aperocore.core import drs_log
 
 from pogos.constants.constants import CDict
 from pogos.core import base
+from pogos.core import file_download
 from pogos.core import startup
 from pogos.core import general
 from pogos.core import recipe_helpers
@@ -48,7 +49,8 @@ __inputs__ = ['GLOBAL.YAML_FILE', 'GLOBAL.DATA_PATH', 'GLOBAL.PROJECT_NAME',
               'GLOBAL.LOCAL_DOWNLOAD_DATA', 'GLOBAL.DEMO_SYMLINK_DATA',
               'GLOBAL.INSTRUMENT_SELECT', 'GLOBAL.INSTRUMENT_MODE',
               'GLOBAL.PREEXTRACT_STEP', 'GLOBAL.EXTRACT_STEP',
-              'GLOBAL.POSTEXTRACT_STEP']
+              'GLOBAL.POSTEXTRACT_STEP', 'GLOBAL.DEMO_SELECT',
+              'GLOBAL.DOWNLOAD_MODE']
 
 # =============================================================================
 # Define functions
@@ -87,24 +89,23 @@ def __main__(**kwargs):
     params = recipe_helpers.setup_enabled_modules(params, cdict, WLOG)
 
     # -------------------------------------------------------------------------
-    # get the demo local value
-    demolocal = params.get('GLOBAL.LOCAL_DOWNLOAD_DATA', None)
-    demosymlink = params.get('GLOBAL.DEMO_SYMLINK_DATA', False)
-    # ask for data download
-    load_functions.download_data(params, demolocal=demolocal,
-                                 demosymlink=demosymlink)
+    # download online input files now or at the first run (asks the user,
+    #   uses GLOBAL.LOCAL_DOWNLOAD_DATA as a local mirror if set)
+    file_download.setup_downloads(params)
     # -------------------------------------------------------------------------
     # Check CRDS setup
     startup.check_crds(params)
     # -------------------------------------------------------------------------
     # Tell user to look at the yaml file created
+    yaml_file = params['GLOBAL.YAML_FILE']
     msg = 'Please review the yaml file created at:'
-    msg += '\n  {0} \n\n You can now run POGOS with'
-    msg += '\n\n\t>> pogos_run --yamlfile={0}'
-    msg += '\n\n and you can use \n\n\t>> pogos_copy --demo_file={0}'
-    msg += '\n\nto use this as a basis for your own setup/data'
-    margs = [params['GLOBAL.YAML_FILE']]
-    WLOG(None, 'info', msg.format(*margs), colour='magenta')
+    WLOG(None, 'info', msg, colour='magenta')
+    general.print_command(yaml_file)
+    WLOG(None, 'info', 'You can now run POGOS with:', colour='magenta')
+    general.print_command(f'pogos_run --yamlfile={yaml_file}')
+    msg = 'and use this as a basis for your own setup/data with:'
+    WLOG(None, 'info', msg, colour='magenta')
+    general.print_command(f'pogos_edit --demo_file={yaml_file}')
     # -------------------------------------------------------------------------
     # print splash
     general.end_splash()

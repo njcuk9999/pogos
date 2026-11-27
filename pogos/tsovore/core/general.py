@@ -16,6 +16,8 @@ from aperocore.core import drs_log
 from aperocore.core import drs_misc
 from pogos.core import base
 from pogos.core import general as pogos_general
+from pogos.core import progress
+from pogos.tsovore.core import progress_plan as tsplan
 from pogos.tsovore.instruments import select as ts_select
 from pogos.tsovore.instruments import default as ts_default
 from sossisse.core import misc
@@ -72,14 +74,20 @@ def run_tsovore(params: ParamDict) -> ts_default.JWST:
     # print the white light curve splash
     print(misc.art('TSOvore', 'yellow', 'CYAN'))
     time.sleep(0.1)
+    # Status tab: the steps are named in pogos.tsovore.core.progress_plan
+    #   (the calibration steps inside process() record themselves)
     # prepare the directories
-    prepare_directories(params)
+    with progress.substep(tsplan.TS_PREPARE):
+        prepare_directories(params)
     # now we load the instrument specific parameters
-    inst = ts_select.load_instrument(params)
+    with progress.substep(tsplan.TS_LOAD):
+        inst = ts_select.load_instrument(params)
     # run the tsovore processing
-    inst.process()
+    with progress.substep(tsplan.TS_PROCESS):
+        inst.process()
     # summary step
-    inst.summary()
+    with progress.substep(tsplan.TS_SUMMARY):
+        inst.summary()
     # return parameters
     return inst
 

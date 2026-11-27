@@ -12,7 +12,7 @@ Created on 2025-03-25 at 09:57
 
 
 from pogos.core import definitions
-from pogos.resources.demos import demos
+from pogos.demos import demos
 from pogos.constants import constants as pconst
 from pogos.constants import miriam as mconst
 from pogos.constants import tsovore as tconst
@@ -44,7 +44,7 @@ class MiriImagingDemo_LHS1140(demos.PogoDemo):
         # define the string flavours (shortened versions of flavours for
         #  title and id)
         self.tflavours = []
-        # url for data download
+        # POGOS data server directory (for files with source: pogos)
         self.url = 'http://206.12.93.77/ari/data/pogos/demos/miri/'
         self.download = dict()
         self.redsteps = dict()
@@ -84,10 +84,6 @@ class MiriImagingDemo_LHS1140(demos.PogoDemo):
         # Add the sub-constants-dictionary for TSOVORE
         TSOvore_CDict = tconst.TSOVORE_CDict.copy(source=__NAME__)
         self.cdict.add_sub_cdict('TSOVORE', TSOvore_CDict, source=__NAME__)
-        # =====================================================================
-        # Add to the downloads
-        # =====================================================================
-        self.download['TSOVORE.INPUTS.FILES'] = 'TSOVORE.PATHS.INPUT_PATH'
 
         # =====================================================================
         # Switches to turn of major features
@@ -114,16 +110,14 @@ class MiriImagingDemo_LHS1140(demos.PogoDemo):
         self.cdict.set('INSTRUMENTMODE', group=cgroup, source=__NAME__,
                        value='JWST.MIRI.IMAGING')
 
-        # List of files to be processed in form:
-        # FILES:
-        #  - file1
-        #  - file2
-        #  - file3
+        # Files to be processed (see the yaml comments for the local / mast /
+        #   pogos forms). Listed files are downloaded from MAST if missing.
         files = ['jw03730009001_03101_00001-seg001_mirimage_uncal.fits',
                  'jw03730009001_03101_00001-seg002_mirimage_uncal.fits',
                  'jw03730009001_03101_00001-seg003_mirimage_uncal.fits',
                  'jw03730009001_03101_00001-seg004_mirimage_uncal.fits',
                  'jw03730009001_03101_00001-seg005_mirimage_uncal.fits']
+        files = self.mast_files(files, pid=3730, obsnumber=9, product='uncal')
         self.cdict.set('FILES', group=cgroup, source=__NAME__, value=files)
 
         # Whether to remove intermediate files
@@ -134,10 +128,6 @@ class MiriImagingDemo_LHS1140(demos.PogoDemo):
         # Add the sub-constants-dictionary for MIRIAM
         MIRIAM_CDict = mconst.MIRIAM_CDict.copy(source=__NAME__)
         self.cdict.add_sub_cdict('MIRIAM', MIRIAM_CDict, source=__NAME__)
-        # =====================================================================
-        # Add to the downloads
-        # =====================================================================
-        self.download['MIRIAM.INPUTS.FILES'] = 'MIRIAM.PATHS.INPUT_PATH'
 
         # =====================================================================
         # Switches to turn of major features
@@ -160,16 +150,15 @@ class MiriImagingDemo_LHS1140(demos.PogoDemo):
         # =====================================================================
         cgroup = 'MIRIAM.INPUTS'
 
-        # List of files to be processed in form:
-        # FILES:
-        #  - file1
-        #  - file2
-        #  - file3
+        # Files to be processed (see the yaml comments for the local / mast /
+        #   pogos forms). Listed files are downloaded from MAST if missing.
         files = ['jw03730009001_03101_00001-seg001_mirimage_rateints.fits',
                  'jw03730009001_03101_00001-seg002_mirimage_rateints.fits',
                  'jw03730009001_03101_00001-seg003_mirimage_rateints.fits',
                  'jw03730009001_03101_00001-seg004_mirimage_rateints.fits',
                  'jw03730009001_03101_00001-seg005_mirimage_rateints.fits']
+        files = self.mast_files(files, pid=3730, obsnumber=9,
+                                product='rateints')
         self.cdict.set('FILES', group=cgroup, source=__NAME__, value=files)
 
     def sorbet(self):
@@ -191,10 +180,6 @@ class MiriImagingDemo_LHS1140(demos.PogoDemo):
 
     def sorbet_wlca(self):
         # =====================================================================
-        # Add to the downloads
-        # =====================================================================
-        self.download['SORBET.WLCA.INPUT_FILE'] = 'SORBET.WLCA.INPUT_PATH'
-        # =====================================================================
         # Switches to turn large parts of the code on/off
         # =====================================================================
         # Switch for turning on/off the white light curve transit fit
@@ -206,8 +191,9 @@ class MiriImagingDemo_LHS1140(demos.PogoDemo):
         # Definition of inputs related to the data
         # =====================================================================
         # Path to input file relative to GLOBAL data path defined by the user
+        # (from the POGOS server unless an extraction step produces it)
         self.cdict.set('INPUT_FILE', group=cgroup, source=__NAME__,
-                       value='white_light_curve.fits')
+                       value=self.pogos_files('white_light_curve.fits'))
 
         # =====================================================================
         # Definition of general inputs SORBET_WLCA

@@ -15,7 +15,7 @@ import os
 import string
 import sys
 import time
-from typing import Any, List, Optional, Tuple
+from typing import Any, Dict, List, Optional, Tuple
 
 from pogos.constants import constants as pogo_constants
 from pogos.core import base as pogos_base
@@ -70,6 +70,19 @@ def _validate_project_name(value):
     return value
 
 
+def validate_project_name(value: Any) -> str:
+    """
+    Check a GLOBAL.PROJECT_NAME value (public wrapper, e.g. for the gui)
+
+    :param value: Any, the candidate project name
+
+    :raises PogosException: if the name is not a valid directory name
+
+    :return: str, the valid project name
+    """
+    return _validate_project_name(value)
+
+
 def ask_project_name(params: ParamDict):
     value = params.get('GLOBAL.PROJECT_NAME', None)
     if value is None:
@@ -83,7 +96,7 @@ def ask_project_name(params: ParamDict):
 
 
 def _load_demo_module():
-    from pogos.resources import demos as demo_module
+    from pogos import demos as demo_module
     return demo_module
 
 
@@ -123,9 +136,11 @@ def setup(params: ParamDict, start_from_demo: bool = True):
     if start_from_demo:
         # deal with start point (setup only) - ask user to start from demo
         # or blank
+        # a command line pre-answer (--demo_select) skips the demo prompts
+        skwargs = dict(ask_for_missing_on_no_demo=False,
+                       demo_select=params.get('GLOBAL.DEMO_SELECT', None))
         params = load_functions.starting_point(params, 'GLOBAL.INSTRUMENTMODE',
-                                               demo_list,
-                                               ask_for_missing_on_no_demo=False)
+                                               demo_list, **skwargs)
 
     params = ask_project_name(params)
     # now set up yaml file name
@@ -425,7 +440,27 @@ def core_setup(params: ParamDict, demo_mod: Optional[Any],
     params = update_run_after_demo_modes(params, demo_modes)
     # -------------------------------------------------------------------------
     # now we want to cut down demo_mod.DEMOS to only those selected
-    demo_dict = dict()
+    demo_dict = get_demo_choices(demo_mod, demo_modes)
+    # -------------------------------------------------------------------------
+    return params, demo_dict
+
+
+def get_demo_choices(demo_mod: Any, demo_modes: List[str]
+                     ) -> Dict[str, Dict[str, Any]]:
+    """
+    Get the demos that use at least one of the selected reduction steps
+
+    Every returned demo instance has the selected steps added to its
+    flavours (and short names to its tflavours, used in its title/id).
+
+    :param demo_mod: module, the demo module (needs dict DEMOS of
+                     instrument mode -> demo key -> demo class)
+    :param demo_modes: list of str, the selected "level:step" names (e.g.
+                       "Extraction:SOSSISSE")
+
+    :return: dict, instrument mode -> demo key -> demo instance
+    """
+    demo_dict: Dict[str, Dict[str, Any]] = dict()
     # loop around demo_mod demos to find those that match our criteria
     for inst_key in demo_mod.DEMOS:
         for demo_name in demo_mod.DEMOS[inst_key]:
@@ -454,8 +489,7 @@ def core_setup(params: ParamDict, demo_mod: Optional[Any],
                     demo_dict[inst_key] = dict()
                 # add the demo
                 demo_dict[inst_key][demo_name] = demo_inst
-    # -------------------------------------------------------------------------
-    return params, demo_dict
+    return demo_dict
 
 
 def ask_reduction_steps(params: ParamDict, imode: str) -> List[str]:
