@@ -230,8 +230,11 @@ the console below.</div>
 <div id="tab-edit" class="tabpage">
 <div class="tabdesc">Load a yaml file (from <code>{path}/yamls</code> or
 anywhere on disk), edit it as a form or as raw text, review the changes
-side by side and save (a backup is kept). Use <b>New project from this
-yaml</b> to copy it into a new project with <code>pogos_edit</code>.</div>
+side by side and save (a backup is kept). <b>+ Add parameters</b> adds
+any POGOS constant that is not in the yaml yet; the <b>&#10005;</b> next
+to a constant removes it again (so its default is used). Use <b>New project from
+this yaml</b> to copy it into a new project with
+<code>pogos_edit</code>.</div>
 
 <div class="section-card">
 <div class="field-row">
@@ -260,6 +263,9 @@ yaml</b> to copy it into a new project with <code>pogos_edit</code>.</div>
        onchange="P.edit.renderForm()"> Changed only</label>
 <span class="grow"></span>
 <span id="edit-dirty" class="pill"></span>
+<button onclick="P.edit.addDialog()"
+        title="Add any POGOS constant that is not in this yaml yet">+ Add
+    parameters</button>
 <button onclick="P.edit.revert()">Revert</button>
 <button onclick="P.edit.review()">Review changes</button>
 <button class="primary" onclick="P.edit.save(false)">&#128190; Save</button>

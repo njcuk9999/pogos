@@ -290,7 +290,8 @@ document.addEventListener('scroll', P.hideTip, true);
 /* ==========================================================================
    Setup
    ========================================================================== */
-P.setup = {choices: null, demos: [], demoKey: '', autoProject: null};
+P.setup = {choices: null, demos: [], demoKey: '', autoProject: null,
+           demoCounts: null};
 
 P.setup.init = function () {
     GUI.get('api/pogos/setup_choices').then(function (data) {
@@ -304,6 +305,14 @@ P.setup.init = function () {
         });
         P.setup.renderInstruments(inst);
         P.setup.renderModes(inst ? wanted : null);
+        // the demo counts of the mode cards (a slower probe)
+        GUI.get('api/pogos/demo_counts').then(function (res) {
+            P.setup.demoCounts = res.counts || {};
+            P.setup.fillModeCounts();
+        }).catch(function () {
+            P.setup.demoCounts = false;
+            P.setup.fillModeCounts();
+        });
     }).catch(GUI.fail);
     ['setup-data-path', 'setup-yaml', 'setup-local']
         .forEach(function (id) {
@@ -406,9 +415,12 @@ P.setup.renderModes = function (wanted) {
             (m.name === wanted ? ' checked' : '') + '><span><span ' +
             'class="choice-title">' + m.number + '. ' + GUI.esc(m.label) +
             '</span><span class="choice-desc">' + GUI.esc(m.name) +
-            (m.enabled ? '' : ' - not yet supported') + '</span></span>' +
-            '</label>';
+            (m.enabled ? '' : ' - not yet supported') + '</span>' +
+            (m.enabled ? '<span class="choice-desc mode-counts" ' +
+             'data-mode="' + GUI.esc(m.name) + '"></span>' : '') +
+            '</span></label>';
     }).join('');
+    P.setup.fillModeCounts();
     holder.querySelectorAll('input').forEach(function (input) {
         input.onchange = function () {
             GUI.store('setup-mode', input.value);
@@ -418,6 +430,27 @@ P.setup.renderModes = function (wanted) {
     });
     P.setup.markChoices('setup-modes');
     P.setup.renderSteps();
+};
+
+P.setup.fillModeCounts = function () {
+    // "Supported flavours (n) demos (m)" on every enabled mode card
+    var inst = P.setup.instrument();
+    if (!inst) { return; }
+    P.$('setup-modes').querySelectorAll('.mode-counts').forEach(function (el) {
+        var name = el.getAttribute('data-mode');
+        var mode = inst.modes.filter(function (m) {
+            return m.name === name; })[0];
+        var nflav = mode ? mode.levels.reduce(function (n, level) {
+            return n + level.steps.length; }, 0) : 0;
+        var counts = P.setup.demoCounts;
+        // null = still probing, false = the probe failed
+        var ndemo = counts === null ? '...' : counts === false ? '?' :
+            (counts[name] || 0);
+        el.textContent = 'Supported flavours (' + nflav + ')   demos (' +
+            ndemo + ')';
+        el.title = 'flavours: reduction steps that support this mode; ' +
+            'demos: every demo object x combination of its flavours';
+    });
 };
 
 P.setup.renderSteps = function () {
@@ -776,7 +809,7 @@ P.setup.done = function (job) {
    Edit
    ========================================================================== */
 P.edit = {path: null, original: '', text: '', mtime: null, outline: null,
-          edits: {}, view: 'form', open: {}};
+          edits: {}, view: 'form', openSecs: {}, added: {}};
 
 P.edit.init = function () {
     // opening the tab loads the remembered / selected yaml
@@ -871,6 +904,7 @@ P.edit.load = function (path) {
         P.edit.text = data.text;
         P.edit.mtime = data.mtime;
         P.edit.edits = {};
+        P.edit.added = {};
         GUI.store('yaml-edit-select', data.path);
         P.$('edit-summary').innerHTML = P.pills(data.summary) +
             (data.truncated ? ' <span class="pill bad">file too large - ' +
@@ -1027,11 +1061,12 @@ P.edit.rowHtml = function (node, label, choices, noHelp, helpText) {
     var info = P.params[key];
     var help = helpText || (noHelp ? '' : (info ? (info.short ||
                                            info.description) : node.comment));
-    var changed = !!P.edit.edits[node.line];
+    var changed = P.edit.isChanged(node);
     return '<div class="yf-row' + (changed ? ' changed' : '') +
         '" data-row="' + node.line + '"><div class="yf-key" data-param="' +
         GUI.esc(key) + '" data-doc="' + GUI.esc(key) + '">' +
-        GUI.esc(label || node.key) + '<span class="yf-path">' +
+        GUI.esc(label || node.key) + (info && !info.file ?
+        P.edit.removeHtml(key) : '') + '<span class="yf-path">' +
         GUI.esc(node.path.slice(0, -1).join('.')) + ' &middot; line ' +
         (node.line + 1) + '</span></div><div class="yf-value">' +
         P.edit.inputHtml(node, choices) + P.helpHtml(key, help) +
@@ -1146,7 +1181,8 @@ P.edit.fileHtml = function (node, children) {
         '<div class="yf-file-head"><span class="yf-file-icon">&#128196;' +
         '</span><span class="yf-file-name" data-param="' + GUI.esc(key) +
         '" data-doc="' + GUI.esc(key) + '">' + GUI.esc(node.key) + '</span>' +
-        '<span class="pill">file</span>' + (nfiles ? '<span class="pill">' +
+        P.edit.removeHtml(key) + '<span class="pill">file</span>' +
+        (nfiles ? '<span class="pill">' +
         nfiles + ' file(s)</span>' : '') + '<span class="yf-src-label">' +
         'Source</span>' + switcher + '<span class="muted small">' +
         GUI.esc(P.FILE_SOURCE_LABELS[source] || '') + '</span><span ' +
@@ -1330,8 +1366,7 @@ P.edit.renderForm = function () {
                 }
                 nparams++;
                 var group = children.concat([node]);
-                var changedFile = group.some(function (n) {
-                    return !!P.edit.edits[n.line]; });
+                var changedFile = group.some(P.edit.isChanged);
                 if (changedOnly && !changedFile) { continue; }
                 if (filter && !group.some(function (n) {
                     return matches(n, key, help); })) { continue; }
@@ -1342,8 +1377,8 @@ P.edit.renderForm = function () {
             if (node.kind === 'map') {
                 if (flat) { continue; }
                 // a sub-section: a coloured box that can be closed
-                var gopen = P.edit.open[key] !== undefined ?
-                    P.edit.open[key] : true;
+                var gopen = P.edit.openSecs[key] !== undefined ?
+                    P.edit.openSecs[key] : true;
                 rows += '<details class="yf-group-box g' + (ngroups % 6) +
                     ' depth' + Math.min(groups.length, 3) + '" ' +
                     'data-sec="' + GUI.esc(key) + '" data-nav="' +
@@ -1358,7 +1393,7 @@ P.edit.renderForm = function () {
                 continue;
             }
             nparams++;
-            if (changedOnly && !P.edit.edits[node.line]) { continue; }
+            if (changedOnly && !P.edit.isChanged(node)) { continue; }
             if (!matches(node, key, help)) { continue; }
             shown++;
             rows += P.edit.rowHtml(node);
@@ -1367,7 +1402,8 @@ P.edit.renderForm = function () {
         closeGroups('');
         if ((filter || changedOnly) && shown === 0) { return; }
         var name = sec.node.key;
-        var isOpen = P.edit.open[name] !== undefined ? P.edit.open[name] :
+        var saved = P.edit.openSecs[name];
+        var isOpen = saved !== undefined ? saved :
             (name === 'GLOBAL' || name === 'RUN' || !!filter || changedOnly);
         html += '<details class="yf-section" data-sec="' + GUI.esc(name) +
             '" data-nav="' + GUI.esc(name) + '"' + (isOpen ? ' open' : '') +
@@ -1383,7 +1419,7 @@ P.edit.renderForm = function () {
         det.addEventListener('toggle', function (ev) {
             // nested details: only record the box that was toggled
             if (ev.target !== det) { return; }
-            P.edit.open[det.getAttribute('data-sec')] = det.open;
+            P.edit.openSecs[det.getAttribute('data-sec')] = det.open;
             P.edit.updateNav();
         });
     });
@@ -1397,6 +1433,14 @@ P.edit.renderForm = function () {
             //   rewrite with the same source)
             if (btn.classList.contains('active')) { return; }
             P.edit.switchSource(line, src);
+        };
+    });
+    holder.querySelectorAll('[data-remove]').forEach(function (btn) {
+        btn.onclick = function (ev) {
+            // (not the Docs link of the key around it)
+            ev.preventDefault();
+            ev.stopPropagation();
+            P.edit.removeParam(btn.getAttribute('data-remove'));
         };
     });
     holder.querySelectorAll('[data-line]').forEach(function (input) {
@@ -1481,12 +1525,137 @@ P.edit.fieldChanged = function (input) {
     P.edit.updateDirty();
 };
 
+P.edit.isChanged = function (node) {
+    // edited in the form, or added since the file was loaded
+    return !!P.edit.edits[node.line] || !!P.edit.added[node.path.join('.')];
+};
+
+// ---- add parameters (any POGOS / flavour constant) ----
+P.edit.presentKeys = function () {
+    // every key already in the open file (sections included)
+    var keys = {};
+    ((P.edit.outline || {}).nodes || []).forEach(function (node) {
+        keys[node.path.join('.')] = true;
+    });
+    return keys;
+};
+
+P.edit.yamlDefault = function (info) {
+    // the default as written in a yaml (file constants: their mapping)
+    return info.yaml !== undefined ? info.yaml : info.default;
+};
+
+P.edit.addDialog = function () {
+    if (!P.edit.path) { return; }
+    if (Object.keys(P.params).length === 0) {
+        GUI.toast('The parameter list is still loading', 'bad');
+        return;
+    }
+    GUI.addParams({
+        title: 'Add parameters to ' + GUI.basename(P.edit.path),
+        intro: 'Every POGOS constant that is not in this yaml yet (by ' +
+               'default only the sections already in the file - choose ' +
+               '<b>All sections</b> for the other flavours). Click ' +
+               '<b>+</b> to add one with its default value: it is added ' +
+               'as an unsaved change, so edit its value in the form, then ' +
+               'review and save. Click a name for its full description.',
+        defaultLabel: 'Default',
+        section: 'file',
+        params: function () {
+            var out = {};
+            Object.keys(P.params).forEach(function (key) {
+                var info = P.params[key];
+                out[key] = {description: info.short || info.description,
+                            dtype: info.file ? 'file' : info.dtype,
+                            advanced: !info.user,
+                            value: P.edit.yamlDefault(info)};
+            });
+            return out;
+        },
+        present: P.edit.presentKeys,
+        add: P.edit.addParams
+    });
+};
+
+P.edit.addParams = function (keys) {
+    // add parameters to the open yaml (as an unsaved change)
+    var entries = keys.map(function (key) {
+        var info = P.params[key] || {};
+        return {key: key, value: P.edit.yamlDefault(info),
+                description: info.short || info.description || '',
+                dtype: info.dtype || null};
+    });
+    if (P.edit.view === 'raw') { P.edit.text = P.$('edit-raw').value; }
+    return P.edit.currentText().then(function (text) {
+        return GUI.yamlAdd(text, entries);
+    }).then(function (res) {
+        if (res.errors && res.errors.length) {
+            GUI.toast(res.errors.join('\n'), 'bad');
+        }
+        if (!res.added || !res.added.length) { return false; }
+        P.edit.text = res.text;
+        P.edit.edits = {};
+        P.$('edit-raw').value = res.text;
+        P.edit.updateGutter();
+        // highlight the added rows (and open their sections)
+        res.added.forEach(function (key) {
+            P.edit.added[key] = true;
+            P.edit.openSecs[key.split('.')[0]] = true;
+        });
+        GUI.toast('Added ' + res.added.join(', ') + ' (not saved yet)');
+        return P.edit.refreshOutline().then(function () { return true; });
+    }).catch(function (err) { GUI.fail(err); return false; });
+};
+
+// ---- remove a parameter (back to its default) ----
+P.edit.removeHtml = function (key) {
+    // the "remove" button of a known constant
+    if (!P.edit.path || !P.params[key]) { return ''; }
+    return '<button type="button" class="yf-remove" data-remove="' +
+        GUI.esc(key) + '" title="Remove ' + GUI.esc(key) + ' from the ' +
+        'yaml (use the default value)">&#10005;</button>';
+};
+
+P.edit.removeParam = function (key) {
+    // take a constant out of the open yaml (as an unsaved change) so its
+    //   default is used again
+    var info = P.params[key] || {};
+    var node = ((P.edit.outline || {}).nodes || []).filter(function (n) {
+        return n.path.join('.') === key; })[0];
+    var current = '';
+    if (node && node.kind !== 'map') { current = P.edit.nodeValue(node); }
+    GUI.confirmRemove({key: key, file: GUI.basename(P.edit.path),
+                       known: !!P.params[key], current: current,
+                       value: info.default, defaultLabel: 'POGOS default'})
+        .then(function (ok) {
+            if (!ok) { return; }
+            if (P.edit.view === 'raw') { P.edit.text = P.$('edit-raw').value; }
+            return P.edit.currentText().then(function (text) {
+                return GUI.yamlRemove(text, [key]);
+            }).then(function (res) {
+                if (res.errors && res.errors.length) {
+                    GUI.toast(res.errors.join('\n'), 'bad');
+                }
+                if (!res.removed || !res.removed.length) { return; }
+                P.edit.text = res.text;
+                P.edit.edits = {};
+                P.$('edit-raw').value = res.text;
+                res.removed.forEach(function (k) { delete P.edit.added[k]; });
+                P.edit.updateGutter();
+                GUI.toast('Removed ' + res.removed.join(', ') + ' (not ' +
+                          'saved yet)');
+                return P.edit.refreshOutline();
+            });
+        }).catch(GUI.fail);
+};
+
 P.edit.revert = function () {
     if (!P.edit.path) { return; }
     P.edit.confirmDiscard().then(function (ok) {
         if (!ok) { return; }
         P.edit.text = P.edit.original;
         P.edit.edits = {};
+        P.edit.added = {};
         P.$('edit-raw').value = P.edit.text;
         P.edit.updateGutter();
         P.edit.refreshOutline();

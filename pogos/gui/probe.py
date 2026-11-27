@@ -77,6 +77,35 @@ def probe_demos(instmode: str, steps: List[str]) -> Dict[str, Any]:
     return dict(instmode=instmode, steps=steps, demos=out)
 
 
+def probe_demo_counts() -> Dict[str, Any]:
+    """
+    Count the demos of every instrument mode: each object counts once per
+    combination of its reduction steps that pogos_setup can select (one
+    step or skip per level, any subset on multiple choice levels, at least
+    one step) - e.g. SOSSISSE and SOSSISSE+SORBET.WLCA count as two
+
+    :return: dict(counts=dict instrument mode -> number of demos)
+    """
+    from pogos import demos as demo_module
+    from pogos.core import definitions
+    counts: Dict[str, int] = dict()
+    for instmode, demos in demo_module.DEMOS.items():
+        mode = definitions.MODE_BY_NAME.get(instmode)
+        total = 0
+        for demo_class in demos.values():
+            redsteps = demo_class().redsteps
+            combos = 1
+            for level in definitions.REDUCTION_LEVELS:
+                nstep = len([step for step in definitions.steps_for_level(
+                    level) if (mode is None or step.supports(mode)) and
+                    '{0}:{1}'.format(level.name, step.name) in redsteps])
+                combos *= 2 ** nstep if level.allow_multiple else nstep + 1
+            # minus the all-skipped choice
+            total += combos - 1
+        counts[instmode] = total
+    return dict(counts=counts)
+
+
 def probe_reset(yaml_file: str) -> Dict[str, Any]:
     """
     Get the directories pogos_reset would delete (without deleting)
@@ -194,11 +223,12 @@ def _const_info(const: Any) -> Dict[str, Any]:
 
     :param const: Const, a constant of a ConstantsDict
 
-    :return: dict(description, short, kind, file, dtype, default, options,
-             user, filespec) - filespec describes file constants (see
-             _file_spec, None otherwise) and short is the constant
-             specific description (without the generic usage text some
-             classes add, e.g. FileObjectConst)
+    :return: dict(description, short, kind, file, dtype, default, yaml,
+             options, user, filespec) - filespec describes file constants
+             (see _file_spec, None otherwise), yaml is the default as
+             written in a yaml file (e.g. the mapping of a file constant)
+             and short is the constant specific description (without the
+             generic usage text some classes add, e.g. FileObjectConst)
     """
     # the constant specific part of the description (file constants add a
     #   long generic usage text to their description)
@@ -211,11 +241,21 @@ def _const_info(const: Any) -> Dict[str, Any]:
         None if dtype is None else str(dtype))
     options = getattr(const, 'options', None)
     filespec = _file_spec(const) if kind == 'FileObjectConst' else None
+    # the default as the yaml writer writes it (custom classes may write
+    #   their own form, e.g. FileObjectConst mappings)
+    default = getattr(const, 'value', None)
+    yaml_default = default
+    if hasattr(const, 'yaml_value'):
+        try:
+            yaml_default = const.yaml_value(default)
+        except Exception:
+            yaml_default = default
     return dict(filespec=filespec,
                 description=str(getattr(const, 'description', '') or ''),
                 short=short.strip(), kind=kind,
                 file=kind == 'FileObjectConst',
-                dtype=dtype, default=getattr(const, 'value', None),
+                dtype=dtype, default=default,
+                yaml=_jsonable(yaml_default),
                 options=None if options is None else [str(opt)
                                                       for opt in options],
                 user=bool(getattr(const, 'user', False)))
@@ -364,7 +404,8 @@ def main(argv: List[str]) -> int:
     :return: int, the exit code (0 = success)
     """
     parser = argparse.ArgumentParser(description='POGOS gui probes')
-    parser.add_argument('probe', choices=['demos', 'reset-preview', 'params',
+    parser.add_argument('probe', choices=['demos', 'demo-counts',
+                                          'reset-preview', 'params',
                                           'algorithms'])
     parser.add_argument('--instmode', default='')
     parser.add_argument('--steps', default='')
@@ -374,6 +415,8 @@ def main(argv: List[str]) -> int:
         if args.probe == 'demos':
             steps = [step for step in args.steps.split(',') if step]
             result = probe_demos(args.instmode, steps)
+        elif args.probe == 'demo-counts':
+            result = probe_demo_counts()
         elif args.probe == 'params':
             result = probe_params()
         elif args.probe == 'algorithms':

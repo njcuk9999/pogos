@@ -229,6 +229,7 @@ class PogosGuiApp(webapp.GuiApp):
         get('/api/pogos/setup_choices',
             lambda req: webapp.Response.json(commands.setup_choices()))
         get('/api/pogos/demos', self.api_demos)
+        get('/api/pogos/demo_counts', self.api_demo_counts)
         get('/api/pogos/param_info', self.api_param_info)
         get('/api/pogos/algorithms', self.api_algorithms)
         post('/api/pogos/project_name', self.api_project_name)
@@ -929,6 +930,24 @@ class PogosGuiApp(webapp.GuiApp):
                     return webapp.Response.error(result['error'])
                 self.demo_cache[key] = result
             return webapp.Response.json(self.demo_cache[key])
+
+    def api_demo_counts(self, request: webapp.Request) -> webapp.Response:
+        """
+        GET /api/pogos/demo_counts: the number of demos (object x flavour
+        combination) of every instrument mode, for the setup mode cards
+
+        :param request: Request, the request
+
+        :return: Response, json (see probe.probe_demo_counts)
+        """
+        _ = request
+        with self.demo_lock:
+            if '__counts__' not in self.demo_cache:
+                result = self._run_probe(['demo-counts'])
+                if 'error' in result:
+                    return webapp.Response.error(result['error'])
+                self.demo_cache['__counts__'] = result
+            return webapp.Response.json(self.demo_cache['__counts__'])
 
     def api_param_info(self, request: webapp.Request) -> webapp.Response:
         """

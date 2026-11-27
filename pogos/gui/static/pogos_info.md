@@ -23,8 +23,13 @@ edit rows) to see its full description, type, default and options.
 - **Edit**: load any yaml (from `yamls/` or anywhere on disk with
   **Browse disk**). Edit it as a form (**Parameters**, grouped by module
   with each parameter's description) or as **Raw YAML**, then **Review
-  changes** side by side and **Save** (a backup is kept). **New project
-  from this yaml** runs `pogos_edit` to copy it into a new project.
+  changes** side by side and **Save** (a backup is kept). **+ Add
+  parameters** lists every POGOS constant that is not in the yaml yet
+  (with its default and description); click **+** to add one, then set
+  its value in the form. The **✕** next to a constant removes it from
+  the yaml (after a confirmation showing the default it falls back to).
+  **New project from this yaml** runs `pogos_edit`
+  to copy it into a new project.
 - **Run**: run a yaml with `pogos_run` on this machine (**Single
   Process**) or write / submit a Slurm script (**Batch Script**) using a
   template made in **Create Batch Template** (resources and activation

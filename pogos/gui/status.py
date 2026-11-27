@@ -435,6 +435,9 @@ def parse_run(file_path: str) -> Optional[Dict[str, Any]]:
                                         + _current(stage['children']))
     out['steps'] = stages
     out['nstages'] = len(stages)
+    # the flavours this run covers (for the Status tab filter)
+    out['flavours'] = sorted(set(str(stage['flavour']) for stage in stages
+                                 if stage['flavour'] is not None))
     out['ndone'] = len([stage for stage in stages
                         if stage['status'] == 'complete'])
     return out
